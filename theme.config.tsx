@@ -4,11 +4,13 @@ import dynamic from 'next/dynamic'
 import Callout from './components/Callout'
 
 const ApiTester = dynamic(() => import('./components/ApiTester'), { ssr: false }) as any
+const BackToTop = dynamic(() => import('./components/BackToTop'), { ssr: false }) as any
 
 const config: DocsThemeConfig = {
   components: {
     Callout,
     ApiTester,
+    BackToTop,
   } as any,
   logo: (
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

@@ -8,11 +8,16 @@ const ApiTester = dynamic(() => import('./components/ApiTester'), {
 const Callout = dynamic(() => import('./components/Callout'), {
   ssr: true,
 })
+
+const BackToTop = dynamic(() => import('./components/BackToTop'), {
+  ssr: false,
+})
  
 export function useMDXComponents(components: MDXComponents): MDXComponents {
   return {
     ...components,
     ApiTester,
     Callout,
+    BackToTop,
   }
 }

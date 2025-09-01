@@ -6,13 +6,13 @@ The Contact Management API allows you to manage contacts in your TaskIP CRM syst
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/api/public-v1/contact` | Get all contacts |
-| `POST` | `/api/public-v1/contact` | Create a new contact |
-| `GET` | `/api/public-v1/contact/{id}` | Get a specific contact |
-| `PUT` | `/api/public-v1/contact/{id}` | Update a contact |
-| `DELETE` | `/api/public-v1/contact/{id}` | Delete a contact |
-| `POST` | `/api/public-v1/contact/bulk-delete` | Delete multiple contacts |
-| `POST` | `/api/public-v1/contact/invite-client/{id}` | Invite a contact as client |
+| `GET` | [`/api/public-v1/contact`](#get-all-contacts) | Get all contacts |
+| `POST` | [`/api/public-v1/contact`](#create-a-contact) | Create a new contact |
+| `GET` | [`/api/public-v1/contact/{id}`](#get-a-specific-contact) | Get a specific contact |
+| `PUT` | [`/api/public-v1/contact/{id}`](#update-a-contact) | Update a contact |
+| `DELETE` | [`/api/public-v1/contact/{contact}`](#delete-a-contact) | Delete a contact |
+| `POST` | [`/api/public-v1/contact/bulk-delete`](#bulk-delete-contacts) | Delete multiple contacts |
+| `POST` | [`/api/public-v1/contact/invite-client/{id}`](#invite-client) | Invite a contact as client |
 
 ---
 
@@ -57,16 +57,18 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/contact?page=1&limit=20
 
 ```json
 {
-  "success": true,
+  "message": "All contacts fetched successfully",
   "data": [
     {
       "id": 1,
       "user_id": 123,
-      "company_id": 5,
       "company": {
         "id": 5,
-        "name": "Acme Corp"
+        "name": "Acme Corp",
+        "domain": "acmecorp.com",
+        "email": "info@acmecorp.com"
       },
+      "company_id": 5,
       "first_name": "John",
       "last_name": "Doe",
       "full_name": "John Doe",
@@ -82,13 +84,22 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/contact?page=1&limit=20
       "address": "123 Tech Street",
       "zip_code": "94105",
       "timezone": "America/Los_Angeles",
+      "details": null,
+      "reference": null,
+      "reference_name": null,
       "access_portal": 1,
       "billings": {
+        "id": 10,
+        "contact_id": 1,
         "billing_address": null,
         "billing_city": null,
         "billing_state": null,
         "billing_country": null,
-        "billing_zip": null
+        "billing_zip": null,
+        "billing_phone": null,
+        "tax_number": null,
+        "created_at": "2024-01-15T10:30:00Z",
+        "updated_at": "2024-01-15T10:30:00Z"
       },
       "languages": [],
       "image": null,
@@ -100,11 +111,13 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/contact?page=1&limit=20
     {
       "id": 2,
       "user_id": 124,
-      "company_id": 3,
       "company": {
         "id": 3,
-        "name": "Tech Solutions"
+        "name": "Tech Solutions",
+        "domain": "techsolutions.com",
+        "email": "hello@techsolutions.com"
       },
+      "company_id": 3,
       "first_name": "Jane",
       "last_name": "Smith",
       "full_name": "Jane Smith",
@@ -120,31 +133,55 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/contact?page=1&limit=20
       "address": "456 Business Ave",
       "zip_code": "10001",
       "timezone": "America/New_York",
+      "details": "Experienced product manager",
+      "reference": "REF-2024-002",
+      "reference_name": "Website Lead",
       "access_portal": 0,
       "billings": {
+        "id": 11,
+        "contact_id": 2,
         "billing_address": "456 Business Ave",
         "billing_city": "New York",
         "billing_state": "New York",
         "billing_country": "United States",
-        "billing_zip": "10001"
+        "billing_zip": "10001",
+        "billing_phone": "555-0124",
+        "tax_number": "TX-987654321",
+        "created_at": "2024-01-10T09:20:00Z",
+        "updated_at": "2024-01-18T16:30:00Z"
       },
-      "languages": ["en", "es"],
+      "languages": [
+        {
+          "id": 1,
+          "code": "en",
+          "name": "English",
+          "is_default": true
+        },
+        {
+          "id": 2,
+          "code": "es",
+          "name": "Spanish",
+          "is_default": false
+        }
+      ],
       "image": {
         "id": 25,
         "url": "https://taskip.net/storage/profile/jane-smith.jpg",
-        "name": "jane-smith.jpg"
+        "name": "jane-smith.jpg",
+        "file_name": "jane-smith.jpg",
+        "mime_type": "image/jpeg",
+        "size": 98765,
+        "collection_name": "profile"
       },
       "custom_fields": {
         "department": "Product",
-        "lead_source": "Website"
+        "lead_source": "Website",
+        "linkedin": "https://linkedin.com/in/janesmith"
       }
     }
   ],
   "meta": {
-    "current_page": 1,
-    "per_page": 20,
-    "total": 150,
-    "total_pages": 8
+    "search": null
   }
 }
 ```
@@ -445,9 +482,9 @@ PUT /api/public-v1/contact/{id}
   endpoint="/contact/1"
   method="PUT"
   defaultBody={{
-    "position": "Senior Marketing Director",
-    "phone": "+1-555-0126",
-    "notes": "Updated contact information"
+    "position": "Senior Marketing Director", 
+    "phone_number": "555-0126",
+    "details": "Promoted to senior position"
   }}
   description="Update an existing contact. Replace '1' in the endpoint with the actual contact ID. Only include fields you want to update."
 />
@@ -468,8 +505,8 @@ curl -X PUT "https://public-api.taskip.net/api/public-v1/contact/151" \
   -H "Content-Type: application/json" \
   -d '{
     "position": "Senior Marketing Director",
-    "phone": "+1-555-0126",
-    "notes": "Promoted to senior position. Met at industry conference 2024"
+    "phone_number": "555-0126",
+    "details": "Promoted to senior position. Met at industry conference 2024"
   }'
 ```
 
@@ -501,22 +538,7 @@ result = response.json()
 
 ```json
 {
-  "success": true,
-  "message": "Contact updated successfully",
-  "data": {
-    "id": 151,
-    "name": "Alice Johnson",
-    "email": "alice.johnson@example.com",
-    "phone": "+1-555-0126",
-    "company_id": 7,
-    "company_name": "Marketing Pro",
-    "position": "Senior Marketing Director",
-    "address": "123 Business Ave, City, State 12345",
-    "notes": "Promoted to senior position. Met at industry conference 2024",
-    "status": "active",
-    "created_at": "2024-01-25T11:20:00Z",
-    "updated_at": "2024-01-26T09:15:00Z"
-  }
+  "msg": "Contact Updated"
 }
 ```
 
@@ -527,11 +549,11 @@ result = response.json()
 Delete a specific contact from your system.
 
 ```http
-DELETE /api/public-v1/contact/{id}
+DELETE /api/public-v1/contact/{contact}
 ```
 
 <ApiTester
-  endpoint="/contact/1"
+  endpoint="/api/public-v1/contact/1"
   method="DELETE"
   description="Delete a contact permanently. Replace '1' in the endpoint with the actual contact ID. This action cannot be undone."
 />
@@ -539,7 +561,7 @@ DELETE /api/public-v1/contact/{id}
 ### Path Parameters
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `id` | integer | Yes | Contact ID to delete |
+| `contact` | integer | Yes | Contact ID to delete |
 
 ### Example Request
 
@@ -552,8 +574,7 @@ curl -X DELETE "https://public-api.taskip.net/api/public-v1/contact/151" \
 
 ```json
 {
-  "success": true,
-  "message": "Contact deleted successfully"
+  "msg": "Contact Deleted"
 }
 ```
 
@@ -568,7 +589,7 @@ POST /api/public-v1/contact/bulk-delete
 ```
 
 <ApiTester
-  endpoint="/contact/bulk-delete"
+  endpoint="/api/public-v1/contact/bulk-delete"
   method="POST"
   defaultBody={{
     "contact_ids": [1, 2, 3]
@@ -597,13 +618,7 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/contact/bulk-delete" \
 
 ```json
 {
-  "success": true,
-  "message": "4 contacts deleted successfully",
-  "data": {
-    "deleted_count": 4,
-    "deleted_ids": [151, 152, 153, 154],
-    "failed_ids": []
-  }
+  "msg": "Contacts Deleted"
 }
 ```
 
@@ -614,7 +629,7 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/contact/bulk-delete" \
 Send an invitation to a contact to join as a client in your system.
 
 <ApiTester
-  endpoint="/contact/invite-client/1"
+  endpoint="/api/public-v1/contact/invite-client/1"
   method="POST"
   defaultBody={{
     "message": "Welcome to our client portal! You now have access to track your projects and invoices.",
@@ -658,15 +673,7 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/contact/invite-client/
 
 ```json
 {
-  "success": true,
-  "message": "Client invitation sent successfully",
-  "data": {
-    "contact_id": 150,
-    "invitation_sent": true,
-    "access_level": "standard",
-    "invitation_url": "https://your-domain.com/client/invite/abc123def456",
-    "expires_at": "2024-02-25T11:20:00Z"
-  }
+  "msg": "Invitation sent success"
 }
 ```
 
@@ -740,3 +747,5 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/contact/invite-client/
 <Callout type="info" emoji="💡">
   **Tip**: Use the search parameter in the GET /contact endpoint to quickly find contacts by name or email. You can also combine it with pagination for efficient searching through large contact lists.
 </Callout>
+
+<BackToTop />
