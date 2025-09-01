@@ -7,8 +7,11 @@
   "invoice-management": "Invoice Management",
   "quotation-management": "Quotation Management",
   "support-ticket-management": "Support Ticket Management",
+  "sales-pipeline-management": "Sales Pipeline Management",
   "document-management": "Document Management",
   "project-management": "Project Management",
+  "inbox-management": "Inbox Management", 
+  "meeting-management": "Meeting Management",
   "api-reference": "API Reference",
   "examples": "Examples"
 }

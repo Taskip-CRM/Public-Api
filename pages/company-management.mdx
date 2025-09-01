@@ -23,6 +23,12 @@ Retrieve a list of all companies in your system.
 GET /api/public-v1/company
 ```
 
+<ApiTester
+  endpoint="/api/public-v1/company"
+  method="GET"
+  description="Retrieve all companies from your TaskIP system with filtering and pagination options"
+/>
+
 ### Request Headers
 ```http
 X-Secret-Key: your-secret-key-here
@@ -122,6 +128,25 @@ Create a new company in your system.
 ```http
 POST /api/public-v1/company
 ```
+
+<ApiTester
+  endpoint="/api/public-v1/company"
+  method="POST"
+  defaultBody={{
+    "name": "Green Energy Solutions",
+    "domain": "greenenergy.com",
+    "email": "contact@greenenergy.com",
+    "phone": "+1-555-0102",
+    "address": "789 Sustainability Blvd, Austin, TX 78701",
+    "industry": "Renewable Energy",
+    "website": "https://www.greenenergy.com",
+    "employee_count": 200,
+    "annual_revenue": 15000000,
+    "status": "active",
+    "description": "Renewable energy solutions for businesses"
+  }}
+  description="Test creating a new company in your TaskIP system"
+/>
 
 ### Request Headers
 ```http
@@ -237,6 +262,12 @@ Retrieve details of a specific company by ID.
 GET /api/public-v1/company/{id}
 ```
 
+<ApiTester
+  endpoint="/api/public-v1/company/1"
+  method="GET"
+  description="Test retrieving a specific company by ID"
+/>
+
 ### Path Parameters
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
@@ -313,6 +344,17 @@ Update an existing company's information.
 PUT /api/public-v1/company/{id}
 ```
 
+<ApiTester
+  endpoint="/api/public-v1/company/1"
+  method="PUT"
+  defaultBody={{
+    "employee_count": 250,
+    "annual_revenue": 18000000,
+    "description": "Leading renewable energy solutions for businesses and municipalities"
+  }}
+  description="Test updating a company's information"
+/>
+
 ### Path Parameters
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
@@ -371,6 +413,12 @@ Delete a specific company from your system.
 DELETE /api/public-v1/company/{id}
 ```
 
+<ApiTester
+  endpoint="/api/public-v1/company/1"
+  method="DELETE"
+  description="Test deleting a company (use with caution)"
+/>
+
 ### Path Parameters
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
@@ -411,6 +459,15 @@ Delete multiple companies at once.
 ```http
 POST /api/public-v1/company/bulk-delete
 ```
+
+<ApiTester
+  endpoint="/api/public-v1/company/bulk-delete"
+  method="POST"
+  defaultBody={{
+    "company_ids": [1, 2, 3, 4]
+  }}
+  description="Test bulk deleting multiple companies (use with caution)"
+/>
 
 ### Request Body
 

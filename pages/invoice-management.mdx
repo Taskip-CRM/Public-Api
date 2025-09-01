@@ -29,6 +29,12 @@ Retrieve a list of all invoices in your system.
 GET /api/public-v1/invoice
 ```
 
+<ApiTester
+  endpoint="/api/public-v1/invoice"
+  method="GET"
+  description="Retrieve all invoices from your TaskIP system with filtering options"
+/>
+
 ### Request Headers
 ```http
 X-Secret-Key: your-secret-key-here
@@ -168,6 +174,35 @@ Create a new invoice in your system.
 ```http
 POST /api/public-v1/invoice
 ```
+
+<ApiTester
+  endpoint="/api/public-v1/invoice"
+  method="POST"
+  defaultBody={{
+    "contact_id": 1,
+    "invoice_number": "INV-2024-001",
+    "invoice_date": "2024-01-25",
+    "due_date": "2024-02-25",
+    "status": "draft",
+    "items": [
+      {
+        "description": "Website Development",
+        "quantity": 1,
+        "unit_price": 2500.00,
+        "tax_rate": 10
+      },
+      {
+        "description": "SEO Optimization",
+        "quantity": 1,
+        "unit_price": 500.00,
+        "tax_rate": 10
+      }
+    ],
+    "notes": "Thank you for your business!",
+    "terms": "Payment due within 30 days"
+  }}
+  description="Test creating a new invoice in your TaskIP system"
+/>
 
 ### Request Headers
 ```http

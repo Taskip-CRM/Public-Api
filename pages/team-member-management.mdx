@@ -23,6 +23,12 @@ Retrieve a list of all team members in your system.
 GET /api/public-v1/team-member
 ```
 
+<ApiTester
+  endpoint="/api/public-v1/team-member"
+  method="GET"
+  description="Retrieve all team members from your TaskIP system with filtering options"
+/>
+
 ### Request Headers
 ```http
 X-Secret-Key: your-secret-key-here
@@ -125,6 +131,24 @@ Create a new team member in your system.
 ```http
 POST /api/public-v1/team-member
 ```
+
+<ApiTester
+  endpoint="/api/public-v1/team-member"
+  method="POST"
+  defaultBody={{
+    "name": "John Smith",
+    "email": "john.smith@taskip.com",
+    "role": "developer",
+    "department": "Engineering",
+    "phone": "+1-555-0123",
+    "position": "Senior Developer",
+    "status": "active",
+    "hire_date": "2024-01-15",
+    "salary": 75000,
+    "permissions": ["projects.view", "tasks.edit"]
+  }}
+  description="Test creating a new team member in your TaskIP system"
+/>
 
 ### Request Headers
 ```http
@@ -243,6 +267,12 @@ Retrieve details of a specific team member by ID.
 GET /api/public-v1/team-member/{id}
 ```
 
+<ApiTester
+  endpoint="/api/public-v1/team-member/1"
+  method="GET"
+  description="Test retrieving a specific team member by ID"
+/>
+
 ### Path Parameters
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
@@ -319,6 +349,18 @@ Update an existing team member's information.
 PUT /api/public-v1/team-member/{id}
 ```
 
+<ApiTester
+  endpoint="/api/public-v1/team-member/1"
+  method="PUT"
+  defaultBody={{
+    "position": "Lead Developer",
+    "salary": 85000,
+    "department": "Engineering",
+    "permissions": ["projects.view", "projects.edit", "tasks.edit", "team.view"]
+  }}
+  description="Test updating a team member's information"
+/>
+
 ### Path Parameters
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
@@ -380,6 +422,12 @@ Delete a specific team member from your system.
 DELETE /api/public-v1/team-member/{id}
 ```
 
+<ApiTester
+  endpoint="/api/public-v1/team-member/1"
+  method="DELETE"
+  description="Test deleting a team member (use with caution)"
+/>
+
 ### Path Parameters
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
@@ -421,6 +469,15 @@ Delete multiple team members at once.
 ```http
 POST /api/public-v1/team-member/bulk-delete
 ```
+
+<ApiTester
+  endpoint="/api/public-v1/team-member/bulk-delete"
+  method="POST"
+  defaultBody={{
+    "team_member_ids": [1, 2, 3, 4]
+  }}
+  description="Test bulk deleting multiple team members (use with caution)"
+/>
 
 ### Request Body
 

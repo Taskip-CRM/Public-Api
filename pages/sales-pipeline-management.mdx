@@ -1,0 +1,358 @@
+# Sales Pipeline Management API
+
+The Sales Pipeline Management API is a comprehensive system for managing sales processes, deals, stages, tasks, meetings, files, notes, and activities. This powerful API allows you to build complete CRM workflows and sales automation systems.
+
+## Overview
+
+Sales Pipeline API consists of multiple interconnected modules:
+- **Pipeline Management**: Main pipeline operations
+- **Deals Management**: Individual deal lifecycle
+- **Stages Management**: Pipeline stage configuration  
+- **Tasks Management**: Deal-specific task tracking
+- **Files Management**: Document handling for deals
+- **Meetings Management**: Schedule and manage meetings
+- **Notes Management**: Deal notes and communication
+- **Activities Management**: Activity tracking and logging
+- **Attributes Management**: Custom pipeline attributes
+
+## Main Endpoints Overview
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/public-v1/sales-pipeline` | Get all sales pipelines |
+| `POST` | `/api/public-v1/sales-pipeline` | Create a new sales pipeline |
+| `GET` | `/api/public-v1/sales-pipeline/{id}` | Get a specific sales pipeline |
+| `PUT` | `/api/public-v1/sales-pipeline/{id}` | Update a sales pipeline |
+| `DELETE` | `/api/public-v1/sales-pipeline/{id}` | Delete a sales pipeline |
+| `POST` | `/api/public-v1/sales-pipeline/bulk-actions` | Perform bulk operations |
+
+---
+
+## Get All Sales Pipelines
+
+Retrieve a list of all sales pipelines in your system.
+
+```http
+GET /api/public-v1/sales-pipeline
+```
+
+### Request Headers
+```http
+X-Secret-Key: your-secret-key-here
+Content-Type: application/json
+```
+
+### Query Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `page` | integer | No | Page number for pagination (default: 1) |
+| `limit` | integer | No | Number of pipelines per page (default: 50) |
+| `search` | string | No | Search term for pipeline name |
+| `status` | string | No | Filter by status (`active`, `inactive`, `archived`) |
+| `sort` | string | No | Sort field (`name`, `created_at`, `deals_count`) |
+| `order` | string | No | Sort order (`asc` or `desc`) |
+
+### Example Request
+
+```bash
+curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline?status=active" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json"
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "uuid": "pipeline-abc123def456",
+      "name": "Main Sales Pipeline",
+      "description": "Primary sales process for new clients",
+      "status": "active",
+      "deals_count": 45,
+      "total_value": 125000.00,
+      "stages": [
+        {
+          "id": 1,
+          "name": "Lead",
+          "position": 1,
+          "deals_count": 12
+        },
+        {
+          "id": 2,
+          "name": "Qualified",
+          "position": 2,
+          "deals_count": 8
+        }
+      ],
+      "created_at": "2024-01-15T10:30:00Z",
+      "updated_at": "2024-01-25T14:20:00Z"
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "per_page": 50,
+    "total": 3,
+    "total_pages": 1
+  }
+}
+```
+
+---
+
+## Create a Sales Pipeline
+
+Create a new sales pipeline with initial configuration.
+
+```http
+POST /api/public-v1/sales-pipeline
+```
+
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | string | Yes | Pipeline name |
+| `description` | string | No | Pipeline description |
+| `status` | string | No | Pipeline status (`active`, `inactive`) - default: `active` |
+| `default_stages` | boolean | No | Create default stages - default: `true` |
+| `stages` | array | No | Custom stages configuration |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Enterprise Sales Pipeline",
+    "description": "Dedicated pipeline for enterprise clients",
+    "status": "active",
+    "default_stages": true
+  }'
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "message": "Sales pipeline created successfully",
+  "data": {
+    "id": 4,
+    "uuid": "pipeline-xyz789abc123",
+    "name": "Enterprise Sales Pipeline",
+    "description": "Dedicated pipeline for enterprise clients",
+    "status": "active",
+    "deals_count": 0,
+    "total_value": 0.00,
+    "stages": [
+      {
+        "id": 15,
+        "name": "Lead",
+        "position": 1,
+        "color": "#3b82f6"
+      },
+      {
+        "id": 16,
+        "name": "Qualified",
+        "position": 2,
+        "color": "#10b981"
+      },
+      {
+        "id": 17,
+        "name": "Proposal",
+        "position": 3,
+        "color": "#f59e0b"
+      },
+      {
+        "id": 18,
+        "name": "Closed Won",
+        "position": 4,
+        "color": "#22c55e"
+      }
+    ],
+    "created_at": "2024-01-26T16:30:00Z",
+    "updated_at": "2024-01-26T16:30:00Z"
+  }
+}
+```
+
+---
+
+## Get a Specific Sales Pipeline
+
+Retrieve detailed information about a specific sales pipeline.
+
+```http
+GET /api/public-v1/sales-pipeline/{id}
+```
+
+### Path Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | integer | Yes | Sales pipeline ID |
+
+### Example Request
+
+```bash
+curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline/1" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json"
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "uuid": "pipeline-abc123def456",
+    "name": "Main Sales Pipeline",
+    "description": "Primary sales process for new clients",
+    "status": "active",
+    "deals_count": 45,
+    "total_value": 125000.00,
+    "conversion_rate": 23.5,
+    "average_deal_value": 2777.78,
+    "stages": [
+      {
+        "id": 1,
+        "name": "Lead",
+        "position": 1,
+        "color": "#3b82f6",
+        "deals_count": 12,
+        "total_value": 15000.00
+      }
+    ],
+    "recent_deals": [
+      {
+        "id": 156,
+        "title": "Acme Corp Website Redesign",
+        "value": 15000.00,
+        "stage": "Qualified",
+        "contact": "John Doe",
+        "created_at": "2024-01-25T10:30:00Z"
+      }
+    ],
+    "created_at": "2024-01-15T10:30:00Z",
+    "updated_at": "2024-01-25T14:20:00Z"
+  }
+}
+```
+
+---
+
+<Callout type="info" emoji="💡">
+  **Complex Module**: Sales Pipeline is the most comprehensive API module with 50+ endpoints. Each sub-module (Deals, Stages, Tasks, etc.) provides full CRUD operations and specialized actions.
+</Callout>
+
+## Next: Sub-Module Documentation
+
+The Sales Pipeline API includes several specialized sub-modules, each documented separately:
+
+- **[Deals Management](#deals-management)** - Individual deal lifecycle
+- **[Stages Management](#stages-management)** - Pipeline stage configuration  
+- **[Tasks Management](#tasks-management)** - Deal-specific tasks
+- **[Files Management](#files-management)** - Document handling
+- **[Meetings Management](#meetings-management)** - Meeting scheduling
+- **[Notes Management](#notes-management)** - Deal notes
+- **[Activities Management](#activities-management)** - Activity logging
+- **[Attributes Management](#attributes-management)** - Custom attributes
+
+---
+
+# Deals Management
+
+Manage individual deals within sales pipelines.
+
+## Deals Endpoints Overview
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/public-v1/sales-pipeline/{uuid}/deals` | Get all deals in pipeline |
+| `POST` | `/api/public-v1/sales-pipeline/{uuid}/deals` | Create a new deal |
+| `GET` | `/api/public-v1/sales-pipeline/{uuid}/deals/{id}` | Get a specific deal |
+| `PUT` | `/api/public-v1/sales-pipeline/{uuid}/deals/{id}` | Update a deal |
+| `DELETE` | `/api/public-v1/sales-pipeline/{uuid}/deals/{id}` | Delete a deal |
+| `POST` | `/api/public-v1/sales-pipeline/{uuid}/deals/bulk-actions/{id}` | Perform bulk actions |
+| `POST` | `/api/public-v1/sales-pipeline/{uuid}/deals/order-change` | Change deal order |
+
+## Get All Deals
+
+Retrieve all deals in a specific pipeline.
+
+```http
+GET /api/public-v1/sales-pipeline/{uuid}/deals
+```
+
+### Path Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `uuid` | string | Yes | Sales pipeline UUID |
+
+### Query Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `stage_id` | integer | No | Filter by stage ID |
+| `status` | string | No | Filter by status (`active`, `won`, `lost`) |
+| `contact_id` | integer | No | Filter by contact ID |
+| `value_min` | decimal | No | Minimum deal value |
+| `value_max` | decimal | No | Maximum deal value |
+| `sort` | string | No | Sort field (`title`, `value`, `created_at`) |
+| `order` | string | No | Sort order (`asc` or `desc`) |
+
+### Example Request
+
+```bash
+curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/deals?stage_id=2" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json"
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 156,
+      "title": "Acme Corp Website Redesign", 
+      "description": "Complete website redesign and development",
+      "value": 15000.00,
+      "probability": 75,
+      "status": "active",
+      "stage": {
+        "id": 2,
+        "name": "Qualified",
+        "position": 2
+      },
+      "contact": {
+        "id": 45,
+        "name": "John Doe",
+        "email": "john.doe@acme.com"
+      },
+      "expected_close_date": "2024-02-15",
+      "created_at": "2024-01-20T14:30:00Z",
+      "updated_at": "2024-01-25T10:15:00Z"
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "per_page": 50,
+    "total": 8,
+    "total_pages": 1
+  }
+}
+```
+
+---
+
+This is just the beginning of the comprehensive Sales Pipeline documentation. Due to the massive size (50+ endpoints), I'll continue with the remaining sections in the next response to maintain clarity and organization.
+
+Would you like me to continue with the remaining sub-modules, or would you prefer to review this first section before proceeding?

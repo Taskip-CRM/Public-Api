@@ -1,0 +1,592 @@
+# Inbox Management API
+
+The Inbox Management API provides comprehensive email conversation handling and communication management capabilities. This powerful API allows you to manage email threads, assign tags, reply to conversations, and organize your communication workflow efficiently.
+
+## Overview
+
+Inbox Management consists of multiple communication features:
+- **Conversation Management**: Handle email threads and conversations
+- **Message Handling**: Send and receive messages within conversations
+- **Tag Assignment**: Organize conversations with tags and labels
+- **Reply System**: Respond to emails and maintain conversation flow
+- **Inbox Configuration**: Manage inbox settings and email addresses
+- **Team Assignment**: Assign conversations to team members
+- **Thread Organization**: Group related messages together
+
+## Main Endpoints Overview
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/public-v1/inbox/conversation/all` | Get all inbox conversations |
+| `POST` | `/api/public-v1/inbox/conversation/new-message` | Create a new message/conversation |
+| `POST` | `/api/public-v1/inbox/conversation/{uuid}/reply` | Reply to a conversation |
+| `POST` | `/api/public-v1/inbox/conversation/{uuid}/assign-tags` | Assign tags to a conversation |
+| `GET` | `/api/public-v1/inbox` | Get inbox email address |
+| `POST` | `/api/public-v1/inbox/assign-tags` | Assign tags (bulk operation) |
+| `PUT` | `/api/public-v1/inbox/assign-tags/{id}` | Update tag assignments |
+| `DELETE` | `/api/public-v1/inbox/assign-tags/{id}` | Remove tag assignments |
+
+---
+
+## Get All Conversations
+
+Retrieve all email conversations from your inbox.
+
+```http
+GET /api/public-v1/inbox/conversation/all
+```
+
+### Request Headers
+```http
+X-Secret-Key: your-secret-key-here
+Content-Type: application/json
+```
+
+### Query Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `page` | integer | No | Page number for pagination (default: 1) |
+| `limit` | integer | No | Number of conversations per page (default: 50) |
+| `status` | string | No | Filter by status (`unread`, `read`, `archived`) |
+| `tag_id` | integer | No | Filter by tag ID |
+| `assigned_to` | integer | No | Filter by assigned team member |
+| `date_from` | date | No | Filter conversations from date (YYYY-MM-DD) |
+| `date_to` | date | No | Filter conversations to date (YYYY-MM-DD) |
+| `search` | string | No | Search term for subject or content |
+| `sort` | string | No | Sort field (`created_at`, `updated_at`, `subject`) |
+| `order` | string | No | Sort order (`asc` or `desc`) |
+
+<ApiTester
+  endpoint="/api/public-v1/inbox/conversation/all"
+  method="GET"
+  description="Test getting all inbox conversations with optional filtering"
+/>
+
+### Example Request
+
+```bash
+curl -X GET "https://public-api.taskip.net/api/public-v1/inbox/conversation/all?status=unread&limit=20" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json"
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "uuid": "conv-abc123def456",
+      "subject": "Project Discussion - Website Redesign",
+      "status": "unread",
+      "message_count": 3,
+      "participants": [
+        {
+          "id": 45,
+          "name": "John Doe",
+          "email": "john.doe@client.com",
+          "type": "external"
+        },
+        {
+          "id": 12,
+          "name": "Jane Smith",
+          "email": "jane@taskip.com",
+          "type": "team_member"
+        }
+      ],
+      "tags": [
+        {
+          "id": 1,
+          "name": "Client Communication",
+          "color": "#3b82f6"
+        },
+        {
+          "id": 3,
+          "name": "High Priority",
+          "color": "#ef4444"
+        }
+      ],
+      "assigned_to": {
+        "id": 12,
+        "name": "Jane Smith",
+        "email": "jane@taskip.com"
+      },
+      "last_message": {
+        "id": 156,
+        "content": "Looking forward to the updated mockups...",
+        "sent_at": "2024-01-25T14:30:00Z",
+        "sender": {
+          "name": "John Doe",
+          "email": "john.doe@client.com"
+        }
+      },
+      "created_at": "2024-01-20T10:15:00Z",
+      "updated_at": "2024-01-25T14:30:00Z"
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "per_page": 20,
+    "total": 45,
+    "total_pages": 3,
+    "unread_count": 12,
+    "total_conversations": 45
+  }
+}
+```
+
+---
+
+## Create New Message/Conversation
+
+Start a new email conversation or send a new message.
+
+```http
+POST /api/public-v1/inbox/conversation/new-message
+```
+
+### Request Headers
+```http
+X-Secret-Key: your-secret-key-here
+Content-Type: application/json
+```
+
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `to` | string/array | Yes | Recipient email(s) |
+| `subject` | string | Yes | Email subject |
+| `content` | string | Yes | Message content (HTML supported) |
+| `cc` | string/array | No | CC recipient email(s) |
+| `bcc` | string/array | No | BCC recipient email(s) |
+| `attachments` | array | No | Array of attachment file IDs |
+| `tags` | array | No | Array of tag IDs to assign |
+| `priority` | string | No | Priority level (`low`, `normal`, `high`) |
+| `send_copy_to_self` | boolean | No | Send copy to sender |
+| `schedule_send` | datetime | No | Schedule message for later sending |
+
+<ApiTester
+  endpoint="/api/public-v1/inbox/conversation/new-message"
+  method="POST"
+  defaultBody={{
+    to: "client@example.com",
+    subject: "Project Update - Website Development",
+    content: "<p>Hi there,</p><p>I wanted to provide you with an update on the website development project...</p><p>Best regards,<br>Your Team</p>",
+    cc: ["manager@taskip.com"],
+    tags: [1, 3],
+    priority: "normal",
+    send_copy_to_self: true
+  }}
+  description="Test creating a new message/conversation"
+/>
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/inbox/conversation/new-message" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "to": "client@example.com",
+    "subject": "Project Update - Website Development", 
+    "content": "<p>Hi there,</p><p>I wanted to provide you with an update...</p>",
+    "tags": [1, 3],
+    "priority": "normal"
+  }'
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "message": "Message sent successfully",
+  "data": {
+    "conversation": {
+      "id": 46,
+      "uuid": "conv-xyz789abc123",
+      "subject": "Project Update - Website Development",
+      "status": "sent",
+      "message_count": 1,
+      "participants": [
+        {
+          "name": "Client User",
+          "email": "client@example.com",
+          "type": "external"
+        }
+      ],
+      "tags": [
+        {
+          "id": 1,
+          "name": "Client Communication",
+          "color": "#3b82f6"
+        }
+      ],
+      "created_at": "2024-01-26T16:30:00Z"
+    },
+    "message": {
+      "id": 180,
+      "content": "<p>Hi there,</p><p>I wanted to provide you with an update...</p>",
+      "sent_at": "2024-01-26T16:30:00Z",
+      "delivery_status": "sent"
+    }
+  }
+}
+```
+
+---
+
+## Reply to Conversation
+
+Reply to an existing email conversation.
+
+```http
+POST /api/public-v1/inbox/conversation/{uuid}/reply
+```
+
+### Path Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `uuid` | string | Yes | Conversation UUID |
+
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `content` | string | Yes | Reply content (HTML supported) |
+| `reply_all` | boolean | No | Reply to all participants (default: false) |
+| `attachments` | array | No | Array of attachment file IDs |
+| `internal_note` | boolean | No | Mark as internal team note |
+| `mark_resolved` | boolean | No | Mark conversation as resolved |
+
+<ApiTester
+  endpoint="/api/public-v1/inbox/conversation/conv-abc123def456/reply"
+  method="POST"
+  defaultBody={{
+    content: "<p>Thank you for your message.</p><p>I'll review the details and get back to you shortly.</p><p>Best regards,<br>Support Team</p>",
+    reply_all: false,
+    internal_note: false,
+    mark_resolved: false
+  }}
+  description="Test replying to a conversation"
+/>
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/inbox/conversation/conv-abc123def456/reply" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "content": "<p>Thank you for your message. I will review and respond soon.</p>",
+    "reply_all": false
+  }'
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "message": "Reply sent successfully",
+  "data": {
+    "message": {
+      "id": 181,
+      "conversation_uuid": "conv-abc123def456",
+      "content": "<p>Thank you for your message. I will review and respond soon.</p>",
+      "type": "reply",
+      "sent_at": "2024-01-26T16:45:00Z",
+      "sender": {
+        "id": 12,
+        "name": "Jane Smith",
+        "email": "jane@taskip.com"
+      },
+      "recipients": [
+        {
+          "name": "John Doe",
+          "email": "john.doe@client.com"
+        }
+      ],
+      "delivery_status": "sent"
+    },
+    "conversation": {
+      "id": 1,
+      "uuid": "conv-abc123def456",
+      "message_count": 4,
+      "status": "replied",
+      "updated_at": "2024-01-26T16:45:00Z"
+    }
+  }
+}
+```
+
+---
+
+## Assign Tags to Conversation
+
+Assign tags to organize and categorize conversations.
+
+```http
+POST /api/public-v1/inbox/conversation/{uuid}/assign-tags
+```
+
+### Path Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `uuid` | string | Yes | Conversation UUID |
+
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `tag_ids` | array | Yes | Array of tag IDs to assign |
+| `replace_existing` | boolean | No | Replace all existing tags (default: false) |
+
+<ApiTester
+  endpoint="/api/public-v1/inbox/conversation/conv-abc123def456/assign-tags"
+  method="POST"
+  defaultBody={{
+    tag_ids: [1, 2, 5],
+    replace_existing: false
+  }}
+  description="Test assigning tags to a conversation"
+/>
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/inbox/conversation/conv-abc123def456/assign-tags" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tag_ids": [1, 2, 5],
+    "replace_existing": false
+  }'
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "message": "Tags assigned successfully",
+  "data": {
+    "conversation": {
+      "id": 1,
+      "uuid": "conv-abc123def456",
+      "subject": "Project Discussion - Website Redesign",
+      "tags": [
+        {
+          "id": 1,
+          "name": "Client Communication",
+          "color": "#3b82f6"
+        },
+        {
+          "id": 2,
+          "name": "Website Project",
+          "color": "#10b981"
+        },
+        {
+          "id": 5,
+          "name": "In Progress",
+          "color": "#f59e0b"
+        }
+      ]
+    }
+  }
+}
+```
+
+---
+
+## Get Inbox Email Address
+
+Retrieve the inbox email address for receiving messages.
+
+```http
+GET /api/public-v1/inbox
+```
+
+<ApiTester
+  endpoint="/api/public-v1/inbox"
+  method="GET"
+  description="Test getting inbox email address"
+/>
+
+### Example Request
+
+```bash
+curl -X GET "https://public-api.taskip.net/api/public-v1/inbox" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json"
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "inbox_email": "inbox-12345@taskip.net",
+    "display_name": "Taskip Support",
+    "forwarding_enabled": true,
+    "auto_reply_enabled": false,
+    "settings": {
+      "auto_tag_new_conversations": true,
+      "default_tags": [1, 2],
+      "notification_settings": {
+        "email_notifications": true,
+        "slack_notifications": false
+      },
+      "assignment_rules": {
+        "auto_assign": true,
+        "round_robin": true,
+        "team_members": [12, 15, 18]
+      }
+    },
+    "statistics": {
+      "total_conversations": 156,
+      "unread_conversations": 12,
+      "messages_today": 23,
+      "response_time_avg": "2.5 hours"
+    }
+  }
+}
+```
+
+---
+
+## Bulk Tag Assignment
+
+Perform bulk tag assignment operations on multiple conversations.
+
+```http
+POST /api/public-v1/inbox/assign-tags
+```
+
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `conversation_ids` | array | Yes | Array of conversation IDs |
+| `tag_ids` | array | Yes | Array of tag IDs to assign |
+| `action` | string | Yes | Action: `add`, `remove`, `replace` |
+
+<ApiTester
+  endpoint="/api/public-v1/inbox/assign-tags"
+  method="POST"
+  defaultBody={{
+    conversation_ids: [1, 2, 3, 4],
+    tag_ids: [1, 2],
+    action: "add"
+  }}
+  description="Test bulk tag assignment operations"
+/>
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/inbox/assign-tags" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "conversation_ids": [1, 2, 3, 4],
+    "tag_ids": [1, 2],
+    "action": "add"
+  }'
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "message": "Tags assigned to 4 conversations successfully",
+  "data": {
+    "processed_conversations": 4,
+    "failed_conversations": 0,
+    "assigned_tags": [
+      {
+        "id": 1,
+        "name": "Client Communication",
+        "color": "#3b82f6"
+      },
+      {
+        "id": 2,
+        "name": "Website Project", 
+        "color": "#10b981"
+      }
+    ]
+  }
+}
+```
+
+---
+
+## Update Tag Assignment
+
+Update existing tag assignments for a conversation.
+
+```http
+PUT /api/public-v1/inbox/assign-tags/{id}
+```
+
+### Path Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | integer | Yes | Tag assignment ID |
+
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `tag_ids` | array | Yes | New array of tag IDs |
+| `replace_all` | boolean | No | Replace all existing tags |
+
+<ApiTester
+  endpoint="/api/public-v1/inbox/assign-tags/1"
+  method="PUT"
+  defaultBody={{
+    tag_ids: [2, 3, 4],
+    replace_all: true
+  }}
+  description="Test updating tag assignments"
+/>
+
+---
+
+## Remove Tag Assignment
+
+Remove tag assignments from conversations.
+
+```http
+DELETE /api/public-v1/inbox/assign-tags/{id}
+```
+
+### Path Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | integer | Yes | Tag assignment ID |
+
+<ApiTester
+  endpoint="/api/public-v1/inbox/assign-tags/1"
+  method="DELETE"
+  description="Test removing tag assignments"
+/>
+
+---
+
+<Callout type="info" emoji="📧">
+  **Email Integration**: The Inbox API seamlessly integrates with popular email providers and supports IMAP/SMTP protocols for real-time message synchronization.
+</Callout>
+
+<Callout type="warning" emoji="🔒">
+  **Security & Privacy**: All email communications are encrypted in transit and at rest. Access controls ensure only authorized team members can view conversations.
+</Callout>
+
+<Callout type="success" emoji="⚡">
+  **Real-time Updates**: Conversations and messages are updated in real-time using WebSocket connections for instant notification delivery.
+</Callout>
