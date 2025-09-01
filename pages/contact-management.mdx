@@ -24,6 +24,12 @@ Retrieve a list of all contacts in your system.
 GET /api/public-v1/contact
 ```
 
+<ApiTester
+  endpoint="/contact"
+  method="GET"
+  description="Retrieve all contacts from your TaskIP system. Use pagination parameters to control the results."
+/>
+
 ### Request Headers
 ```http
 X-Secret-Key: your-secret-key-here
@@ -96,6 +102,21 @@ Create a new contact in your system.
 ```http
 POST /api/public-v1/contact
 ```
+
+<ApiTester
+  endpoint="/contact"
+  method="POST"
+  defaultBody={{
+    "name": "John Doe",
+    "email": "john.doe@example.com",
+    "phone": "+1-555-0123",
+    "company_id": 1,
+    "position": "Software Engineer",
+    "address": "123 Main St, Anytown, USA",
+    "status": "active"
+  }}
+  description="Create a new contact with the required information. Modify the request body as needed."
+/>
 
 ### Request Headers
 ```http
@@ -192,6 +213,12 @@ Retrieve details of a specific contact by ID.
 GET /api/public-v1/contact/{id}
 ```
 
+<ApiTester
+  endpoint="/contact/1"
+  method="GET"
+  description="Get details of a specific contact. Replace '1' in the endpoint with the actual contact ID."
+/>
+
 ### Path Parameters
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
@@ -241,6 +268,17 @@ Update an existing contact's information.
 ```http
 PUT /api/public-v1/contact/{id}
 ```
+
+<ApiTester
+  endpoint="/contact/1"
+  method="PUT"
+  defaultBody={{
+    "position": "Senior Marketing Director",
+    "phone": "+1-555-0126",
+    "notes": "Updated contact information"
+  }}
+  description="Update an existing contact. Replace '1' in the endpoint with the actual contact ID. Only include fields you want to update."
+/>
 
 ### Path Parameters
 | Parameter | Type | Required | Description |
@@ -320,6 +358,12 @@ Delete a specific contact from your system.
 DELETE /api/public-v1/contact/{id}
 ```
 
+<ApiTester
+  endpoint="/contact/1"
+  method="DELETE"
+  description="Delete a contact permanently. Replace '1' in the endpoint with the actual contact ID. This action cannot be undone."
+/>
+
 ### Path Parameters
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
@@ -350,6 +394,15 @@ Delete multiple contacts at once.
 ```http
 POST /api/public-v1/contact/bulk-delete
 ```
+
+<ApiTester
+  endpoint="/contact/bulk-delete"
+  method="POST"
+  defaultBody={{
+    "contact_ids": [1, 2, 3]
+  }}
+  description="Delete multiple contacts at once. Replace the IDs in the array with actual contact IDs. This action cannot be undone."
+/>
 
 ### Request Body
 
@@ -387,6 +440,16 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/contact/bulk-delete" \
 ## Invite Client
 
 Send an invitation to a contact to join as a client in your system.
+
+<ApiTester
+  endpoint="/contact/invite-client/1"
+  method="POST"
+  defaultBody={{
+    "message": "Welcome to our client portal! Please click the link to set up your account.",
+    "send_notification": true
+  }}
+  description="Send an invitation to a contact to become a client. Replace '1' in the endpoint with the actual contact ID."
+/>
 
 ```http
 POST /api/public-v1/contact/invite-client/{id}

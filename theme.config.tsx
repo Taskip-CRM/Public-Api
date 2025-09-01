@@ -1,7 +1,15 @@
 import React from 'react'
 import { DocsThemeConfig } from 'nextra-theme-docs'
+import dynamic from 'next/dynamic'
+import Callout from './components/Callout'
+
+const ApiTester = dynamic(() => import('./components/ApiTester'), { ssr: false }) as any
 
 const config: DocsThemeConfig = {
+  components: {
+    Callout,
+    ApiTester,
+  } as any,
   logo: (
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
       <img 
