@@ -1,0 +1,3410 @@
+openapi: 3.0.0
+info:
+  title: Taskip Public API
+  description: Public API for Taskip
+  version: 1.0.0
+servers:
+  - url: /api/public-v1
+    description: API Server
+components:
+  securitySchemes:
+    SecretKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Secret-Key
+security:
+  - SecretKeyAuth: []
+paths:
+  /contact:
+    get:
+      tags:
+        - Contact
+      summary: Get all contacts
+      description: Get all contacts
+      operationId: getAllContacts
+      responses:
+        '200':
+          description: Successful operation
+    post:
+      tags:
+        - Contact
+      summary: Create a contact
+      description: Create a contact
+      operationId: createContact
+      responses:
+        '201':
+          description: Successful operation
+  /contact/{id}:
+    get:
+      tags:
+        - Contact
+      summary: Get a contact
+      description: Get a contact
+      operationId: getContact
+      parameters:
+        - name: id
+          in: path
+          description: Contact ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    put:
+      tags:
+        - Contact
+      summary: Update a contact
+      description: Update a contact
+      operationId: updateContact
+      parameters:
+        - name: id
+          in: path
+          description: Contact ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    delete:
+      tags:
+        - Contact
+      summary: Delete a contact
+      description: Delete a contact
+      operationId: deleteContact
+      parameters:
+        - name: id
+          in: path
+          description: Contact ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Successful operation
+  /contact/bulk-delete:
+    post:
+      tags:
+        - Contact
+      summary: Bulk delete contacts
+      description: Bulk delete contacts
+      operationId: bulkDeleteContacts
+      responses:
+        '200':
+          description: Successful operation
+  /contact/invite-client/{id}:
+    post:
+      tags:
+        - Contact
+      summary: Invite a client
+      description: Invite a client
+      operationId: inviteClient
+      parameters:
+        - name: id
+          in: path
+          description: Contact ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+  /company:
+    get:
+      tags:
+        - Company
+      summary: Get all companies
+      description: Get all companies
+      operationId: getAllCompanies
+      responses:
+        '200':
+          description: Successful operation
+    post:
+      tags:
+        - Company
+      summary: Create a company
+      description: Create a company
+      operationId: createCompany
+      responses:
+        '201':
+          description: Successful operation
+  /company/{id}:
+    get:
+      tags:
+        - Company
+      summary: Get a company
+      description: Get a company
+      operationId: getCompany
+      parameters:
+        - name: id
+          in: path
+          description: Company ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    put:
+      tags:
+        - Company
+      summary: Update a company
+      description: Update a company
+      operationId: updateCompany
+      parameters:
+        - name: id
+          in: path
+          description: Company ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    delete:
+      tags:
+        - Company
+      summary: Delete a company
+      description: Delete a company
+      operationId: deleteCompany
+      parameters:
+        - name: id
+          in: path
+          description: Company ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Successful operation
+  /company/bulk-delete:
+    post:
+      tags:
+        - Company
+      summary: Bulk delete companies
+      description: Bulk delete companies
+      operationId: bulkDeleteCompanies
+      responses:
+        '200':
+          description: Successful operation
+  /team-member:
+    get:
+      tags:
+        - Team Member
+      summary: Get all team members
+      description: Get all team members
+      operationId: getAllTeamMembers
+      responses:
+        '200':
+          description: Successful operation
+    post:
+      tags:
+        - Team Member
+      summary: Create a team member
+      description: Create a team member
+      operationId: createTeamMember
+      responses:
+        '201':
+          description: Successful operation
+  /team-member/{id}:
+    get:
+      tags:
+        - Team Member
+      summary: Get a team member
+      description: Get a team member
+      operationId: getTeamMember
+      parameters:
+        - name: id
+          in: path
+          description: Team member ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    put:
+      tags:
+        - Team Member
+      summary: Update a team member
+      description: Update a team member
+      operationId: updateTeamMember
+      parameters:
+        - name: id
+          in: path
+          description: Team member ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    delete:
+      tags:
+        - Team Member
+      summary: Delete a team member
+      description: Delete a team member
+      operationId: deleteTeamMember
+      parameters:
+        - name: id
+          in: path
+          description: Team member ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Successful operation
+  /team-member/bulk-delete:
+    post:
+      tags:
+        - Team Member
+      summary: Bulk delete team members
+      description: Bulk delete team members
+      operationId: bulkDeleteTeamMembers
+      responses:
+        '200':
+          description: Successful operation
+  /invoice:
+    get:
+      tags:
+        - Invoice
+      summary: Get all invoices
+      description: Get all invoices
+      operationId: getAllInvoices
+      responses:
+        '200':
+          description: Successful operation
+    post:
+      tags:
+        - Invoice
+      summary: Create an invoice
+      description: Create an invoice
+      operationId: createInvoice
+      responses:
+        '201':
+          description: Successful operation
+  /invoice/{id}:
+    get:
+      tags:
+        - Invoice
+      summary: Get an invoice
+      description: Get an invoice
+      operationId: getInvoice
+      parameters:
+        - name: id
+          in: path
+          description: Invoice ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    put:
+      tags:
+        - Invoice
+      summary: Update an invoice
+      description: Update an invoice
+      operationId: updateInvoice
+      parameters:
+        - name: id
+          in: path
+          description: Invoice ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    delete:
+      tags:
+        - Invoice
+      summary: Delete an invoice
+      description: Delete an invoice
+      operationId: deleteInvoice
+      parameters:
+        - name: id
+          in: path
+          description: Invoice ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Successful operation
+  /invoice/bulk-actions:
+    post:
+      tags:
+        - Invoice
+      summary: Bulk actions for invoices
+      description: Bulk actions for invoices
+      operationId: invoiceBulkActions
+      responses:
+        '200':
+          description: Successful operation
+  /invoice/{id}/status-update:
+    post:
+      tags:
+        - Invoice
+      summary: Update invoice status
+      description: Update invoice status
+      operationId: updateInvoiceStatus
+      parameters:
+        - name: id
+          in: path
+          description: Invoice ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+  /invoice/publish/{id}:
+    post:
+      tags:
+        - Invoice
+      summary: Publish/unpublish an invoice
+      description: Publish/unpublish an invoice
+      operationId: publishUnpublishInvoice
+      parameters:
+        - name: id
+          in: path
+          description: Invoice ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+  /invoice/{id}/payment-gateway:
+    post:
+      tags:
+        - Invoice
+      summary: Update payment gateway for an invoice
+      description: Update payment gateway for an invoice
+      operationId: updateInvoicePaymentGateway
+      parameters:
+        - name: id
+          in: path
+          description: Invoice ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+  /invoice/{id}/recurring:
+    post:
+      tags:
+        - Invoice
+      summary: Update recurring payment for an invoice
+      description: Update recurring payment for an invoice
+      operationId: updateInvoiceRecurringPayment
+      parameters:
+        - name: id
+          in: path
+          description: Invoice ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+  /invoice/{id}/download:
+    get:
+      tags:
+        - Invoice
+      summary: Download an invoice
+      description: Download an invoice
+      operationId: downloadInvoice
+      parameters:
+        - name: id
+          in: path
+          description: Invoice ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+  /invoice/sent/{id}:
+    post:
+      tags:
+        - Invoice
+      summary: Send an invoice to a client
+      description: Send an invoice to a client
+      operationId: sendInvoiceToClient
+      parameters:
+        - name: id
+          in: path
+          description: Invoice ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+  /quotation:
+    get:
+      tags:
+        - Quotation
+      summary: Get all quotations
+      description: Get all quotations
+      operationId: getAllQuotations
+      responses:
+        '200':
+          description: Successful operation
+    post:
+      tags:
+        - Quotation
+      summary: Create a quotation
+      description: Create a quotation
+      operationId: createQuotation
+      responses:
+        '201':
+          description: Successful operation
+  /quotation/{id}:
+    get:
+      tags:
+        - Quotation
+      summary: Get a quotation
+      description: Get a quotation
+      operationId: getQuotation
+      parameters:
+        - name: id
+          in: path
+          description: Quotation ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    put:
+      tags:
+        - Quotation
+      summary: Update a quotation
+      description: Update a quotation
+      operationId: updateQuotation
+      parameters:
+        - name: id
+          in: path
+          description: Quotation ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    delete:
+      tags:
+        - Quotation
+      summary: Delete a quotation
+      description: Delete a quotation
+      operationId: deleteQuotation
+      parameters:
+        - name: id
+          in: path
+          description: Quotation ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Successful operation
+  /quotation/bulk-actions:
+    post:
+      tags:
+        - Quotation
+      summary: Bulk actions for quotations
+      description: Bulk actions for quotations
+      operationId: quotationBulkActions
+      responses:
+        '200':
+          description: Successful operation
+  /quotation/{id}/status-update:
+    post:
+      tags:
+        - Quotation
+      summary: Update quotation status
+      description: Update quotation status
+      operationId: updateQuotationStatus
+      parameters:
+        - name: id
+          in: path
+          description: Quotation ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+  /quotation/publish/{id}:
+    post:
+      tags:
+        - Quotation
+      summary: Publish/unpublish a quotation
+      description: Publish/unpublish a quotation
+      operationId: publishUnpublishQuotation
+      parameters:
+        - name: id
+          in: path
+          description: Quotation ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+  /quotation/{id}/download:
+    get:
+      tags:
+        - Quotation
+      summary: Download a quotation
+      description: Download a quotation
+      operationId: downloadQuotation
+      parameters:
+        - name: id
+          in: path
+          description: Quotation ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+  /quotation/sent/{id}:
+    post:
+      tags:
+        - Quotation
+      summary: Send a quotation to a client
+      description: Send a quotation to a client
+      operationId: sendQuotationToClient
+      parameters:
+        - name: id
+          in: path
+          description: Quotation ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+  /support-ticket:
+    get:
+      tags:
+        - Support Ticket
+      summary: Get all support tickets
+      description: Get all support tickets
+      operationId: getAllSupportTickets
+      responses:
+        '200':
+          description: Successful operation
+    post:
+      tags:
+        - Support Ticket
+      summary: Create a support ticket
+      description: Create a support ticket
+      operationId: createSupportTicket
+      responses:
+        '201':
+          description: Successful operation
+  /support-ticket/{id}:
+    get:
+      tags:
+        - Support Ticket
+      summary: Get a support ticket
+      description: Get a support ticket
+      operationId: getSupportTicket
+      parameters:
+        - name: id
+          in: path
+          description: Support ticket ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    put:
+      tags:
+        - Support Ticket
+      summary: Update a support ticket
+      description: Update a support ticket
+      operationId: updateSupportTicket
+      parameters:
+        - name: id
+          in: path
+          description: Support ticket ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    delete:
+      tags:
+        - Support Ticket
+      summary: Delete a support ticket
+      description: Delete a support ticket
+      operationId: deleteSupportTicket
+      parameters:
+        - name: id
+          in: path
+          description: Support ticket ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Successful operation
+  /support-ticket/bulk-actions:
+    post:
+      tags:
+        - Support Ticket
+      summary: Bulk actions for support tickets
+      description: Bulk actions for support tickets
+      operationId: supportTicketBulkActions
+      responses:
+        '200':
+          description: Successful operation
+  /support-ticket/reply/{uuid}:
+    post:
+      tags:
+        - Support Ticket
+      summary: Reply to a support ticket
+      description: Reply to a support ticket
+      operationId: replySupportTicket
+      parameters:
+        - name: uuid
+          in: path
+          description: Support ticket UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+  /support-ticket/{uuid}/priority:
+    post:
+      tags:
+        - Support Ticket
+      summary: Prioritize ticket status update
+      description: Prioritize ticket status update
+      operationId: prioritizeTicketStatusUpdate
+      parameters:
+        - name: uuid
+          in: path
+          description: Support ticket UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+  /support-ticket/status-update/{uuid}:
+    post:
+      tags:
+        - Support Ticket
+      summary: Update support ticket status
+      description: Update support ticket status
+      operationId: updateSupportTicketStatus
+      parameters:
+        - name: uuid
+          in: path
+          description: Support ticket UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+  /support-ticket/{uuid}/note-delete/{id}:
+    delete:
+      tags:
+        - Support Ticket
+      summary: Delete a note from a support ticket
+      description: Delete a note from a support ticket
+      operationId: deleteSupportTicketNote
+      parameters:
+        - name: uuid
+          in: path
+          description: Support ticket UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Note ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Successful operation
+  /support-ticket/{uuid}/note-store:
+    post:
+      tags:
+        - Support Ticket
+      summary: Add a note to a support ticket
+      description: Add a note to a support ticket
+      operationId: addSupportTicketNote
+      parameters:
+        - name: uuid
+          in: path
+          description: Support ticket UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+  /sales-pipeline:
+    get:
+      tags:
+        - Sales Pipeline
+      summary: Get all sales pipelines
+      description: Get all sales pipelines
+      operationId: getAllSalesPipelines
+      responses:
+        '200':
+          description: Successful operation
+    post:
+      tags:
+        - Sales Pipeline
+      summary: Create a sales pipeline
+      description: Create a sales pipeline
+      operationId: createSalesPipeline
+      responses:
+        '201':
+          description: Successful operation
+  /sales-pipeline/{id}:
+    get:
+      tags:
+        - Sales Pipeline
+      summary: Get a sales pipeline
+      description: Get a sales pipeline
+      operationId: getSalesPipeline
+      parameters:
+        - name: id
+          in: path
+          description: Sales pipeline ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    put:
+      tags:
+        - Sales Pipeline
+      summary: Update a sales pipeline
+      description: Update a sales pipeline
+      operationId: updateSalesPipeline
+      parameters:
+        - name: id
+          in: path
+          description: Sales pipeline ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    delete:
+      tags:
+        - Sales Pipeline
+      summary: Delete a sales pipeline
+      description: Delete a sales pipeline
+      operationId: deleteSalesPipeline
+      parameters:
+        - name: id
+          in: path
+          description: Sales pipeline ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Successful operation
+  /sales-pipeline/bulk-actions:
+    post:
+      tags:
+        - Sales Pipeline
+      summary: Bulk actions for sales pipelines
+      description: Bulk actions for sales pipelines
+      operationId: salesPipelineBulkActions
+      responses:
+        '200':
+          description: Successful operation
+  /sales-pipeline/{uuid}/deals:
+    get:
+      tags:
+        - Sales Pipeline Deals
+      summary: Get all deals for a sales pipeline
+      description: Get all deals for a sales pipeline
+      operationId: getAllSalesPipelineDeals
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+    post:
+      tags:
+        - Sales Pipeline Deals
+      summary: Create a deal for a sales pipeline
+      description: Create a deal for a sales pipeline
+      operationId: createSalesPipelineDeal
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: Successful operation
+  /sales-pipeline/{uuid}/deals/{id}:
+    get:
+      tags:
+        - Sales Pipeline Deals
+      summary: Get a deal for a sales pipeline
+      description: Get a deal for a sales pipeline
+      operationId: getSalesPipelineDeal
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Deal ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    put:
+      tags:
+        - Sales Pipeline Deals
+      summary: Update a deal for a sales pipeline
+      description: Update a deal for a sales pipeline
+      operationId: updateSalesPipelineDeal
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Deal ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    delete:
+      tags:
+        - Sales Pipeline Deals
+      summary: Delete a deal for a sales pipeline
+      description: Delete a deal for a sales pipeline
+      operationId: deleteSalesPipelineDeal
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Deal ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Successful operation
+  /sales-pipeline/{uuid}/deals/bulk-actions/{id}:
+    post:
+      tags:
+        - Sales Pipeline Deals
+      summary: Bulk actions for deals in a sales pipeline
+      description: Bulk actions for deals in a sales pipeline
+      operationId: salesPipelineDealsBulkActions
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Deal ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+  /sales-pipeline/{uuid}/deals/order-change:
+    post:
+      tags:
+        - Sales Pipeline Deals
+      summary: Change the order of deals in a sales pipeline
+      description: Change the order of deals in a sales pipeline
+      operationId: changeSalesPipelineDealsOrder
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+  /sales-pipeline/{uuid}/stage:
+    get:
+      tags:
+        - Sales Pipeline Stage
+      summary: Get all stages for a sales pipeline
+      description: Get all stages for a sales pipeline
+      operationId: getAllSalesPipelineStages
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+    post:
+      tags:
+        - Sales Pipeline Stage
+      summary: Create a stage for a sales pipeline
+      description: Create a stage for a sales pipeline
+      operationId: createSalesPipelineStage
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: Successful operation
+  /sales-pipeline/{uuid}/stage/{id}:
+    get:
+      tags:
+        - Sales Pipeline Stage
+      summary: Get a stage for a sales pipeline
+      description: Get a stage for a sales pipeline
+      operationId: getSalesPipelineStage
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Stage ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    put:
+      tags:
+        - Sales Pipeline Stage
+      summary: Update a stage for a sales pipeline
+      description: Update a stage for a sales pipeline
+      operationId: updateSalesPipelineStage
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Stage ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    delete:
+      tags:
+        - Sales Pipeline Stage
+      summary: Delete a stage for a sales pipeline
+      description: Delete a stage for a sales pipeline
+      operationId: deleteSalesPipelineStage
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Stage ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Successful operation
+  /sales-pipeline/{uuid}/stage/order-change:
+    post:
+      tags:
+        - Sales Pipeline Stage
+      summary: Change the order of stages in a sales pipeline
+      description: Change the order of stages in a sales pipeline
+      operationId: changeSalesPipelineStagesOrder
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+  /sales-pipeline/{uuid}/stage/{id}/duplicate:
+    post:
+      tags:
+        - Sales Pipeline Stage
+      summary: Duplicate a stage in a sales pipeline
+      description: Duplicate a stage in a sales pipeline
+      operationId: duplicateSalesPipelineStage
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Stage ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+  /sales-pipeline/{uuid}/stage/{id}/move-all-deal:
+    post:
+      tags:
+        - Sales Pipeline Stage
+      summary: Move all deals from one stage to another
+      description: Move all deals from one stage to another
+      operationId: moveAllDealsToAnotherStage
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Stage ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+  /sales-pipeline/{uuid}/stage/bulk-actions:
+    post:
+      tags:
+        - Sales Pipeline Stage
+      summary: Bulk actions for stages in a sales pipeline
+      description: Bulk actions for stages in a sales pipeline
+      operationId: salesPipelineStagesBulkActions
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+  /sales-pipeline/{uuid}/deal/{id}/task:
+    get:
+      tags:
+        - Sales Pipeline Task
+      summary: Get all tasks for a deal in a sales pipeline
+      description: Get all tasks for a deal in a sales pipeline
+      operationId: getAllSalesPipelineTasks
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Deal ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    post:
+      tags:
+        - Sales Pipeline Task
+      summary: Create a task for a deal in a sales pipeline
+      description: Create a task for a deal in a sales pipeline
+      operationId: createSalesPipelineTask
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Deal ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '201':
+          description: Successful operation
+  /sales-pipeline/{uuid}/deal/{id}/task/{task_id}:
+    get:
+      tags:
+        - Sales Pipeline Task
+      summary: Get a task for a deal in a sales pipeline
+      description: Get a task for a deal in a sales pipeline
+      operationId: getSalesPipelineTask
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Deal ID
+          required: true
+          schema:
+            type: integer
+        - name: task_id
+          in: path
+          description: Task ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    put:
+      tags:
+        - Sales Pipeline Task
+      summary: Update a task for a deal in a sales pipeline
+      description: Update a task for a deal in a sales pipeline
+      operationId: updateSalesPipelineTask
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Deal ID
+          required: true
+          schema:
+            type: integer
+        - name: task_id
+          in: path
+          description: Task ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    delete:
+      tags:
+        - Sales Pipeline Task
+      summary: Delete a task for a deal in a sales pipeline
+      description: Delete a task for a deal in a sales pipeline
+      operationId: deleteSalesPipelineTask
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Deal ID
+          required: true
+          schema:
+            type: integer
+        - name: task_id
+          in: path
+          description: Task ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Successful operation
+  /sales-pipeline/{uuid}/deal/{id}/task/bulk-actions:
+    post:
+      tags:
+        - Sales Pipeline Task
+      summary: Bulk actions for tasks in a deal
+      description: Bulk actions for tasks in a deal
+      operationId: salesPipelineTasksBulkActions
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Deal ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+  /sales-pipeline/{uuid}/deal/{id}/task/order-change:
+    post:
+      tags:
+        - Sales Pipeline Task
+      summary: Change the order of tasks in a deal
+      description: Change the order of tasks in a deal
+      operationId: changeSalesPipelineTasksOrder
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Deal ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+  /sales-pipeline/{uuid}/deal/{id}/task/{task_id}/complete:
+    post:
+      tags:
+        - Sales Pipeline Task
+      summary: Mark a task as complete
+      description: Mark a task as complete
+      operationId: markSalesPipelineTaskAsComplete
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Deal ID
+          required: true
+          schema:
+            type: integer
+        - name: task_id
+          in: path
+          description: Task ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+  /sales-pipeline/{uuid}/deal/{id}/file:
+    get:
+      tags:
+        - Sales Pipeline Deal File
+      summary: Get all files for a deal in a sales pipeline
+      description: Get all files for a deal in a sales pipeline
+      operationId: getAllSalesPipelineDealFiles
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Deal ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    post:
+      tags:
+        - Sales Pipeline Deal File
+      summary: Upload a file for a deal in a sales pipeline
+      description: Upload a file for a deal in a sales pipeline
+      operationId: uploadSalesPipelineDealFile
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Deal ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '201':
+          description: Successful operation
+  /sales-pipeline/{uuid}/deal/{id}/file/{file_id}:
+    delete:
+      tags:
+        - Sales Pipeline Deal File
+      summary: Delete a file from a deal in a sales pipeline
+      description: Delete a file from a deal in a sales pipeline
+      operationId: deleteSalesPipelineDealFile
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Deal ID
+          required: true
+          schema:
+            type: integer
+        - name: file_id
+          in: path
+          description: File ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Successful operation
+  /sales-pipeline/{uuid}/deal/{id}/meeting:
+    get:
+      tags:
+        - Sales Pipeline Meeting
+      summary: Get all meetings for a deal in a sales pipeline
+      description: Get all meetings for a deal in a sales pipeline
+      operationId: getAllSalesPipelineMeetings
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Deal ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    post:
+      tags:
+        - Sales Pipeline Meeting
+      summary: Create a meeting for a deal in a sales pipeline
+      description: Create a meeting for a deal in a sales pipeline
+      operationId: createSalesPipelineMeeting
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Deal ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '201':
+          description: Successful operation
+  /sales-pipeline/{uuid}/deal/{id}/meeting/{meeting_id}:
+    get:
+      tags:
+        - Sales Pipeline Meeting
+      summary: Get a meeting for a deal in a sales pipeline
+      description: Get a meeting for a deal in a sales pipeline
+      operationId: getSalesPipelineMeeting
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Deal ID
+          required: true
+          schema:
+            type: integer
+        - name: meeting_id
+          in: path
+          description: Meeting ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    put:
+      tags:
+        - Sales Pipeline Meeting
+      summary: Update a meeting for a deal in a sales pipeline
+      description: Update a meeting for a sales pipeline
+      operationId: updateSalesPipelineMeeting
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Deal ID
+          required: true
+          schema:
+            type: integer
+        - name: meeting_id
+          in: path
+          description: Meeting ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    delete:
+      tags:
+        - Sales Pipeline Meeting
+      summary: Delete a meeting for a deal in a sales pipeline
+      description: Delete a meeting for a deal in a sales pipeline
+      operationId: deleteSalesPipelineMeeting
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Deal ID
+          required: true
+          schema:
+            type: integer
+        - name: meeting_id
+          in: path
+          description: Meeting ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Successful operation
+  /sales-pipeline/{uuid}/deal/{id}/meeting/bulk-actions:
+    post:
+      tags:
+        - Sales Pipeline Meeting
+      summary: Bulk actions for meetings in a deal
+      description: Bulk actions for meetings in a deal
+      operationId: salesPipelineMeetingsBulkActions
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Deal ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+  /sales-pipeline/{uuid}/deal/{id}/meeting/{meeting_id}/complete:
+    post:
+      tags:
+        - Sales Pipeline Meeting
+      summary: Mark a meeting as complete
+      description: Mark a meeting as complete
+      operationId: markSalesPipelineMeetingAsComplete
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Deal ID
+          required: true
+          schema:
+            type: integer
+        - name: meeting_id
+          in: path
+          description: Meeting ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+  /sales-pipeline/{uuid}/deal/{id}/note:
+    get:
+      tags:
+        - Sales Pipeline Note
+      summary: Get all notes for a deal in a sales pipeline
+      description: Get all notes for a deal in a sales pipeline
+      operationId: getAllSalesPipelineNotes
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Deal ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    post:
+      tags:
+        - Sales Pipeline Note
+      summary: Create a note for a deal in a sales pipeline
+      description: Create a note for a deal in a sales pipeline
+      operationId: createSalesPipelineNote
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Deal ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '201':
+          description: Successful operation
+  /sales-pipeline/{uuid}/deal/{id}/note/{note_id}:
+    get:
+      tags:
+        - Sales Pipeline Note
+      summary: Get a note for a deal in a sales pipeline
+      description: Get a note for a deal in a sales pipeline
+      operationId: getSalesPipelineNote
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Deal ID
+          required: true
+          schema:
+            type: integer
+        - name: note_id
+          in: path
+          description: Note ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    put:
+      tags:
+        - Sales Pipeline Note
+      summary: Update a note for a deal in a sales pipeline
+      description: Update a note for a deal in a sales pipeline
+      operationId: updateSalesPipelineNote
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Deal ID
+          required: true
+          schema:
+            type: integer
+        - name: note_id
+          in: path
+          description: Note ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    delete:
+      tags:
+        - Sales Pipeline Note
+      summary: Delete a note for a deal in a sales pipeline
+      description: Delete a note for a deal in a sales pipeline
+      operationId: deleteSalesPipelineNote
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Deal ID
+          required: true
+          schema:
+            type: integer
+        - name: note_id
+          in: path
+          description: Note ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Successful operation
+  /sales-pipeline/{uuid}/deal/{id}/note/bulk-actions:
+    post:
+      tags:
+        - Sales Pipeline Note
+      summary: Bulk actions for notes in a deal
+      description: Bulk actions for notes in a deal
+      operationId: salesPipelineNotesBulkActions
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Deal ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+  /sales-pipeline/{uuid}/deal/{id}/activity:
+    get:
+      tags:
+        - Sales Pipeline Activity
+      summary: Get all activities for a deal in a sales pipeline
+      description: Get all activities for a deal in a sales pipeline
+      operationId: getAllSalesPipelineActivities
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Deal ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    post:
+      tags:
+        - Sales Pipeline Activity
+      summary: Create an activity for a deal in a sales pipeline
+      description: Create an activity for a deal in a sales pipeline
+      operationId: createSalesPipelineActivity
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Deal ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '201':
+          description: Successful operation
+  /sales-pipeline/{uuid}/deal/{id}/activity/{activity_id}:
+    get:
+      tags:
+        - Sales Pipeline Activity
+      summary: Get an activity for a deal in a sales pipeline
+      description: Get an activity for a deal in a sales pipeline
+      operationId: getSalesPipelineActivity
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Deal ID
+          required: true
+          schema:
+            type: integer
+        - name: activity_id
+          in: path
+          description: Activity ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    put:
+      tags:
+        - Sales Pipeline Activity
+      summary: Update an activity for a deal in a sales pipeline
+      description: Update an activity for a deal in a sales pipeline
+      operationId: updateSalesPipelineActivity
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Deal ID
+          required: true
+          schema:
+            type: integer
+        - name: activity_id
+          in: path
+          description: Activity ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    delete:
+      tags:
+        - Sales Pipeline Activity
+      summary: Delete an activity for a deal in a sales pipeline
+      description: Delete an activity for a deal in a sales pipeline
+      operationId: deleteSalesPipelineActivity
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Deal ID
+          required: true
+          schema:
+            type: integer
+        - name: activity_id
+          in: path
+          description: Activity ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Successful operation
+  /sales-pipeline/{uuid}/deal/{id}/activity/bulk-actions:
+    post:
+      tags:
+        - Sales Pipeline Activity
+      summary: Bulk actions for activities in a deal
+      description: Bulk actions for activities in a deal
+      operationId: salesPipelineActivitiesBulkActions
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Deal ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+  /sales-pipeline/{uuid}/deal/{id}/activity/send-mail:
+    post:
+      tags:
+        - Sales Pipeline Activity
+      summary: Send an email for an activity in a deal
+      description: Send an email for an activity in a deal
+      operationId: sendSalesPipelineActivityEmail
+      parameters:
+        - name: uuid
+          in: path
+          description: Sales pipeline UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Deal ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+  /sales-pipeline/attributes:
+    get:
+      tags:
+        - Sales Pipeline Attribute
+      summary: Get all attributes for a sales pipeline
+      description: Get all attributes for a sales pipeline
+      operationId: getAllSalesPipelineAttributes
+      responses:
+        '200':
+          description: Successful operation
+    post:
+      tags:
+        - Sales Pipeline Attribute
+      summary: Create an attribute for a sales pipeline
+      description: Create an attribute for a sales pipeline
+      operationId: createSalesPipelineAttribute
+      responses:
+        '201':
+          description: Successful operation
+  /sales-pipeline/attributes/{id}:
+    get:
+      tags:
+        - Sales Pipeline Attribute
+      summary: Get an attribute for a sales pipeline
+      description: Get an attribute for a sales pipeline
+      operationId: getSalesPipelineAttribute
+      parameters:
+        - name: id
+          in: path
+          description: Attribute ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    put:
+      tags:
+        - Sales Pipeline Attribute
+      summary: Update an attribute for a sales pipeline
+      description: Update an attribute for a sales pipeline
+      operationId: updateSalesPipelineAttribute
+      parameters:
+        - name: id
+          in: path
+          description: Attribute ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    delete:
+      tags:
+        - Sales Pipeline Attribute
+      summary: Delete an attribute for a sales pipeline
+      description: Delete an attribute for a sales pipeline
+      operationId: deleteSalesPipelineAttribute
+      parameters:
+        - name: id
+          in: path
+          description: Attribute ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Successful operation
+  /sales-pipeline/attributes/bulk-actions:
+    post:
+      tags:
+        - Sales Pipeline Attribute
+      summary: Bulk actions for attributes in a sales pipeline
+      description: Bulk actions for attributes in a sales pipeline
+      operationId: salesPipelineAttributesBulkActions
+      responses:
+        '200':
+          description: Successful operation
+  /documents:
+    get:
+      tags:
+        - Document
+      summary: Get all documents
+      description: Get all documents
+      operationId: getAllDocuments
+      responses:
+        '200':
+          description: Successful operation
+    post:
+      tags:
+        - Document
+      summary: Create a document
+      description: Create a document
+      operationId: createDocument
+      responses:
+        '201':
+          description: Successful operation
+  /documents/{id}:
+    get:
+      tags:
+        - Document
+      summary: Get a document
+      description: Get a document
+      operationId: getDocument
+      parameters:
+        - name: id
+          in: path
+          description: Document ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    put:
+      tags:
+        - Document
+      summary: Update a document
+      description: Update a document
+      operationId: updateDocument
+      parameters:
+        - name: id
+          in: path
+          description: Document ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    delete:
+      tags:
+        - Document
+      summary: Delete a document
+      description: Delete a document
+      operationId: deleteDocument
+      parameters:
+        - name: id
+          in: path
+          description: Document ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Successful operation
+  /documents/blocks/store/{uuid}:
+    post:
+      tags:
+        - Document
+      summary: Store blocks for a document
+      description: Store blocks for a document
+      operationId: storeDocumentBlocks
+      parameters:
+        - name: uuid
+          in: path
+          description: Document UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+  /documents/blocks/rename/{uuid}:
+    post:
+      tags:
+        - Document
+      summary: Rename a document
+      description: Rename a document
+      operationId: renameDocument
+      parameters:
+        - name: uuid
+          in: path
+          description: Document UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+  /documents/blocks/move-to-folder/{uuid}:
+    post:
+      tags:
+        - Document
+      summary: Move a document to a folder
+      description: Move a document to a folder
+      operationId: moveDocumentToFolder
+      parameters:
+        - name: uuid
+          in: path
+          description: Document UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+  /documents/blocks/share/{uuid}:
+    post:
+      tags:
+        - Document
+      summary: Share a document
+      description: Share a document
+      operationId: shareDocument
+      parameters:
+        - name: uuid
+          in: path
+          description: Document UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+  /documents/blocks/duplicate_document/{uuid}:
+    post:
+      tags:
+        - Document
+      summary: Duplicate a document
+      description: Duplicate a document
+      operationId: duplicateDocument
+      parameters:
+        - name: uuid
+          in: path
+          description: Document UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+  /documents/download/{uuid}:
+    post:
+      tags:
+        - Document
+      summary: Download a document
+      description: Download a document
+      operationId: downloadDocument
+      parameters:
+        - name: uuid
+          in: path
+          description: Document UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+  /documents-invite/{uuid}:
+    post:
+      tags:
+        - Document
+      summary: Invite to a document
+      description: Invite to a document
+      operationId: inviteToDocument
+      parameters:
+        - name: uuid
+          in: path
+          description: Document UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+  /documents-publish/{uuid}:
+    post:
+      tags:
+        - Document
+      summary: Publish a document
+      description: Publish a document
+      operationId: publishDocument
+      parameters:
+        - name: uuid
+          in: path
+          description: Document UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+  /documents-thumbnail/{uuid}:
+    post:
+      tags:
+        - Document
+      summary: Set a thumbnail for a document
+      description: Set a thumbnail for a document
+      operationId: setDocumentThumbnail
+      parameters:
+        - name: uuid
+          in: path
+          description: Document UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+  /documents-cover/{uuid}:
+    post:
+      tags:
+        - Document
+      summary: Set a cover for a document
+      description: Set a cover for a document
+      operationId: setDocumentCover
+      parameters:
+        - name: uuid
+          in: path
+          description: Document UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+  /documents/mention/user:
+    post:
+      tags:
+        - Document
+      summary: Mention a user in a document
+      description: Mention a user in a document
+      operationId: mentionUserInDocument
+      responses:
+        '200':
+          description: Successful operation
+  /inbox/conversation/all:
+    get:
+      tags:
+        - Inbox
+      summary: Get all conversations
+      description: Get all conversations
+      operationId: getAllConversations
+      responses:
+        '200':
+          description: Successful operation
+  /inbox/conversation/{uuid}/assign-tags:
+    post:
+      tags:
+        - Inbox
+      summary: Assign tags to a conversation
+      description: Assign tags to a conversation
+      operationId: assignTagsToConversation
+      parameters:
+        - name: uuid
+          in: path
+          description: Conversation UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+  /inbox/conversation/new-message:
+    post:
+      tags:
+        - Inbox
+      summary: Send a new message
+      description: Send a new message
+      operationId: sendNewMessage
+      responses:
+        '200':
+          description: Successful operation
+  /inbox/conversation/{uuid}/reply:
+    post:
+      tags:
+        - Inbox
+      summary: Reply to a conversation
+      description: Reply to a conversation
+      operationId: replyToConversation
+      parameters:
+        - name: uuid
+          in: path
+          description: Conversation UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+  /get-email-address:
+    get:
+      tags:
+        - Inbox
+      summary: Get inbox email address
+      description: Get inbox email address
+      operationId: getInboxEmailAddress
+      responses:
+        '200':
+          description: Successful operation
+  /inbox/assign-tags:
+    get:
+      tags:
+        - Inbox
+      summary: Get all tags
+      description: Get all tags
+      operationId: getAllTags
+      responses:
+        '200':
+          description: Successful operation
+    post:
+      tags:
+        - Inbox
+      summary: Create a tag
+      description: Create a tag
+      operationId: createTag
+      responses:
+        '201':
+          description: Successful operation
+  /inbox/assign-tags/{id}:
+    get:
+      tags:
+        - Inbox
+      summary: Get a tag
+      description: Get a tag
+      operationId: getTag
+      parameters:
+        - name: id
+          in: path
+          description: Tag ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    put:
+      tags:
+        - Inbox
+      summary: Update a tag
+      description: Update a tag
+      operationId: updateTag
+      parameters:
+        - name: id
+          in: path
+          description: Tag ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    delete:
+      tags:
+        - Inbox
+      summary: Delete a tag
+      description: Delete a tag
+      operationId: deleteTag
+      parameters:
+        - name: id
+          in: path
+          description: Tag ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Successful operation
+  /meeting-list:
+    get:
+      tags:
+        - Meeting
+      summary: Get all meetings
+      description: Get all meetings
+      operationId: getAllMeetings
+      responses:
+        '200':
+          description: Successful operation
+  /meeting/details/{uuid}:
+    get:
+      tags:
+        - Meeting
+      summary: Get meeting details
+      description: Get meeting details
+      operationId: getMeetingDetails
+      parameters:
+        - name: uuid
+          in: path
+          description: Meeting UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+  /meeting/{uuid}/booking-list:
+    get:
+      tags:
+        - Meeting
+      summary: Get booking list for a meeting
+      description: Get booking list for a meeting
+      operationId: getMeetingBookingList
+      parameters:
+        - name: uuid
+          in: path
+          description: Meeting UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+  /meeting/{uuid}/booking/details/{id}:
+    get:
+      tags:
+        - Meeting
+      summary: Get booking details for a meeting
+      description: Get booking details for a meeting
+      operationId: getMeetingBookingDetails
+      parameters:
+        - name: uuid
+          in: path
+          description: Meeting UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Booking ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+  /meeting/{uuid}/booking:
+    post:
+      tags:
+        - Meeting
+      summary: Book a meeting
+      description: Book a meeting
+      operationId: bookMeeting
+      parameters:
+        - name: uuid
+          in: path
+          description: Meeting UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+  /project:
+    get:
+      tags:
+        - Project
+      summary: Get all projects
+      description: Get all projects
+      operationId: getAllProjects
+      responses:
+        '200':
+          description: Successful operation
+    post:
+      tags:
+        - Project
+      summary: Create a project
+      description: Create a project
+      operationId: createProject
+      responses:
+        '201':
+          description: Successful operation
+  /project/{id}:
+    get:
+      tags:
+        - Project
+      summary: Get a project
+      description: Get a project
+      operationId: getProject
+      parameters:
+        - name: id
+          in: path
+          description: Project ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    put:
+      tags:
+        - Project
+      summary: Update a project
+      description: Update a project
+      operationId: updateProject
+      parameters:
+        - name: id
+          in: path
+          description: Project ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    delete:
+      tags:
+        - Project
+      summary: Delete a project
+      description: Delete a project
+      operationId: deleteProject
+      parameters:
+        - name: id
+          in: path
+          description: Project ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Successful operation
+  /project/dashboard/activity:
+    post:
+      tags:
+        - Project
+      summary: Get dashboard activities
+      description: Get dashboard activities
+      operationId: getDashboardActivities
+      responses:
+        '200':
+          description: Successful operation
+  /project/{uuid}/activity:
+    post:
+      tags:
+        - Project
+      summary: Get project activities
+      description: Get project activities
+      operationId: getProjectActivities
+      parameters:
+        - name: uuid
+          in: path
+          description: Project UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+  /project/all-tasks/list:
+    post:
+      tags:
+        - Project
+      summary: Get all tasks
+      description: Get all tasks
+      operationId: getAllTasks
+      responses:
+        '200':
+          description: Successful operation
+  /project/{uuid}/change-priority:
+    post:
+      tags:
+        - Project
+      summary: Change project priority
+      description: Change project priority
+      operationId: changeProjectPriority
+      parameters:
+        - name: uuid
+          in: path
+          description: Project UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+  /project/{uuid}/change-status:
+    post:
+      tags:
+        - Project
+      summary: Change project status
+      description: Change project status
+      operationId: changeProjectStatus
+      parameters:
+        - name: uuid
+          in: path
+          description: Project UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+  /project/{uuid}/change-category:
+    post:
+      tags:
+        - Project
+      summary: Change project category
+      description: Change project category
+      operationId: changeProjectCategory
+      parameters:
+        - name: uuid
+          in: path
+          description: Project UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+  /project/{uuid}/task:
+    get:
+      tags:
+        - Project Task
+      summary: Get all tasks for a project
+      description: Get all tasks for a project
+      operationId: getAllProjectTasks
+      parameters:
+        - name: uuid
+          in: path
+          description: Project UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+    post:
+      tags:
+        - Project Task
+      summary: Create a task for a project
+      description: Create a task for a project
+      operationId: createProjectTask
+      parameters:
+        - name: uuid
+          in: path
+          description: Project UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: Successful operation
+  /project/{uuid}/task/{id}:
+    get:
+      tags:
+        - Project Task
+      summary: Get a task for a project
+      description: Get a task for a project
+      operationId: getProjectTask
+      parameters:
+        - name: uuid
+          in: path
+          description: Project UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Task ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    put:
+      tags:
+        - Project Task
+      summary: Update a task for a project
+      description: Update a task for a project
+      operationId: updateProjectTask
+      parameters:
+        - name: uuid
+          in: path
+          description: Project UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Task ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    delete:
+      tags:
+        - Project Task
+      summary: Delete a task for a project
+      description: Delete a task for a project
+      operationId: deleteProjectTask
+      parameters:
+        - name: uuid
+          in: path
+          description: Project UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Task ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Successful operation
+  /project/{uuid}/task/change-order:
+    post:
+      tags:
+        - Project Task
+      summary: Change the order of tasks in a project
+      description: Change the order of tasks in a project
+      operationId: changeProjectTasksOrder
+      parameters:
+        - name: uuid
+          in: path
+          description: Project UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+  /project/{uuid}/task/{id}/change-container:
+    post:
+      tags:
+        - Project Task
+      summary: Change the container of a task
+      description: Change the container of a task
+      operationId: changeProjectTaskContainer
+      parameters:
+        - name: uuid
+          in: path
+          description: Project UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Task ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+  /project/{uuid}/task/{id}/change-priority:
+    post:
+      tags:
+        - Project Task
+      summary: Change the priority of a task
+      description: Change the priority of a task
+      operationId: changeProjectTaskPriority
+      parameters:
+        - name: uuid
+          in: path
+          description: Project UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Task ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+  /project/{uuid}/task/{id}/mark-as-complete:
+    post:
+      tags:
+        - Project Task
+      summary: Mark a task as complete
+      description: Mark a task as complete
+      operationId: markProjectTaskAsComplete
+      parameters:
+        - name: uuid
+          in: path
+          description: Project UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Task ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+  /project/{uuid}/task/{id}/label:
+    post:
+      tags:
+        - Project Task Label
+      summary: Add a label to a task
+      description: Add a label to a task
+      operationId: addProjectTaskLabel
+      parameters:
+        - name: uuid
+          in: path
+          description: Project UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Task ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    delete:
+      tags:
+        - Project Task Label
+      summary: Remove a label from a task
+      description: Remove a label from a task
+      operationId: removeProjectTaskLabel
+      parameters:
+        - name: uuid
+          in: path
+          description: Project UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Task ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Successful operation
+  /project/{uuid}/task/{id}/assignee:
+    post:
+      tags:
+        - Project Task Assignee
+      summary: Add an assignee to a task
+      description: Add an assignee to a task
+      operationId: addProjectTaskAssignee
+      parameters:
+        - name: uuid
+          in: path
+          description: Project UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Task ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    delete:
+      tags:
+        - Project Task Assignee
+      summary: Remove an assignee from a task
+      description: Remove an assignee from a task
+      operationId: removeProjectTaskAssignee
+      parameters:
+        - name: uuid
+          in: path
+          description: Project UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Task ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Successful operation
+  /project/{uuid}/task/{id}/document:
+    get:
+      tags:
+        - Project Task Document
+      summary: Get all documents for a task
+      description: Get all documents for a task
+      operationId: getAllProjectTaskDocuments
+      parameters:
+        - name: uuid
+          in: path
+          description: Project UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Task ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    post:
+      tags:
+        - Project Task Document
+      summary: Add a document to a task
+      description: Add a document to a task
+      operationId: addProjectTaskDocument
+      parameters:
+        - name: uuid
+          in: path
+          description: Project UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Task ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    delete:
+      tags:
+        - Project Task Document
+      summary: Remove a document from a task
+      description: Remove a document from a task
+      operationId: removeProjectTaskDocument
+      parameters:
+        - name: uuid
+          in: path
+          description: Project UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Task ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Successful operation
+  /project/{uuid}/task/{id}/comment:
+    get:
+      tags:
+        - Project Task Comment
+      summary: Get all comments for a task
+      description: Get all comments for a task
+      operationId: getAllProjectTaskComments
+      parameters:
+        - name: uuid
+          in: path
+          description: Project UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Task ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    post:
+      tags:
+        - Project Task Comment
+      summary: Add a comment to a task
+      description: Add a comment to a task
+      operationId: addProjectTaskComment
+      parameters:
+        - name: uuid
+          in: path
+          description: Project UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Task ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    delete:
+      tags:
+        - Project Task Comment
+      summary: Remove a comment from a task
+      description: Remove a comment from a task
+      operationId: removeProjectTaskComment
+      parameters:
+        - name: uuid
+          in: path
+          description: Project UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Task ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Successful operation
+  /project/{uuid}/task/files:
+    get:
+      tags:
+        - Project Task File
+      summary: Get all files for all tasks in a project
+      description: Get all files for all tasks in a project
+      operationId: getAllProjectTaskFiles
+      parameters:
+        - name: uuid
+          in: path
+          description: Project UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+  /project/{uuid}/task/{id}/files:
+    get:
+      tags:
+        - Project Task File
+      summary: Get all files for a task
+      description: Get all files for a task
+      operationId: getAllFilesForTask
+      parameters:
+        - name: uuid
+          in: path
+          description: Project UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Task ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    post:
+      tags:
+        - Project Task File
+      summary: Add a file to a task
+      description: Add a file to a task
+      operationId: addFileToTask
+      parameters:
+        - name: uuid
+          in: path
+          description: Project UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Task ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+    delete:
+      tags:
+        - Project Task File
+      summary: Remove a file from a task
+      description: Remove a file from a task
+      operationId: removeFileFromTask
+      parameters:
+        - name: uuid
+          in: path
+          description: Project UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Task ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Successful operation
+  /project/{uuid}/discussion:
+    get:
+      tags:
+        - Project Discussion
+      summary: Get all discussions for a project
+      description: Get all discussions for a project
+      operationId: getAllProjectDiscussions
+      parameters:
+        - name: uuid
+          in: path
+          description: Project UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+    post:
+      tags:
+        - Project Discussion
+      summary: Add a discussion to a project
+      description: Add a discussion to a project
+      operationId: addProjectDiscussion
+      parameters:
+        - name: uuid
+          in: path
+          description: Project UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+  /project/{uuid}/discussion/files:
+    get:
+      tags:
+        - Project Discussion
+      summary: Get all files for all discussions in a project
+      description: Get all files for all discussions in a project
+      operationId: getAllProjectDiscussionFiles
+      parameters:
+        - name: uuid
+          in: path
+          description: Project UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+  /project/{uuid}/files:
+    get:
+      tags:
+        - Project File
+      summary: Get all files for a project
+      description: Get all files for a project
+      operationId: getAllProjectFiles
+      parameters:
+        - name: uuid
+          in: path
+          description: Project UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+  /project/{uuid}/container:
+    post:
+      tags:
+        - Project Task Container
+      summary: Create a task container for a project
+      description: Create a task container for a project
+      operationId: createProjectTaskContainer
+      parameters:
+        - name: uuid
+          in: path
+          description: Project UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+  /project/{uuid}/container/{id}/rename:
+    put:
+      tags:
+        - Project Task Container
+      summary: Rename a task container
+      description: Rename a task container
+      operationId: renameProjectTaskContainer
+      parameters:
+        - name: uuid
+          in: path
+          description: Project UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Container ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+  /project/{uuid}/container/{id}/change-color:
+    post:
+      tags:
+        - Project Task Container
+      summary: Change the color of a task container
+      description: Change the color of a task container
+      operationId: changeProjectTaskContainerColor
+      parameters:
+        - name: uuid
+          in: path
+          description: Project UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Container ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+  /project/{uuid}/container/change-order:
+    post:
+      tags:
+        - Project Task Container
+      summary: Change the order of task containers
+      description: Change the order of task containers
+      operationId: changeProjectTaskContainerOrder
+      parameters:
+        - name: uuid
+          in: path
+          description: Project UUID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+  /project/{uuid}/container/{id}/delete:
+    delete:
+      tags:
+        - Project Task Container
+      summary: Delete a task container
+      description: Delete a task container
+      operationId: deleteProjectTaskContainer
+      parameters:
+        - name: uuid
+          in: path
+          description: Project UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Container ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Successful operation
+  /project/{uuid}/container/{id}/move-all-tasks:
+    post:
+      tags:
+        - Project Task Container
+      summary: Move all tasks from one container to another
+      description: Move all tasks from one container to another
+      operationId: moveAllTasksToAnotherContainer
+      parameters:
+        - name: uuid
+          in: path
+          description: Project UUID
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Container ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+  /project/attribute/tags/update:
+    post:
+      tags:
+        - Project Attribute
+      summary: Bulk update tags
+      description: Bulk update tags
+      operationId: bulkUpdateTags
+      responses:
+        '200':
+          description: Successful operation
+  /project/attribute/categories/update:
+    post:
+      tags:
+        - Project Attribute
+      summary: Bulk update categories
+      description: Bulk update categories
+      operationId: bulkUpdateCategories
+      responses:
+        '200':
+          description: Successful operation
+  /project/attribute/all:
+    get:
+      tags:
+        - Project Attribute
+      summary: Get all attributes
+      description: Get all attributes
+      operationId: getAllAttributes
+      responses:
+        '200':
+          description: Successful operation
+  /project/attribute:
+    post:
+      tags:
+        - Project Attribute
+      summary: Create an attribute
+      description: Create an attribute
+      operationId: createAttribute
+      responses:
+        '201':
+          description: Successful operation
+  /project/attribute/{id}/update:
+    put:
+      tags:
+        - Project Attribute
+      summary: Update an attribute
+      description: Update an attribute
+      operationId: updateAttribute
+      parameters:
+        - name: id
+          in: path
+          description: Attribute ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+  /project/attribute/{id}/delete:
+    delete:
+      tags:
+        - Project Attribute
+      summary: Delete an attribute
+      description: Delete an attribute
+      operationId: deleteAttribute
+      parameters:
+        - name: id
+          in: path
+          description: Attribute ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Successful operation

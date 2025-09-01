@@ -1,0 +1,48 @@
+# Examples
+
+## JavaScript/Node.js
+
+### Creating a Task
+
+```javascript
+const response = await fetch('https://api.taskip.com/v1/tasks', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_KEY',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    title: 'New Task',
+    description: 'Task description',
+    priority: 'high'
+  })
+});
+
+const task = await response.json();
+console.log(task);
+```
+
+## Python
+
+### Getting IP Information
+
+```python
+import requests
+
+headers = {
+    'Authorization': 'Bearer YOUR_API_KEY'
+}
+
+response = requests.get('https://api.taskip.com/v1/ip', headers=headers)
+ip_info = response.json()
+print(ip_info)
+```
+
+## cURL
+
+### List All Tasks
+
+```bash
+curl -X GET https://api.taskip.com/v1/tasks \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```

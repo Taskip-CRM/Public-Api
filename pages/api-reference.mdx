@@ -1,0 +1,46 @@
+# API Reference
+
+## Base URL
+
+```
+https://api.taskip.com/v1
+```
+
+## Endpoints
+
+### Tasks
+
+#### GET /tasks
+Retrieve all tasks
+
+#### POST /tasks
+Create a new task
+
+#### GET /tasks/{id}
+Get a specific task
+
+#### PUT /tasks/{id}
+Update a task
+
+#### DELETE /tasks/{id}
+Delete a task
+
+### IP Information
+
+#### GET /ip
+Get current IP information
+
+#### GET /ip/{address}
+Get information for specific IP address
+
+## Response Format
+
+All API responses are returned in JSON format:
+
+```json
+{
+  "success": true,
+  "data": {},
+  "message": "Operation successful"
+}
+```

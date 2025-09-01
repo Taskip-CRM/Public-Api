@@ -1,0 +1,26 @@
+# Authentication
+
+The TaskIP API uses API keys to authenticate requests. You can view and manage your API keys in the TaskIP Dashboard.
+
+## Getting Your API Key
+
+1. Sign in to your TaskIP account
+2. Navigate to the API section
+3. Generate a new API key
+4. Store your API key securely
+
+## Using Your API Key
+
+Include your API key in all API requests using the `Authorization` header:
+
+```bash
+curl https://api.taskip.com/v1/tasks \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+## Security Best Practices
+
+- Never expose your API keys in client-side code
+- Rotate your API keys regularly
+- Use environment variables to store API keys
+- Implement IP whitelisting when possible
