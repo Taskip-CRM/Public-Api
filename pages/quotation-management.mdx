@@ -14,6 +14,9 @@ The Quotation Management API allows you to manage quotations/estimates in your T
 | `POST` | `/api/public-v1/quotation/{id}/convert-to-invoice` | Convert quotation to invoice |
 | `POST` | `/api/public-v1/quotation/{id}/send-to-client` | Send quotation to client via email |
 | `POST` | `/api/public-v1/quotation/{id}/status-update` | Update quotation status |
+| `POST` | `/api/public-v1/quotation/publish/{id}` | Publish/unpublish quotation |
+| `GET` | `/api/public-v1/quotation/{id}/download` | Download quotation PDF |
+| `POST` | `/api/public-v1/quotation/sent/{id}` | Send quotation to client (rate limited) |
 | `POST` | `/api/public-v1/quotation/bulk-actions` | Perform bulk operations |
 
 ---
@@ -834,3 +837,132 @@ const result = await response.json();
 <Callout type="info" emoji="💡">
   **Tip**: Use the bulk actions endpoint to efficiently manage multiple quotations. This is particularly useful for updating statuses of expired quotations or sending reminder emails to multiple clients.
 </Callout>
+
+---
+
+## Publish/Unpublish Quotation
+
+Publish or unpublish a quotation to make it visible to clients.
+
+```http
+POST /api/public-v1/quotation/publish/{id}
+```
+
+### Path Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | integer | Yes | Quotation ID to publish/unpublish |
+
+### Request Body
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `publish` | boolean | Yes | True to publish, false to unpublish |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/quotation/publish/25" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "publish": true
+  }'
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "message": "Quotation published successfully",
+  "data": {
+    "id": 25,
+    "quotation_number": "QUO-2024-025",
+    "is_published": true,
+    "published_at": "2024-01-26T14:30:00Z",
+    "public_url": "https://public-api.taskip.net/quotation/view/abc123def456"
+  }
+}
+```
+
+---
+
+## Download Quotation PDF
+
+Download a quotation as a PDF file.
+
+```http
+GET /api/public-v1/quotation/{id}/download
+```
+
+### Path Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | integer | Yes | Quotation ID to download |
+
+### Example Request
+
+```bash
+curl -X GET "https://public-api.taskip.net/api/public-v1/quotation/25/download" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  --output quotation_25.pdf
+```
+
+### Response
+Returns a PDF file with `Content-Type: application/pdf` header.
+
+---
+
+## Send Quotation to Client (Rate Limited)
+
+Send a quotation directly to the client via email with rate limiting.
+
+<Callout type="warning" emoji="⚠️">
+  This endpoint is rate limited to 10 requests per minute to prevent spam.
+</Callout>
+
+```http
+POST /api/public-v1/quotation/sent/{id}
+```
+
+### Path Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | integer | Yes | Quotation ID to send |
+
+### Request Body
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `recipient_email` | string | No | Override recipient email (defaults to quotation client) |
+| `custom_message` | string | No | Custom message to include in email |
+| `cc_emails` | array | No | Additional CC email addresses |
+| `attach_pdf` | boolean | No | Attach PDF copy (default: true) |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/quotation/sent/25" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "custom_message": "Please review the attached quotation for your project.",
+    "cc_emails": ["manager@company.com"],
+    "attach_pdf": true
+  }'
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "message": "Quotation sent successfully",
+  "data": {
+    "quotation_id": 25,
+    "sent_to": "client@example.com",
+    "cc_emails": ["manager@company.com"],
+    "sent_at": "2024-01-26T14:30:00Z",
+    "email_tracking_id": "email_abc123def456"
+  }
+}
+```
