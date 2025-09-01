@@ -61,27 +61,83 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/contact?page=1&limit=20
   "data": [
     {
       "id": 1,
-      "name": "John Doe",
-      "email": "john.doe@example.com",
-      "phone": "+1-555-0123",
+      "user_id": 123,
       "company_id": 5,
-      "company_name": "Acme Corp",
+      "company": {
+        "id": 5,
+        "name": "Acme Corp"
+      },
+      "first_name": "John",
+      "last_name": "Doe",
+      "full_name": "John Doe",
+      "email": "john.doe@example.com",
       "position": "Software Engineer",
-      "status": "active",
-      "created_at": "2024-01-15T10:30:00Z",
-      "updated_at": "2024-01-20T14:45:00Z"
+      "phone_number": "555-0123",
+      "country_id": 1,
+      "country": "United States",
+      "state_id": 5,
+      "state": "California",
+      "city_id": 10,
+      "city": "San Francisco",
+      "address": "123 Tech Street",
+      "zip_code": "94105",
+      "timezone": "America/Los_Angeles",
+      "access_portal": 1,
+      "billings": {
+        "billing_address": null,
+        "billing_city": null,
+        "billing_state": null,
+        "billing_country": null,
+        "billing_zip": null
+      },
+      "languages": [],
+      "image": null,
+      "custom_fields": {
+        "department": "Engineering",
+        "lead_source": "Referral"
+      }
     },
     {
       "id": 2,
-      "name": "Jane Smith",
-      "email": "jane.smith@example.com",
-      "phone": "+1-555-0124",
+      "user_id": 124,
       "company_id": 3,
-      "company_name": "Tech Solutions",
+      "company": {
+        "id": 3,
+        "name": "Tech Solutions"
+      },
+      "first_name": "Jane",
+      "last_name": "Smith",
+      "full_name": "Jane Smith",
+      "email": "jane.smith@example.com",
       "position": "Product Manager",
-      "status": "active",
-      "created_at": "2024-01-10T09:20:00Z",
-      "updated_at": "2024-01-18T16:30:00Z"
+      "phone_number": "555-0124",
+      "country_id": 1,
+      "country": "United States",
+      "state_id": 6,
+      "state": "New York",
+      "city_id": 11,
+      "city": "New York",
+      "address": "456 Business Ave",
+      "zip_code": "10001",
+      "timezone": "America/New_York",
+      "access_portal": 0,
+      "billings": {
+        "billing_address": "456 Business Ave",
+        "billing_city": "New York",
+        "billing_state": "New York",
+        "billing_country": "United States",
+        "billing_zip": "10001"
+      },
+      "languages": ["en", "es"],
+      "image": {
+        "id": 25,
+        "url": "https://taskip.net/storage/profile/jane-smith.jpg",
+        "name": "jane-smith.jpg"
+      },
+      "custom_fields": {
+        "department": "Product",
+        "lead_source": "Website"
+      }
     }
   ],
   "meta": {
@@ -107,14 +163,26 @@ POST /api/public-v1/contact
   endpoint="/contact"
   method="POST"
   defaultBody={{
-    "name": "Alice Johnson",
+    "first_name": "Alice",
+    "last_name": "Johnson",
     "email": "alice.johnson@example.com",
-    "phone": "+1-555-0125",
+    "phone_code": "+1",
+    "phone_number": "555-0125",
     "company_id": 7,
     "position": "Marketing Director",
-    "address": "123 Business Ave, City, State 12345",
-    "notes": "Met at industry conference 2024",
-    "status": "active"
+    "country_id": 1,
+    "state_id": 5,
+    "city_id": 10,
+    "address": "123 Business Ave",
+    "zip_code": "12345",
+    "timezone": "America/New_York",
+    "access_portal": 1,
+    "password": "secure123",
+    "custom_fields": {{
+      "department": "Marketing",
+      "lead_source": "Website"
+    }},
+    "invite_client": true
   }}
   description="Create a new contact with the required information. Modify the request body as needed."
 />
@@ -129,14 +197,24 @@ Content-Type: application/json
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `name` | string | Yes | Contact's full name |
-| `email` | string | Yes | Contact's email address |
-| `phone` | string | No | Contact's phone number |
+| `first_name` | string | Yes | Contact's first name |
+| `last_name` | string | No | Contact's last name |
+| `email` | string | Yes | Contact's email address (must be unique) |
+| `phone_code` | string | No | Phone country code (max 5 chars) |
+| `phone_number` | string | No | Contact's phone number (max 18 chars) |
 | `company_id` | integer | No | Associated company ID |
 | `position` | string | No | Job position/title |
+| `country_id` | integer | No | Country ID |
+| `state_id` | integer | No | State ID |
+| `city_id` | integer | No | City ID |
 | `address` | string | No | Contact's address |
-| `notes` | string | No | Additional notes |
-| `status` | string | No | Contact status (`active`, `inactive`) |
+| `zip_code` | string | No | ZIP/postal code (max 8 chars) |
+| `timezone` | string | No | Contact's timezone |
+| `image` | integer | No | Profile image media ID |
+| `access_portal` | integer | No | Portal access (0 or 1) |
+| `password` | string | Required if access_portal=1 | Password (min 6, max 191 chars) |
+| `custom_fields` | object | No | Custom field data |
+| `invite_client` | boolean | No | Send client invitation email |
 
 ### Example Request
 
@@ -145,28 +223,41 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/contact" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "Alice Johnson",
+    "first_name": "Alice",
+    "last_name": "Johnson",
     "email": "alice.johnson@example.com",
-    "phone": "+1-555-0125",
+    "phone_code": "+1",
+    "phone_number": "555-0125",
     "company_id": 7,
     "position": "Marketing Director",
-    "address": "123 Business Ave, City, State 12345",
-    "notes": "Met at industry conference 2024",
-    "status": "active"
+    "address": "123 Business Ave",
+    "zip_code": "12345",
+    "access_portal": 1,
+    "password": "secure123",
+    "invite_client": true
   }'
 ```
 
 ### JavaScript Example
 ```javascript
 const contactData = {
-  name: "Alice Johnson",
+  first_name: "Alice",
+  last_name: "Johnson",
   email: "alice.johnson@example.com",
-  phone: "+1-555-0125",
+  phone_code: "+1",
+  phone_number: "555-0125",
   company_id: 7,
   position: "Marketing Director",
-  address: "123 Business Ave, City, State 12345",
-  notes: "Met at industry conference 2024",
-  status: "active"
+  address: "123 Business Ave",
+  zip_code: "12345",
+  timezone: "America/New_York",
+  access_portal: 1,
+  password: "secure123",
+  custom_fields: {
+    department: "Marketing",
+    lead_source: "Website"
+  },
+  invite_client: true
 };
 
 const response = await fetch('https://public-api.taskip.net/api/public-v1/contact', {
@@ -189,15 +280,41 @@ const result = await response.json();
   "message": "Contact created successfully",
   "data": {
     "id": 151,
-    "name": "Alice Johnson",
-    "email": "alice.johnson@example.com",
-    "phone": "+1-555-0125",
+    "user_id": 245,
     "company_id": 7,
-    "company_name": "Marketing Pro",
+    "company": {
+      "id": 7,
+      "name": "Marketing Pro"
+    },
+    "first_name": "Alice",
+    "last_name": "Johnson",
+    "full_name": "Alice Johnson",
+    "email": "alice.johnson@example.com",
     "position": "Marketing Director",
-    "address": "123 Business Ave, City, State 12345",
-    "notes": "Met at industry conference 2024",
-    "status": "active",
+    "phone_number": "555-0125",
+    "country_id": 1,
+    "country": "United States",
+    "state_id": 5,
+    "state": "New York",
+    "city_id": 10,
+    "city": "New York",
+    "address": "123 Business Ave",
+    "zip_code": "12345",
+    "timezone": "America/New_York",
+    "access_portal": 1,
+    "billings": {
+      "billing_address": null,
+      "billing_city": null,
+      "billing_state": null,
+      "billing_country": null,
+      "billing_zip": null
+    },
+    "languages": [],
+    "image": null,
+    "custom_fields": {
+      "department": "Marketing",
+      "lead_source": "Website"
+    },
     "created_at": "2024-01-25T11:20:00Z",
     "updated_at": "2024-01-25T11:20:00Z"
   }
@@ -240,22 +357,50 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/contact/151" \
   "success": true,
   "data": {
     "id": 151,
-    "name": "Alice Johnson",
-    "email": "alice.johnson@example.com",
-    "phone": "+1-555-0125",
+    "user_id": 245,
     "company_id": 7,
-    "company_name": "Marketing Pro",
+    "company": {
+      "id": 7,
+      "name": "Marketing Pro"
+    },
+    "first_name": "Alice",
+    "last_name": "Johnson",
+    "full_name": "Alice Johnson",
+    "email": "alice.johnson@example.com",
     "position": "Marketing Director",
-    "address": "123 Business Ave, City, State 12345",
-    "notes": "Met at industry conference 2024",
-    "status": "active",
-    "tags": ["lead", "marketing", "conference"],
+    "phone_number": "555-0125",
+    "country_id": 1,
+    "country": "United States",
+    "state_id": 5,
+    "state": "New York",
+    "city_id": 10,
+    "city": "New York",
+    "address": "123 Business Ave",
+    "zip_code": "12345",
+    "timezone": "America/New_York",
+    "details": "Met at industry conference 2024",
+    "reference": "REF-2024-001",
+    "reference_name": "Conference Lead",
+    "access_portal": 1,
+    "billings": {
+      "billing_address": "123 Business Ave",
+      "billing_city": "New York",
+      "billing_state": "New York",
+      "billing_country": "United States",
+      "billing_zip": "12345"
+    },
+    "languages": ["en"],
+    "image": {
+      "id": 42,
+      "url": "https://taskip.net/storage/profile/alice-johnson.jpg",
+      "name": "alice-johnson.jpg"
+    },
     "custom_fields": {
       "linkedin": "https://linkedin.com/in/alicejohnson",
-      "preferred_contact": "email"
-    },
-    "created_at": "2024-01-25T11:20:00Z",
-    "updated_at": "2024-01-25T11:20:00Z"
+      "preferred_contact": "email",
+      "department": "Marketing",
+      "lead_source": "Conference"
+    }
   }
 }
 ```
