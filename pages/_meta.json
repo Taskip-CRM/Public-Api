@@ -10,9 +10,5 @@
   "document-management": "Document Management",
   "project-management": "Project Management",
   "api-reference": "API Reference",
-  "examples": "Examples",
-  "about": {
-    "title": "About",
-    "type": "page"
-  }
+  "examples": "Examples"
 }

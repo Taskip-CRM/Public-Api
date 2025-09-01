@@ -2,6 +2,8 @@
 
 Comprehensive API documentation for the TaskIP CRM system built with [Nextra](https://nextra.site).
 
+![TaskIP API Documentation](screenshort.png)
+
 ## Features
 
 - **Complete API Coverage**: Documentation for all TaskIP API endpoints
@@ -88,15 +90,26 @@ taskip-api-docs/
 
 ## API Documentation Sections
 
-- **Authentication**: X-Secret-Key authentication setup
-- **Contact Management**: CRUD operations for contacts (7 endpoints)
-- **Company Management**: Company management APIs (6 endpoints)
-- **Team Member Management**: Team member APIs (6 endpoints)
-- **Invoice Management**: Complete invoicing system (11 endpoints)
-- **Quotation Management**: Quote/estimate management (9 endpoints)
-- **Support Ticket Management**: Customer support system (12 endpoints)
-- **Document Management**: File and document handling (17 endpoints)
-- **Project Management**: Project and task management (35+ endpoints)
+### Available APIs
+
+| Feature | API Documentation | TaskIP Platform |
+|---------|------------------|-----------------|
+| **Authentication** | X-Secret-Key authentication setup | - |
+| **Sales Pipeline** | Company Management APIs (6 endpoints) | [Sales Pipeline](https://taskip.net/sales-pipeline/) |
+| **Contacts** | Contact Management APIs (7 endpoints) | [Contacts](https://taskip.net/contacts/) |
+| **Invoices** | Complete invoicing system (11 endpoints) | [Invoice Management](https://taskip.net/invoice/) |
+| **Quotations** | Quote/estimate management (9 endpoints) | [Quotations](https://taskip.net/quotations/) |
+| **Documents** | File and document handling (17 endpoints) | [Document Management](https://taskip.net/documents/) |
+| **Forms** | Form management and submissions | [Forms](https://taskip.net/forms/) |
+| **Inbox** | Email and message management | [Inbox](https://taskip.net/inbox/) |
+| **Discussions** | Team discussions and collaboration | [Discussions](https://taskip.net/discussions/) |
+| **Meetings** | Meeting scheduling and management | [Meetings](https://taskip.net/meeting/) |
+| **Projects** | Project and task management (35+ endpoints) | [Project Management](https://taskip.net/project/) |
+| **Support Tickets** | Customer support system (12 endpoints) | [Support Tickets](https://taskip.net/support-ticket-features/) |
+| **Team Members** | Team member management (6 endpoints) | - |
+
+### Quick Access
+
 - **API Reference**: Complete endpoint catalog
 - **Examples**: Practical integration examples
 
