@@ -107,12 +107,13 @@ POST /api/public-v1/contact
   endpoint="/contact"
   method="POST"
   defaultBody={{
-    "name": "John Doe",
-    "email": "john.doe@example.com",
-    "phone": "+1-555-0123",
-    "company_id": 1,
-    "position": "Software Engineer",
-    "address": "123 Main St, Anytown, USA",
+    "name": "Alice Johnson",
+    "email": "alice.johnson@example.com",
+    "phone": "+1-555-0125",
+    "company_id": 7,
+    "position": "Marketing Director",
+    "address": "123 Business Ave, City, State 12345",
+    "notes": "Met at industry conference 2024",
     "status": "active"
   }}
   description="Create a new contact with the required information. Modify the request body as needed."
@@ -445,8 +446,9 @@ Send an invitation to a contact to join as a client in your system.
   endpoint="/contact/invite-client/1"
   method="POST"
   defaultBody={{
-    "message": "Welcome to our client portal! Please click the link to set up your account.",
-    "send_notification": true
+    "message": "Welcome to our client portal! You now have access to track your projects and invoices.",
+    "send_email": true,
+    "access_level": "standard"
   }}
   description="Send an invitation to a contact to become a client. Replace '1' in the endpoint with the actual contact ID."
 />
