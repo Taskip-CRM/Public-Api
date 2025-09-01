@@ -1,0 +1,1187 @@
+# Project Management API
+
+The Project Management API allows you to manage projects, tasks, milestones, and team collaboration in your TaskIP CRM system. You can create and track projects, assign tasks, monitor progress, and manage project workflows with comprehensive reporting and analytics.
+
+## Endpoints Overview
+
+### Project Management
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/public-v1/project` | Get all projects |
+| `POST` | `/api/public-v1/project` | Create a new project |
+| `GET` | `/api/public-v1/project/{id}` | Get a specific project |
+| `PUT` | `/api/public-v1/project/{id}` | Update a project |
+| `DELETE` | `/api/public-v1/project/{id}` | Delete a project |
+| `POST` | `/api/public-v1/project/{id}/status-update` | Update project status |
+| `POST` | `/api/public-v1/project/{id}/assign-team` | Assign team members to project |
+| `GET` | `/api/public-v1/project/{id}/team` | Get project team members |
+| `POST` | `/api/public-v1/project/{id}/duplicate` | Duplicate a project |
+| `GET` | `/api/public-v1/project/{id}/analytics` | Get project analytics |
+
+### Task Management
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/public-v1/project/{project_id}/task` | Get all tasks in project |
+| `POST` | `/api/public-v1/project/{project_id}/task` | Create a new task |
+| `GET` | `/api/public-v1/task/{id}` | Get a specific task |
+| `PUT` | `/api/public-v1/task/{id}` | Update a task |
+| `DELETE` | `/api/public-v1/task/{id}` | Delete a task |
+| `POST` | `/api/public-v1/task/{id}/assign` | Assign task to team member |
+| `POST` | `/api/public-v1/task/{id}/status-update` | Update task status |
+| `POST` | `/api/public-v1/task/{id}/comment` | Add comment to task |
+| `GET` | `/api/public-v1/task/{id}/comments` | Get task comments |
+| `POST` | `/api/public-v1/task/{id}/time-log` | Log time spent on task |
+| `GET` | `/api/public-v1/task/{id}/time-logs` | Get task time logs |
+| `POST` | `/api/public-v1/task/{id}/attachments` | Upload task attachments |
+| `GET` | `/api/public-v1/task/{id}/attachments` | Get task attachments |
+| `POST` | `/api/public-v1/task/bulk-actions` | Perform bulk task operations |
+
+### Milestone Management
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/public-v1/project/{project_id}/milestone` | Get all milestones in project |
+| `POST` | `/api/public-v1/project/{project_id}/milestone` | Create a new milestone |
+| `GET` | `/api/public-v1/milestone/{id}` | Get a specific milestone |
+| `PUT` | `/api/public-v1/milestone/{id}` | Update a milestone |
+| `DELETE` | `/api/public-v1/milestone/{id}` | Delete a milestone |
+| `POST` | `/api/public-v1/milestone/{id}/status-update` | Update milestone status |
+
+### Project Templates
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/public-v1/project-template` | Get all project templates |
+| `POST` | `/api/public-v1/project-template` | Create a new project template |
+| `GET` | `/api/public-v1/project-template/{id}` | Get a specific project template |
+| `PUT` | `/api/public-v1/project-template/{id}` | Update a project template |
+| `DELETE` | `/api/public-v1/project-template/{id}` | Delete a project template |
+| `POST` | `/api/public-v1/project-template/{id}/create-project` | Create project from template |
+
+### Time Tracking & Reporting
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/public-v1/project/{project_id}/time-tracking` | Get project time tracking |
+| `GET` | `/api/public-v1/project/{project_id}/reports` | Get project reports |
+| `GET` | `/api/public-v1/project/dashboard` | Get projects dashboard data |
+| `GET` | `/api/public-v1/task/my-tasks` | Get current user's tasks |
+| `GET` | `/api/public-v1/project/calendar` | Get project calendar view |
+
+---
+
+## Get All Projects
+
+Retrieve a list of all projects in your system.
+
+```http
+GET /api/public-v1/project
+```
+
+### Request Headers
+```http
+X-Secret-Key: your-secret-key-here
+Content-Type: application/json
+```
+
+### Query Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `page` | integer | No | Page number for pagination (default: 1) |
+| `limit` | integer | No | Number of projects per page (default: 50) |
+| `search` | string | No | Search term for project name or description |
+| `sort` | string | No | Sort field (`name`, `status`, `start_date`, `end_date`, `created_at`) |
+| `order` | string | No | Sort order (`asc` or `desc`) |
+| `status` | string | No | Filter by status (`planning`, `active`, `on_hold`, `completed`, `cancelled`) |
+| `client_id` | integer | No | Filter by client ID |
+| `assigned_to` | integer | No | Filter by assigned team member |
+| `priority` | string | No | Filter by priority (`low`, `medium`, `high`, `critical`) |
+| `date_from` | string | No | Filter projects from start date (YYYY-MM-DD) |
+| `date_to` | string | No | Filter projects to end date (YYYY-MM-DD) |
+
+### Example Request
+
+```bash
+curl -X GET "https://public-api.taskip.net/api/public-v1/project?page=1&limit=20&status=active&priority=high" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json"
+```
+
+### JavaScript Example
+```javascript
+const response = await fetch('https://public-api.taskip.net/api/public-v1/project?page=1&limit=20', {
+  method: 'GET',
+  headers: {
+    'X-Secret-Key': 'your-secret-key-here',
+    'Content-Type': 'application/json'
+  }
+});
+
+const projects = await response.json();
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "name": "Website Redesign - Acme Corp",
+      "description": "Complete website redesign and development for Acme Corporation",
+      "client_id": 15,
+      "client_name": "Acme Corporation",
+      "project_manager_id": 3,
+      "project_manager_name": "Sarah Johnson",
+      "status": "active",
+      "priority": "high",
+      "budget": 50000.00,
+      "actual_cost": 32000.00,
+      "start_date": "2024-01-15",
+      "end_date": "2024-04-15",
+      "progress_percentage": 65,
+      "total_tasks": 45,
+      "completed_tasks": 29,
+      "total_hours_logged": 320.5,
+      "estimated_hours": 500.0,
+      "team_members": [
+        {
+          "id": 3,
+          "name": "Sarah Johnson",
+          "role": "Project Manager"
+        },
+        {
+          "id": 8,
+          "name": "David Chen",
+          "role": "Developer"
+        },
+        {
+          "id": 12,
+          "name": "Lisa Park",
+          "role": "Designer"
+        }
+      ],
+      "tags": ["website", "redesign", "high-priority"],
+      "created_at": "2024-01-10T09:30:00Z",
+      "updated_at": "2024-01-20T14:20:00Z"
+    },
+    {
+      "id": 2,
+      "name": "Mobile App Development - TechStart",
+      "description": "iOS and Android mobile application development",
+      "client_id": 22,
+      "client_name": "TechStart Inc",
+      "project_manager_id": 5,
+      "project_manager_name": "Mike Wilson",
+      "status": "active",
+      "priority": "medium",
+      "budget": 75000.00,
+      "actual_cost": 18000.00,
+      "start_date": "2024-02-01",
+      "end_date": "2024-08-01",
+      "progress_percentage": 25,
+      "total_tasks": 68,
+      "completed_tasks": 17,
+      "total_hours_logged": 145.0,
+      "estimated_hours": 800.0,
+      "team_members": [
+        {
+          "id": 5,
+          "name": "Mike Wilson",
+          "role": "Project Manager"
+        },
+        {
+          "id": 15,
+          "name": "John Smith",
+          "role": "Mobile Developer"
+        }
+      ],
+      "tags": ["mobile", "ios", "android"],
+      "created_at": "2024-01-25T11:15:00Z",
+      "updated_at": "2024-02-05T16:45:00Z"
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "per_page": 20,
+    "total": 25,
+    "total_pages": 2,
+    "summary": {
+      "active_projects": 12,
+      "completed_projects": 8,
+      "total_budget": 450000.00,
+      "total_actual_cost": 280000.00
+    }
+  }
+}
+```
+
+---
+
+## Create a New Project
+
+Create a new project in your system.
+
+```http
+POST /api/public-v1/project
+```
+
+### Request Headers
+```http
+X-Secret-Key: your-secret-key-here
+Content-Type: application/json
+```
+
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | string | Yes | Project name |
+| `description` | string | Yes | Project description |
+| `client_id` | integer | Yes | Client ID for the project |
+| `project_manager_id` | integer | Yes | Project manager user ID |
+| `start_date` | string | Yes | Project start date (YYYY-MM-DD) |
+| `end_date` | string | Yes | Project end date (YYYY-MM-DD) |
+| `budget` | decimal | No | Project budget |
+| `priority` | string | No | Priority level (`low`, `medium`, `high`, `critical`) |
+| `status` | string | No | Initial status (`planning`, `active`) |
+| `team_member_ids` | array | No | Array of team member IDs |
+| `tags` | array | No | Array of project tags |
+| `custom_fields` | object | No | Custom field values |
+| `template_id` | integer | No | Create from project template |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/project" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "E-commerce Platform - GreenTech",
+    "description": "Build a complete e-commerce platform with inventory management and analytics",
+    "client_id": 28,
+    "project_manager_id": 3,
+    "start_date": "2024-03-01",
+    "end_date": "2024-09-01",
+    "budget": 120000.00,
+    "priority": "high",
+    "status": "planning",
+    "team_member_ids": [3, 8, 12, 15, 20],
+    "tags": ["ecommerce", "platform", "analytics"],
+    "custom_fields": {
+      "technology_stack": "React, Node.js, MongoDB",
+      "deployment_environment": "AWS"
+    }
+  }'
+```
+
+### Python Example
+```python
+import requests
+
+headers = {
+    'X-Secret-Key': 'your-secret-key-here',
+    'Content-Type': 'application/json'
+}
+
+project_data = {
+    "name": "E-commerce Platform - GreenTech",
+    "description": "Build a complete e-commerce platform with inventory management and analytics",
+    "client_id": 28,
+    "project_manager_id": 3,
+    "start_date": "2024-03-01",
+    "end_date": "2024-09-01",
+    "budget": 120000.00,
+    "priority": "high",
+    "status": "planning",
+    "team_member_ids": [3, 8, 12, 15, 20],
+    "tags": ["ecommerce", "platform", "analytics"],
+    "custom_fields": {
+        "technology_stack": "React, Node.js, MongoDB",
+        "deployment_environment": "AWS"
+    }
+}
+
+response = requests.post(
+    'https://public-api.taskip.net/api/public-v1/project',
+    headers=headers,
+    json=project_data
+)
+
+result = response.json()
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "message": "Project created successfully",
+  "data": {
+    "id": 26,
+    "name": "E-commerce Platform - GreenTech",
+    "description": "Build a complete e-commerce platform with inventory management and analytics",
+    "client_id": 28,
+    "client_name": "GreenTech Solutions",
+    "project_manager_id": 3,
+    "project_manager_name": "Sarah Johnson",
+    "status": "planning",
+    "priority": "high",
+    "budget": 120000.00,
+    "actual_cost": 0.00,
+    "start_date": "2024-03-01",
+    "end_date": "2024-09-01",
+    "progress_percentage": 0,
+    "total_tasks": 0,
+    "completed_tasks": 0,
+    "total_hours_logged": 0.0,
+    "estimated_hours": 0.0,
+    "team_members": [
+      {
+        "id": 3,
+        "name": "Sarah Johnson",
+        "role": "Project Manager"
+      },
+      {
+        "id": 8,
+        "name": "David Chen",
+        "role": "Developer"
+      },
+      {
+        "id": 12,
+        "name": "Lisa Park",
+        "role": "Designer"
+      },
+      {
+        "id": 15,
+        "name": "John Smith",
+        "role": "Developer"
+      },
+      {
+        "id": 20,
+        "name": "Emma Davis",
+        "role": "QA Engineer"
+      }
+    ],
+    "tags": ["ecommerce", "platform", "analytics"],
+    "custom_fields": {
+      "technology_stack": "React, Node.js, MongoDB",
+      "deployment_environment": "AWS"
+    },
+    "created_at": "2024-02-20T10:30:00Z",
+    "updated_at": "2024-02-20T10:30:00Z"
+  }
+}
+```
+
+---
+
+## Get a Specific Project
+
+Retrieve detailed information about a specific project.
+
+```http
+GET /api/public-v1/project/{id}
+```
+
+### Path Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | integer | Yes | Project ID |
+
+### Example Request
+
+```bash
+curl -X GET "https://public-api.taskip.net/api/public-v1/project/26" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json"
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": 26,
+    "name": "E-commerce Platform - GreenTech",
+    "description": "Build a complete e-commerce platform with inventory management and analytics",
+    "client_id": 28,
+    "client": {
+      "id": 28,
+      "name": "GreenTech Solutions",
+      "email": "contact@greentech.com",
+      "company": "GreenTech Solutions Inc"
+    },
+    "project_manager_id": 3,
+    "project_manager": {
+      "id": 3,
+      "name": "Sarah Johnson",
+      "email": "sarah@company.com"
+    },
+    "status": "planning",
+    "priority": "high",
+    "budget": 120000.00,
+    "actual_cost": 0.00,
+    "start_date": "2024-03-01",
+    "end_date": "2024-09-01",
+    "progress_percentage": 0,
+    "health_status": "on_track",
+    "total_tasks": 0,
+    "completed_tasks": 0,
+    "overdue_tasks": 0,
+    "total_hours_logged": 0.0,
+    "estimated_hours": 0.0,
+    "team_members": [
+      {
+        "id": 3,
+        "name": "Sarah Johnson",
+        "email": "sarah@company.com",
+        "role": "Project Manager",
+        "hours_logged": 0.0,
+        "tasks_assigned": 0
+      },
+      {
+        "id": 8,
+        "name": "David Chen",
+        "email": "david@company.com",
+        "role": "Developer",
+        "hours_logged": 0.0,
+        "tasks_assigned": 0
+      }
+    ],
+    "milestones": [
+      {
+        "id": 15,
+        "name": "Requirements Analysis Complete",
+        "due_date": "2024-03-15",
+        "status": "pending",
+        "progress_percentage": 0
+      },
+      {
+        "id": 16,
+        "name": "Design Phase Complete",
+        "due_date": "2024-04-30",
+        "status": "pending",
+        "progress_percentage": 0
+      }
+    ],
+    "recent_tasks": [
+      {
+        "id": 120,
+        "title": "Project kickoff meeting",
+        "status": "pending",
+        "assigned_to": "Sarah Johnson",
+        "due_date": "2024-03-05"
+      }
+    ],
+    "tags": ["ecommerce", "platform", "analytics"],
+    "custom_fields": {
+      "technology_stack": "React, Node.js, MongoDB",
+      "deployment_environment": "AWS"
+    },
+    "activity_log": [
+      {
+        "action": "created",
+        "user": "Sarah Johnson",
+        "timestamp": "2024-02-20T10:30:00Z"
+      }
+    ],
+    "created_at": "2024-02-20T10:30:00Z",
+    "updated_at": "2024-02-20T10:30:00Z"
+  }
+}
+```
+
+---
+
+## Create a New Task
+
+Create a new task within a project.
+
+```http
+POST /api/public-v1/project/{project_id}/task
+```
+
+### Path Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `project_id` | integer | Yes | Project ID |
+
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `title` | string | Yes | Task title |
+| `description` | string | No | Task description |
+| `assigned_to` | integer | No | Team member ID to assign task |
+| `priority` | string | No | Priority level (`low`, `medium`, `high`, `critical`) |
+| `status` | string | No | Initial status (`todo`, `in_progress`, `review`, `done`) |
+| `due_date` | string | No | Due date (YYYY-MM-DD) |
+| `estimated_hours` | decimal | No | Estimated hours to complete |
+| `milestone_id` | integer | No | Associated milestone ID |
+| `parent_task_id` | integer | No | Parent task ID (for subtasks) |
+| `tags` | array | No | Array of task tags |
+| `dependencies` | array | No | Array of dependent task IDs |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/project/26/task" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Design database schema",
+    "description": "Create comprehensive database schema for the e-commerce platform including all entities and relationships",
+    "assigned_to": 8,
+    "priority": "high",
+    "status": "todo",
+    "due_date": "2024-03-20",
+    "estimated_hours": 16.0,
+    "milestone_id": 15,
+    "tags": ["database", "schema", "design"]
+  }'
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "message": "Task created successfully",
+  "data": {
+    "id": 245,
+    "title": "Design database schema",
+    "description": "Create comprehensive database schema for the e-commerce platform including all entities and relationships",
+    "project_id": 26,
+    "project_name": "E-commerce Platform - GreenTech",
+    "assigned_to": 8,
+    "assigned_to_name": "David Chen",
+    "priority": "high",
+    "status": "todo",
+    "due_date": "2024-03-20",
+    "estimated_hours": 16.0,
+    "actual_hours": 0.0,
+    "progress_percentage": 0,
+    "milestone_id": 15,
+    "milestone_name": "Requirements Analysis Complete",
+    "parent_task_id": null,
+    "subtasks": [],
+    "dependencies": [],
+    "tags": ["database", "schema", "design"],
+    "created_at": "2024-02-21T09:15:00Z",
+    "updated_at": "2024-02-21T09:15:00Z"
+  }
+}
+```
+
+---
+
+## Update Task Status
+
+Update the status of a specific task.
+
+```http
+POST /api/public-v1/task/{id}/status-update
+```
+
+### Path Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | integer | Yes | Task ID |
+
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `status` | string | Yes | New status (`todo`, `in_progress`, `review`, `done`, `cancelled`) |
+| `progress_percentage` | integer | No | Progress percentage (0-100) |
+| `completion_notes` | string | No | Completion notes |
+| `notify_team` | boolean | No | Send notification to team members |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/task/245/status-update" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "in_progress",
+    "progress_percentage": 25,
+    "completion_notes": "Started working on user and product entities",
+    "notify_team": true
+  }'
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "message": "Task status updated successfully",
+  "data": {
+    "task_id": 245,
+    "old_status": "todo",
+    "new_status": "in_progress",
+    "progress_percentage": 25,
+    "completion_notes": "Started working on user and product entities",
+    "updated_by": "David Chen",
+    "updated_at": "2024-02-22T14:30:00Z"
+  }
+}
+```
+
+---
+
+## Log Time Spent on Task
+
+Log time spent working on a specific task.
+
+```http
+POST /api/public-v1/task/{id}/time-log
+```
+
+### Path Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | integer | Yes | Task ID |
+
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `hours` | decimal | Yes | Hours spent |
+| `date` | string | Yes | Date of work (YYYY-MM-DD) |
+| `description` | string | No | Description of work done |
+| `billable` | boolean | No | Whether time is billable (default: true) |
+| `start_time` | string | No | Start time (HH:MM:SS) |
+| `end_time` | string | No | End time (HH:MM:SS) |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/task/245/time-log" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "hours": 4.5,
+    "date": "2024-02-22",
+    "description": "Worked on user authentication and product catalog schemas",
+    "billable": true,
+    "start_time": "09:00:00",
+    "end_time": "13:30:00"
+  }'
+```
+
+### JavaScript Example
+```javascript
+const timeLogData = {
+  hours: 4.5,
+  date: "2024-02-22",
+  description: "Worked on user authentication and product catalog schemas",
+  billable: true,
+  start_time: "09:00:00",
+  end_time: "13:30:00"
+};
+
+const response = await fetch('https://public-api.taskip.net/api/public-v1/task/245/time-log', {
+  method: 'POST',
+  headers: {
+    'X-Secret-Key': 'your-secret-key-here',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify(timeLogData)
+});
+
+const result = await response.json();
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "message": "Time logged successfully",
+  "data": {
+    "id": 156,
+    "task_id": 245,
+    "task_title": "Design database schema",
+    "project_id": 26,
+    "user_id": 8,
+    "user_name": "David Chen",
+    "hours": 4.5,
+    "date": "2024-02-22",
+    "description": "Worked on user authentication and product catalog schemas",
+    "billable": true,
+    "start_time": "09:00:00",
+    "end_time": "13:30:00",
+    "hourly_rate": 75.00,
+    "total_amount": 337.50,
+    "created_at": "2024-02-22T13:45:00Z"
+  }
+}
+```
+
+---
+
+## Get Project Analytics
+
+Retrieve comprehensive analytics for a specific project.
+
+```http
+GET /api/public-v1/project/{id}/analytics
+```
+
+### Path Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | integer | Yes | Project ID |
+
+### Query Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `period` | string | No | Analysis period (`week`, `month`, `quarter`, `all`) |
+| `include_team_performance` | boolean | No | Include team member performance data |
+| `include_time_tracking` | boolean | No | Include detailed time tracking data |
+
+### Example Request
+
+```bash
+curl -X GET "https://public-api.taskip.net/api/public-v1/project/26/analytics?period=month&include_team_performance=true" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json"
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "project_id": 26,
+    "project_name": "E-commerce Platform - GreenTech",
+    "period": "month",
+    "start_date": "2024-02-01",
+    "end_date": "2024-02-29",
+    "overview": {
+      "total_tasks": 45,
+      "completed_tasks": 18,
+      "in_progress_tasks": 12,
+      "pending_tasks": 15,
+      "overdue_tasks": 3,
+      "completion_rate": 40.0,
+      "total_hours_logged": 234.5,
+      "estimated_hours": 450.0,
+      "budget_used": 17587.50,
+      "budget_remaining": 102412.50,
+      "days_elapsed": 28,
+      "days_remaining": 156
+    },
+    "progress_trend": [
+      {
+        "week": "2024-W05",
+        "tasks_completed": 4,
+        "hours_logged": 32.5,
+        "budget_spent": 2437.50
+      },
+      {
+        "week": "2024-W06",
+        "tasks_completed": 6,
+        "hours_logged": 45.0,
+        "budget_spent": 3375.00
+      },
+      {
+        "week": "2024-W07",
+        "tasks_completed": 5,
+        "hours_logged": 38.5,
+        "budget_spent": 2887.50
+      },
+      {
+        "week": "2024-W08",
+        "tasks_completed": 3,
+        "hours_logged": 28.0,
+        "budget_spent": 2100.00
+      }
+    ],
+    "milestone_progress": [
+      {
+        "id": 15,
+        "name": "Requirements Analysis Complete",
+        "due_date": "2024-03-15",
+        "progress_percentage": 75,
+        "status": "in_progress",
+        "tasks_completed": 6,
+        "tasks_total": 8
+      },
+      {
+        "id": 16,
+        "name": "Design Phase Complete",
+        "due_date": "2024-04-30",
+        "progress_percentage": 20,
+        "status": "in_progress",
+        "tasks_completed": 3,
+        "tasks_total": 15
+      }
+    ],
+    "team_performance": [
+      {
+        "user_id": 8,
+        "user_name": "David Chen",
+        "role": "Developer",
+        "tasks_completed": 8,
+        "tasks_in_progress": 3,
+        "hours_logged": 89.5,
+        "efficiency_score": 92.5,
+        "on_time_completion_rate": 87.5
+      },
+      {
+        "user_id": 12,
+        "user_name": "Lisa Park",
+        "role": "Designer",
+        "tasks_completed": 6,
+        "tasks_in_progress": 2,
+        "hours_logged": 67.0,
+        "efficiency_score": 88.0,
+        "on_time_completion_rate": 100.0
+      }
+    ],
+    "task_categories": {
+      "development": {
+        "total": 22,
+        "completed": 8,
+        "hours_logged": 145.5
+      },
+      "design": {
+        "total": 15,
+        "completed": 7,
+        "hours_logged": 67.0
+      },
+      "testing": {
+        "total": 8,
+        "completed": 3,
+        "hours_logged": 22.0
+      }
+    },
+    "risk_indicators": {
+      "schedule_risk": "medium",
+      "budget_risk": "low",
+      "scope_risk": "low",
+      "team_capacity_risk": "low"
+    }
+  }
+}
+```
+
+---
+
+## Get My Tasks
+
+Retrieve tasks assigned to the current user across all projects.
+
+```http
+GET /api/public-v1/task/my-tasks
+```
+
+### Query Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `status` | string | No | Filter by status |
+| `priority` | string | No | Filter by priority |
+| `due_date` | string | No | Filter by due date (today, overdue, this_week, this_month) |
+| `project_id` | integer | No | Filter by specific project |
+| `page` | integer | No | Page number for pagination |
+| `limit` | integer | No | Tasks per page |
+
+### Example Request
+
+```bash
+curl -X GET "https://public-api.taskip.net/api/public-v1/task/my-tasks?status=in_progress&due_date=this_week" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json"
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 245,
+      "title": "Design database schema",
+      "project_id": 26,
+      "project_name": "E-commerce Platform - GreenTech",
+      "status": "in_progress",
+      "priority": "high",
+      "due_date": "2024-03-20",
+      "progress_percentage": 25,
+      "estimated_hours": 16.0,
+      "actual_hours": 4.5,
+      "days_until_due": 26,
+      "is_overdue": false,
+      "milestone_name": "Requirements Analysis Complete",
+      "created_at": "2024-02-21T09:15:00Z",
+      "updated_at": "2024-02-22T14:30:00Z"
+    },
+    {
+      "id": 198,
+      "title": "Code review - Authentication module",
+      "project_id": 18,
+      "project_name": "CRM Enhancement Project",
+      "status": "in_progress",
+      "priority": "medium",
+      "due_date": "2024-02-25",
+      "progress_percentage": 80,
+      "estimated_hours": 4.0,
+      "actual_hours": 3.2,
+      "days_until_due": 3,
+      "is_overdue": false,
+      "milestone_name": "Phase 2 Complete",
+      "created_at": "2024-02-18T14:20:00Z",
+      "updated_at": "2024-02-22T11:45:00Z"
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "per_page": 20,
+    "total": 8,
+    "total_pages": 1,
+    "summary": {
+      "total_tasks": 8,
+      "overdue": 1,
+      "due_today": 0,
+      "due_this_week": 3,
+      "in_progress": 5,
+      "pending_review": 2
+    }
+  }
+}
+```
+
+---
+
+## Bulk Task Operations
+
+Perform bulk operations on multiple tasks.
+
+```http
+POST /api/public-v1/task/bulk-actions
+```
+
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `task_ids` | array | Yes | Array of task IDs |
+| `action` | string | Yes | Action to perform (`status_update`, `assign`, `delete`, `add_tags`, `set_priority`) |
+| `parameters` | object | No | Additional parameters for the action |
+
+#### Action-specific Parameters
+
+**For `status_update` action:**
+- `status`: New status for all tasks
+- `completion_notes`: Notes for status change
+
+**For `assign` action:**
+- `assigned_to`: User ID to assign tasks to
+
+**For `set_priority` action:**
+- `priority`: Priority level to set
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/task/bulk-actions" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "task_ids": [240, 241, 242, 243],
+    "action": "set_priority",
+    "parameters": {
+      "priority": "high"
+    }
+  }'
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "message": "Bulk action completed successfully",
+  "data": {
+    "action": "set_priority",
+    "processed_count": 4,
+    "successful_ids": [240, 241, 242, 243],
+    "failed_ids": [],
+    "results": [
+      {
+        "task_id": 240,
+        "status": "success",
+        "message": "Priority updated to high"
+      },
+      {
+        "task_id": 241,
+        "status": "success",
+        "message": "Priority updated to high"
+      },
+      {
+        "task_id": 242,
+        "status": "success",
+        "message": "Priority updated to high"
+      },
+      {
+        "task_id": 243,
+        "status": "success",
+        "message": "Priority updated to high"
+      }
+    ]
+  }
+}
+```
+
+---
+
+## Error Responses
+
+### Common Error Codes
+
+| Status Code | Error Type | Description |
+|-------------|------------|-------------|
+| `400` | Bad Request | Invalid request data or missing required fields |
+| `401` | Unauthorized | Invalid or missing X-Secret-Key |
+| `403` | Forbidden | Insufficient permissions to access project/task |
+| `404` | Not Found | Project or task not found |
+| `409` | Conflict | Project name already exists or scheduling conflict |
+| `422` | Validation Error | Request data failed validation |
+| `429` | Too Many Requests | Rate limit exceeded |
+
+### Example Error Response
+
+```json
+{
+  "success": false,
+  "error": "Validation Error",
+  "message": "The given data was invalid",
+  "errors": {
+    "name": ["The name field is required."],
+    "client_id": ["The selected client id is invalid."],
+    "end_date": ["The end date must be after start date."],
+    "budget": ["The budget must be a positive number."]
+  },
+  "status_code": 422
+}
+```
+
+---
+
+## Response Schemas
+
+### Project Object
+
+```json
+{
+  "id": "integer",
+  "name": "string",
+  "description": "string",
+  "client_id": "integer",
+  "client_name": "string",
+  "project_manager_id": "integer",
+  "project_manager_name": "string",
+  "status": "string",
+  "priority": "string",
+  "budget": "decimal",
+  "actual_cost": "decimal",
+  "start_date": "string (YYYY-MM-DD)",
+  "end_date": "string (YYYY-MM-DD)",
+  "progress_percentage": "integer",
+  "total_tasks": "integer",
+  "completed_tasks": "integer",
+  "total_hours_logged": "decimal",
+  "estimated_hours": "decimal",
+  "team_members": "array",
+  "tags": "array",
+  "created_at": "string (ISO 8601)",
+  "updated_at": "string (ISO 8601)"
+}
+```
+
+### Task Object
+
+```json
+{
+  "id": "integer",
+  "title": "string",
+  "description": "string|null",
+  "project_id": "integer",
+  "project_name": "string",
+  "assigned_to": "integer|null",
+  "assigned_to_name": "string|null",
+  "priority": "string",
+  "status": "string",
+  "due_date": "string (YYYY-MM-DD)|null",
+  "estimated_hours": "decimal",
+  "actual_hours": "decimal",
+  "progress_percentage": "integer",
+  "milestone_id": "integer|null",
+  "milestone_name": "string|null",
+  "parent_task_id": "integer|null",
+  "tags": "array",
+  "created_at": "string (ISO 8601)",
+  "updated_at": "string (ISO 8601)"
+}
+```
+
+### Time Log Object
+
+```json
+{
+  "id": "integer",
+  "task_id": "integer",
+  "task_title": "string",
+  "project_id": "integer",
+  "user_id": "integer",
+  "user_name": "string",
+  "hours": "decimal",
+  "date": "string (YYYY-MM-DD)",
+  "description": "string|null",
+  "billable": "boolean",
+  "start_time": "string (HH:MM:SS)|null",
+  "end_time": "string (HH:MM:SS)|null",
+  "hourly_rate": "decimal",
+  "total_amount": "decimal",
+  "created_at": "string (ISO 8601)"
+}
+```
+
+---
+
+## Best Practices
+
+### Project Management
+1. **Clear objectives**: Define clear project goals and deliverables
+2. **Realistic timelines**: Set achievable deadlines with buffer time
+3. **Regular updates**: Update project status and progress regularly
+4. **Team communication**: Use comments and notifications for team collaboration
+
+### Task Management
+1. **Task breakdown**: Break large tasks into smaller, manageable subtasks
+2. **Clear assignments**: Assign tasks to specific team members with clear expectations
+3. **Priority setting**: Use priority levels to help team members focus on important work
+4. **Dependencies tracking**: Track task dependencies to avoid bottlenecks
+
+### Time Tracking
+1. **Regular logging**: Log time daily while work is fresh in memory
+2. **Detailed descriptions**: Include meaningful descriptions for time entries
+3. **Accurate estimates**: Improve estimation accuracy through historical data
+4. **Billable vs non-billable**: Properly categorize billable and non-billable time
+
+### Reporting & Analytics
+1. **Regular monitoring**: Review project analytics regularly to identify issues early
+2. **Team performance**: Use performance data to identify training needs
+3. **Budget tracking**: Monitor budget usage to prevent cost overruns
+4. **Risk assessment**: Pay attention to risk indicators and take proactive measures
+
+import { Callout } from 'nextra-theme-docs'
+
+<Callout type="info" emoji="💡">
+  **Tip**: Use the project analytics endpoint to get comprehensive insights into project performance, team productivity, and potential risks. Regular monitoring can help prevent issues before they become critical problems.
+</Callout>

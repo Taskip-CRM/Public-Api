@@ -1,46 +1,337 @@
 # API Reference
 
+This page provides a comprehensive reference of all available endpoints in the TaskIP API. All endpoints require authentication using the X-Secret-Key header.
+
 ## Base URL
 
 ```
-https://api.taskip.com/v1
+https://public-api.taskip.net/api/public-v1
 ```
 
-## Endpoints
+## Authentication
 
-### Tasks
+All API requests must include the authentication header:
 
-#### GET /tasks
-Retrieve all tasks
+```http
+X-Secret-Key: your-secret-key-here
+Content-Type: application/json
+```
 
-#### POST /tasks
-Create a new task
+---
 
-#### GET /tasks/{id}
-Get a specific task
+## Contact Management
 
-#### PUT /tasks/{id}
-Update a task
+### Contact Operations
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/contact` | [Get all contacts](/contact-management#get-all-contacts) |
+| `POST` | `/contact` | [Create a new contact](/contact-management#create-a-contact) |
+| `GET` | `/contact/{id}` | [Get a specific contact](/contact-management#get-a-specific-contact) |
+| `PUT` | `/contact/{id}` | [Update a contact](/contact-management#update-a-contact) |
+| `DELETE` | `/contact/{id}` | [Delete a contact](/contact-management#delete-a-contact) |
+| `POST` | `/contact/bulk-delete` | [Bulk delete contacts](/contact-management#bulk-delete-contacts) |
+| `POST` | `/contact/invite-client` | [Invite contact as client](/contact-management#invite-contact-as-client) |
 
-#### DELETE /tasks/{id}
-Delete a task
+---
 
-### IP Information
+## Company Management
 
-#### GET /ip
-Get current IP information
+### Company Operations
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/company` | [Get all companies](/company-management#get-all-companies) |
+| `POST` | `/company` | [Create a new company](/company-management#create-a-company) |
+| `GET` | `/company/{id}` | [Get a specific company](/company-management#get-a-specific-company) |
+| `PUT` | `/company/{id}` | [Update a company](/company-management#update-a-company) |
+| `DELETE` | `/company/{id}` | [Delete a company](/company-management#delete-a-company) |
+| `POST` | `/company/bulk-delete` | [Bulk delete companies](/company-management#bulk-delete-companies) |
 
-#### GET /ip/{address}
-Get information for specific IP address
+---
+
+## Team Member Management
+
+### Team Member Operations
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/team-member` | [Get all team members](/team-member-management#get-all-team-members) |
+| `POST` | `/team-member` | [Create a new team member](/team-member-management#create-a-team-member) |
+| `GET` | `/team-member/{id}` | [Get a specific team member](/team-member-management#get-a-specific-team-member) |
+| `PUT` | `/team-member/{id}` | [Update a team member](/team-member-management#update-a-team-member) |
+| `DELETE` | `/team-member/{id}` | [Delete a team member](/team-member-management#delete-a-team-member) |
+| `POST` | `/team-member/bulk-delete` | [Bulk delete team members](/team-member-management#bulk-delete-team-members) |
+
+---
+
+## Invoice Management
+
+### Invoice Operations
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/invoice` | [Get all invoices](/invoice-management#get-all-invoices) |
+| `POST` | `/invoice` | [Create a new invoice](/invoice-management#create-an-invoice) |
+| `GET` | `/invoice/{id}` | [Get a specific invoice](/invoice-management#get-a-specific-invoice) |
+| `PUT` | `/invoice/{id}` | [Update an invoice](/invoice-management#update-an-invoice) |
+| `DELETE` | `/invoice/{id}` | [Delete an invoice](/invoice-management#delete-an-invoice) |
+| `POST` | `/invoice/{id}/send-to-client` | [Send invoice to client](/invoice-management#send-invoice-to-client) |
+| `POST` | `/invoice/{id}/status-update` | [Update invoice status](/invoice-management#update-invoice-status) |
+| `GET` | `/invoice/{id}/download-pdf` | [Download invoice PDF](/invoice-management#download-invoice-pdf) |
+| `POST` | `/invoice/{id}/payment-gateway` | [Configure payment gateway](/invoice-management#configure-payment-gateway) |
+| `POST` | `/invoice/{id}/recurring-setup` | [Setup recurring invoice](/invoice-management#setup-recurring-invoice) |
+| `POST` | `/invoice/bulk-actions` | [Bulk invoice operations](/invoice-management#bulk-actions) |
+
+---
+
+## Quotation Management
+
+### Quotation Operations
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/quotation` | [Get all quotations](/quotation-management#get-all-quotations) |
+| `POST` | `/quotation` | [Create a new quotation](/quotation-management#create-a-quotation) |
+| `GET` | `/quotation/{id}` | [Get a specific quotation](/quotation-management#get-a-specific-quotation) |
+| `PUT` | `/quotation/{id}` | [Update a quotation](/quotation-management#update-a-quotation) |
+| `DELETE` | `/quotation/{id}` | [Delete a quotation](/quotation-management#delete-a-quotation) |
+| `POST` | `/quotation/{id}/convert-to-invoice` | [Convert quotation to invoice](/quotation-management#convert-quotation-to-invoice) |
+| `POST` | `/quotation/{id}/send-to-client` | [Send quotation to client](/quotation-management#send-quotation-to-client) |
+| `POST` | `/quotation/{id}/status-update` | [Update quotation status](/quotation-management#update-quotation-status) |
+| `POST` | `/quotation/bulk-actions` | [Bulk quotation operations](/quotation-management#bulk-actions) |
+
+---
+
+## Support Ticket Management
+
+### Support Ticket Operations
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/ticket` | [Get all support tickets](/support-ticket-management#get-all-support-tickets) |
+| `POST` | `/ticket` | [Create a new support ticket](/support-ticket-management#create-a-support-ticket) |
+| `GET` | `/ticket/{id}` | [Get a specific support ticket](/support-ticket-management#get-a-specific-support-ticket) |
+| `PUT` | `/ticket/{id}` | [Update a support ticket](/support-ticket-management#update-a-support-ticket) |
+| `DELETE` | `/ticket/{id}` | [Delete a support ticket](/support-ticket-management#delete-a-support-ticket) |
+| `POST` | `/ticket/{id}/assign` | [Assign ticket to team member](/support-ticket-management#assign-ticket-to-team-member) |
+| `POST` | `/ticket/{id}/status-update` | [Update ticket status](/support-ticket-management#update-ticket-status) |
+| `POST` | `/ticket/{id}/add-reply` | [Add reply to ticket](/support-ticket-management#add-reply-to-ticket) |
+| `POST` | `/ticket/{id}/attachments` | [Upload ticket attachments](/support-ticket-management#upload-ticket-attachments) |
+| `GET` | `/ticket/{id}/attachments` | [Get ticket attachments](/support-ticket-management#get-ticket-attachments) |
+| `POST` | `/ticket/bulk-actions` | [Bulk ticket operations](/support-ticket-management#bulk-actions) |
+| `GET` | `/ticket/analytics` | [Get ticket analytics](/support-ticket-management#get-ticket-analytics) |
+
+---
+
+## Document Management
+
+### Document Operations
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/document` | [Get all documents](/document-management#get-all-documents) |
+| `POST` | `/document` | [Upload a new document](/document-management#upload-a-new-document) |
+| `GET` | `/document/{id}` | [Get a specific document](/document-management#get-a-specific-document) |
+| `PUT` | `/document/{id}` | [Update document metadata](/document-management#update-document-metadata) |
+| `DELETE` | `/document/{id}` | [Delete a document](/document-management#delete-a-document) |
+| `GET` | `/document/{id}/download` | [Download document file](/document-management#download-document-file) |
+| `POST` | `/document/{id}/share` | [Share document with users](/document-management#share-document-with-users) |
+| `POST` | `/document/{id}/version` | [Upload new document version](/document-management#upload-new-document-version) |
+| `GET` | `/document/{id}/versions` | [Get document version history](/document-management#get-document-version-history) |
+| `POST` | `/document/{id}/comment` | [Add comment to document](/document-management#add-comment-to-document) |
+| `GET` | `/document/{id}/comments` | [Get document comments](/document-management#get-document-comments) |
+| `POST` | `/document/bulk-actions` | [Bulk document operations](/document-management#bulk-actions) |
+| `GET` | `/document/folders` | [Get folder structure](/document-management#get-folder-structure) |
+| `GET` | `/document/search` | [Search documents](/document-management#search-documents) |
+
+---
+
+## Project Management
+
+### Project Operations
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/project` | [Get all projects](/project-management#get-all-projects) |
+| `POST` | `/project` | [Create a new project](/project-management#create-a-new-project) |
+| `GET` | `/project/{id}` | [Get a specific project](/project-management#get-a-specific-project) |
+| `PUT` | `/project/{id}` | [Update a project](/project-management#update-a-project) |
+| `DELETE` | `/project/{id}` | [Delete a project](/project-management#delete-a-project) |
+| `POST` | `/project/{id}/status-update` | [Update project status](/project-management#update-project-status) |
+| `POST` | `/project/{id}/assign-team` | [Assign team members to project](/project-management#assign-team-to-project) |
+| `GET` | `/project/{id}/team` | [Get project team members](/project-management#get-project-team) |
+| `GET` | `/project/{id}/analytics` | [Get project analytics](/project-management#get-project-analytics) |
+
+### Task Operations
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/project/{project_id}/task` | [Get all tasks in project](/project-management#get-all-tasks) |
+| `POST` | `/project/{project_id}/task` | [Create a new task](/project-management#create-a-new-task) |
+| `GET` | `/task/{id}` | [Get a specific task](/project-management#get-specific-task) |
+| `PUT` | `/task/{id}` | [Update a task](/project-management#update-task) |
+| `DELETE` | `/task/{id}` | [Delete a task](/project-management#delete-task) |
+| `POST` | `/task/{id}/assign` | [Assign task to team member](/project-management#assign-task) |
+| `POST` | `/task/{id}/status-update` | [Update task status](/project-management#update-task-status) |
+| `POST` | `/task/{id}/time-log` | [Log time spent on task](/project-management#log-time-spent-on-task) |
+| `GET` | `/task/{id}/time-logs` | [Get task time logs](/project-management#get-task-time-logs) |
+| `POST` | `/task/bulk-actions` | [Perform bulk task operations](/project-management#bulk-task-operations) |
+| `GET` | `/task/my-tasks` | [Get current user's tasks](/project-management#get-my-tasks) |
+
+---
+
+## HTTP Status Codes
+
+The API uses standard HTTP status codes to indicate the success or failure of requests:
+
+### Success Codes
+| Code | Status | Description |
+|------|--------|-------------|
+| `200` | OK | Request successful |
+| `201` | Created | Resource created successfully |
+| `204` | No Content | Request successful, no content returned |
+
+### Error Codes
+| Code | Status | Description |
+|------|--------|-------------|
+| `400` | Bad Request | Invalid request data |
+| `401` | Unauthorized | Authentication required |
+| `403` | Forbidden | Insufficient permissions |
+| `404` | Not Found | Resource not found |
+| `409` | Conflict | Resource conflict |
+| `422` | Validation Error | Request data validation failed |
+| `429` | Too Many Requests | Rate limit exceeded |
+| `500` | Internal Server Error | Server error |
+
+---
 
 ## Response Format
 
-All API responses are returned in JSON format:
+All API responses follow a consistent JSON structure:
 
+### Success Response
 ```json
 {
   "success": true,
   "data": {},
-  "message": "Operation successful"
+  "message": "Operation completed successfully",
+  "meta": {
+    "current_page": 1,
+    "per_page": 50,
+    "total": 100,
+    "total_pages": 2
+  }
 }
 ```
+
+### Error Response
+```json
+{
+  "success": false,
+  "error": "Error Type",
+  "message": "Detailed error message",
+  "errors": {
+    "field_name": ["Field specific error message"]
+  },
+  "status_code": 422
+}
+```
+
+---
+
+## Rate Limiting
+
+The API implements rate limiting to ensure fair usage:
+
+- **Standard Rate Limit**: 1000 requests per hour per API key
+- **Burst Limit**: 100 requests per minute per API key
+- **File Upload Limit**: 50 uploads per hour per API key
+
+Rate limit headers are included in all responses:
+```http
+X-RateLimit-Limit: 1000
+X-RateLimit-Remaining: 999
+X-RateLimit-Reset: 1640995200
+```
+
+---
+
+## Pagination
+
+Endpoints that return multiple items support pagination:
+
+### Request Parameters
+- `page`: Page number (default: 1)
+- `limit`: Items per page (default: 50, max: 100)
+
+### Response Meta Data
+```json
+{
+  "meta": {
+    "current_page": 1,
+    "per_page": 50,
+    "total": 250,
+    "total_pages": 5
+  }
+}
+```
+
+---
+
+## Filtering and Sorting
+
+Many endpoints support filtering and sorting parameters:
+
+### Common Filter Parameters
+- `search`: Text search across relevant fields
+- `status`: Filter by status
+- `date_from`: Filter from date (YYYY-MM-DD)
+- `date_to`: Filter to date (YYYY-MM-DD)
+- `created_at`: Filter by creation date
+
+### Sorting Parameters
+- `sort`: Field to sort by
+- `order`: Sort direction (`asc` or `desc`)
+
+Example:
+```
+GET /api/public-v1/contact?search=john&status=active&sort=created_at&order=desc
+```
+
+---
+
+## Webhooks
+
+TaskIP API supports webhooks for real-time event notifications. Configure webhooks in your account settings to receive HTTP POST requests when specific events occur.
+
+### Supported Events
+- `contact.created`, `contact.updated`, `contact.deleted`
+- `company.created`, `company.updated`, `company.deleted`
+- `invoice.created`, `invoice.sent`, `invoice.paid`
+- `quotation.created`, `quotation.accepted`, `quotation.rejected`
+- `ticket.created`, `ticket.assigned`, `ticket.resolved`
+- `project.created`, `project.completed`
+- `task.created`, `task.completed`
+
+### Webhook Payload
+```json
+{
+  "event": "invoice.paid",
+  "timestamp": "2024-01-20T10:30:00Z",
+  "data": {
+    "invoice_id": 123,
+    "amount": 1500.00,
+    "client_id": 45
+  }
+}
+```
+
+---
+
+## Support
+
+### API Support
+- **Documentation**: This documentation site
+- **Support Email**: contact@taskip.net
+- **Status Page**: [https://status.taskip.com](https://status.taskip.com)
+
+### Rate Limit Increases
+For higher rate limits, contact our support team with your use case and current API usage patterns.
+
+import { Callout } from 'nextra-theme-docs'
+
+<Callout type="info" emoji="💡">
+  **Tip**: Bookmark this API Reference page for quick access to all available endpoints. Each endpoint links to detailed documentation with examples and response schemas.
+</Callout>

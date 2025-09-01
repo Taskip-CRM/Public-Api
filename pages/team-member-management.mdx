@@ -1,0 +1,613 @@
+# Team Member Management API
+
+The Team Member Management API allows you to manage team members and users in your TaskIP system. You can create, read, update, and delete team members, as well as perform bulk operations.
+
+## Endpoints Overview
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/public-v1/team-member` | Get all team members |
+| `POST` | `/api/public-v1/team-member` | Create a new team member |
+| `GET` | `/api/public-v1/team-member/{id}` | Get a specific team member |
+| `PUT` | `/api/public-v1/team-member/{id}` | Update a team member |
+| `DELETE` | `/api/public-v1/team-member/{id}` | Delete a team member |
+| `POST` | `/api/public-v1/team-member/bulk-delete` | Delete multiple team members |
+
+---
+
+## Get All Team Members
+
+Retrieve a list of all team members in your system.
+
+```http
+GET /api/public-v1/team-member
+```
+
+### Request Headers
+```http
+X-Secret-Key: your-secret-key-here
+Content-Type: application/json
+```
+
+### Query Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `page` | integer | No | Page number for pagination (default: 1) |
+| `limit` | integer | No | Number of team members per page (default: 50) |
+| `search` | string | No | Search term for name or email |
+| `sort` | string | No | Sort field (`name`, `email`, `role`, `created_at`) |
+| `order` | string | No | Sort order (`asc` or `desc`) |
+| `role` | string | No | Filter by role |
+| `status` | string | No | Filter by status (`active`, `inactive`, `pending`) |
+| `department` | string | No | Filter by department |
+
+### Example Request
+
+```bash
+curl -X GET "https://public-api.taskip.net/api/public-v1/team-member?page=1&limit=20&role=developer" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json"
+```
+
+### JavaScript Example
+```javascript
+const response = await fetch('https://public-api.taskip.net/api/public-v1/team-member?status=active', {
+  method: 'GET',
+  headers: {
+    'X-Secret-Key': 'your-secret-key-here',
+    'Content-Type': 'application/json'
+  }
+});
+
+const teamMembers = await response.json();
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "name": "John Smith",
+      "email": "john.smith@taskip.com",
+      "username": "john.smith",
+      "role": "admin",
+      "department": "Engineering",
+      "position": "Senior Developer",
+      "phone": "+1-555-0150",
+      "avatar": "https://your-domain.com/avatars/john-smith.jpg",
+      "status": "active",
+      "timezone": "America/New_York",
+      "last_login": "2024-01-25T08:30:00Z",
+      "permissions": ["project.create", "project.edit", "user.manage"],
+      "project_count": 8,
+      "task_count": 25,
+      "created_at": "2024-01-01T09:00:00Z",
+      "updated_at": "2024-01-20T14:30:00Z"
+    },
+    {
+      "id": 2,
+      "name": "Sarah Davis",
+      "email": "sarah.davis@taskip.com",
+      "username": "sarah.davis",
+      "role": "project_manager",
+      "department": "Operations",
+      "position": "Project Manager",
+      "phone": "+1-555-0151",
+      "avatar": "https://your-domain.com/avatars/sarah-davis.jpg",
+      "status": "active",
+      "timezone": "America/Los_Angeles",
+      "last_login": "2024-01-24T16:45:00Z",
+      "permissions": ["project.create", "project.edit", "project.view"],
+      "project_count": 12,
+      "task_count": 18,
+      "created_at": "2024-01-02T10:15:00Z",
+      "updated_at": "2024-01-22T11:20:00Z"
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "per_page": 20,
+    "total": 25,
+    "total_pages": 2
+  }
+}
+```
+
+---
+
+## Create a Team Member
+
+Create a new team member in your system.
+
+```http
+POST /api/public-v1/team-member
+```
+
+### Request Headers
+```http
+X-Secret-Key: your-secret-key-here
+Content-Type: application/json
+```
+
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | string | Yes | Team member's full name |
+| `email` | string | Yes | Team member's email address |
+| `username` | string | No | Username (auto-generated if not provided) |
+| `password` | string | Yes | Initial password |
+| `role` | string | Yes | User role (`admin`, `project_manager`, `developer`, `designer`, `client`) |
+| `department` | string | No | Department name |
+| `position` | string | No | Job position/title |
+| `phone` | string | No | Phone number |
+| `timezone` | string | No | Timezone (default: system timezone) |
+| `status` | string | No | Status (`active`, `inactive`, `pending`) |
+| `permissions` | array | No | Array of permission strings |
+| `send_invitation` | boolean | No | Send welcome email (default: true) |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/team-member" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Alice Johnson",
+    "email": "alice.johnson@taskip.com",
+    "username": "alice.johnson",
+    "password": "TempPassword123!",
+    "role": "developer",
+    "department": "Engineering",
+    "position": "Frontend Developer",
+    "phone": "+1-555-0152",
+    "timezone": "America/Chicago",
+    "status": "active",
+    "permissions": ["project.view", "project.edit", "task.create", "task.edit"],
+    "send_invitation": true
+  }'
+```
+
+### Python Example
+```python
+import requests
+
+headers = {
+    'X-Secret-Key': 'your-secret-key-here',
+    'Content-Type': 'application/json'
+}
+
+team_member_data = {
+    "name": "Alice Johnson",
+    "email": "alice.johnson@taskip.com",
+    "username": "alice.johnson",
+    "password": "TempPassword123!",
+    "role": "developer",
+    "department": "Engineering",
+    "position": "Frontend Developer",
+    "phone": "+1-555-0152",
+    "timezone": "America/Chicago",
+    "status": "active",
+    "permissions": ["project.view", "project.edit", "task.create", "task.edit"],
+    "send_invitation": True
+}
+
+response = requests.post(
+    'https://public-api.taskip.net/api/public-v1/team-member',
+    headers=headers,
+    json=team_member_data
+)
+
+result = response.json()
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "message": "Team member created successfully",
+  "data": {
+    "id": 26,
+    "name": "Alice Johnson",
+    "email": "alice.johnson@taskip.com",
+    "username": "alice.johnson",
+    "role": "developer",
+    "department": "Engineering",
+    "position": "Frontend Developer",
+    "phone": "+1-555-0152",
+    "avatar": null,
+    "status": "active",
+    "timezone": "America/Chicago",
+    "last_login": null,
+    "permissions": ["project.view", "project.edit", "task.create", "task.edit"],
+    "project_count": 0,
+    "task_count": 0,
+    "invitation_sent": true,
+    "created_at": "2024-01-25T11:45:00Z",
+    "updated_at": "2024-01-25T11:45:00Z"
+  }
+}
+```
+
+---
+
+## Get a Specific Team Member
+
+Retrieve details of a specific team member by ID.
+
+```http
+GET /api/public-v1/team-member/{id}
+```
+
+### Path Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | integer | Yes | Team member ID |
+
+### Example Request
+
+```bash
+curl -X GET "https://public-api.taskip.net/api/public-v1/team-member/26" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json"
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": 26,
+    "name": "Alice Johnson",
+    "email": "alice.johnson@taskip.com",
+    "username": "alice.johnson",
+    "role": "developer",
+    "department": "Engineering",
+    "position": "Frontend Developer",
+    "phone": "+1-555-0152",
+    "avatar": "https://your-domain.com/avatars/alice-johnson.jpg",
+    "status": "active",
+    "timezone": "America/Chicago",
+    "last_login": "2024-01-25T14:20:00Z",
+    "permissions": ["project.view", "project.edit", "task.create", "task.edit"],
+    "bio": "Frontend developer with 5 years of experience in React and Vue.js",
+    "skills": ["JavaScript", "React", "Vue.js", "HTML", "CSS"],
+    "projects": [
+      {
+        "id": 101,
+        "name": "E-commerce Platform",
+        "role": "Frontend Developer"
+      },
+      {
+        "id": 102,
+        "name": "Mobile App UI",
+        "role": "UI Developer"
+      }
+    ],
+    "recent_tasks": [
+      {
+        "id": 501,
+        "title": "Implement user dashboard",
+        "status": "in_progress"
+      },
+      {
+        "id": 502,
+        "title": "Fix responsive layout issues",
+        "status": "completed"
+      }
+    ],
+    "project_count": 2,
+    "task_count": 8,
+    "created_at": "2024-01-25T11:45:00Z",
+    "updated_at": "2024-01-25T14:20:00Z"
+  }
+}
+```
+
+---
+
+## Update a Team Member
+
+Update an existing team member's information.
+
+```http
+PUT /api/public-v1/team-member/{id}
+```
+
+### Path Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | integer | Yes | Team member ID to update |
+
+### Request Body
+Same fields as create team member (except password). All fields are optional - only include fields you want to update.
+
+### Example Request
+
+```bash
+curl -X PUT "https://public-api.taskip.net/api/public-v1/team-member/26" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "position": "Senior Frontend Developer",
+    "department": "Engineering",
+    "permissions": ["project.view", "project.edit", "project.create", "task.create", "task.edit"],
+    "bio": "Senior frontend developer with 5+ years of experience in React, Vue.js, and modern JavaScript frameworks"
+  }'
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "message": "Team member updated successfully",
+  "data": {
+    "id": 26,
+    "name": "Alice Johnson",
+    "email": "alice.johnson@taskip.com",
+    "username": "alice.johnson",
+    "role": "developer",
+    "department": "Engineering",
+    "position": "Senior Frontend Developer",
+    "phone": "+1-555-0152",
+    "avatar": "https://your-domain.com/avatars/alice-johnson.jpg",
+    "status": "active",
+    "timezone": "America/Chicago",
+    "last_login": "2024-01-25T14:20:00Z",
+    "permissions": ["project.view", "project.edit", "project.create", "task.create", "task.edit"],
+    "bio": "Senior frontend developer with 5+ years of experience in React, Vue.js, and modern JavaScript frameworks",
+    "project_count": 2,
+    "task_count": 8,
+    "created_at": "2024-01-25T11:45:00Z",
+    "updated_at": "2024-01-26T10:15:00Z"
+  }
+}
+```
+
+---
+
+## Delete a Team Member
+
+Delete a specific team member from your system.
+
+```http
+DELETE /api/public-v1/team-member/{id}
+```
+
+### Path Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | integer | Yes | Team member ID to delete |
+
+import { Callout } from 'nextra-theme-docs'
+
+<Callout type="warning" emoji="⚠️">
+  **Warning**: Deleting a team member will transfer their assigned tasks and projects to the system administrator. This action cannot be undone.
+</Callout>
+
+### Example Request
+
+```bash
+curl -X DELETE "https://public-api.taskip.net/api/public-v1/team-member/26" \
+  -H "X-Secret-Key: your-secret-key-here"
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "message": "Team member deleted successfully",
+  "data": {
+    "deleted_member_id": 26,
+    "transferred_projects": 2,
+    "transferred_tasks": 8,
+    "transferred_to": "System Administrator"
+  }
+}
+```
+
+---
+
+## Bulk Delete Team Members
+
+Delete multiple team members at once.
+
+```http
+POST /api/public-v1/team-member/bulk-delete
+```
+
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `member_ids` | array | Yes | Array of team member IDs to delete |
+| `transfer_to` | integer | No | User ID to transfer assignments to |
+| `notify_members` | boolean | No | Send notification emails (default: true) |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/team-member/bulk-delete" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "member_ids": [24, 25, 27, 28],
+    "transfer_to": 1,
+    "notify_members": true
+  }'
+```
+
+### JavaScript Example
+```javascript
+const bulkDeleteData = {
+  member_ids: [24, 25, 27, 28],
+  transfer_to: 1,
+  notify_members: true
+};
+
+const response = await fetch('https://public-api.taskip.net/api/public-v1/team-member/bulk-delete', {
+  method: 'POST',
+  headers: {
+    'X-Secret-Key': 'your-secret-key-here',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify(bulkDeleteData)
+});
+
+const result = await response.json();
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "message": "4 team members deleted successfully",
+  "data": {
+    "deleted_count": 4,
+    "deleted_ids": [24, 25, 27, 28],
+    "failed_ids": [],
+    "total_projects_transferred": 6,
+    "total_tasks_transferred": 22,
+    "transferred_to": {
+      "id": 1,
+      "name": "System Administrator"
+    }
+  }
+}
+```
+
+---
+
+## User Roles and Permissions
+
+### Available Roles
+
+| Role | Description | Default Permissions |
+|------|-------------|-------------------|
+| `admin` | Full system access | All permissions |
+| `project_manager` | Manage projects and teams | `project.*`, `task.*`, `team.view` |
+| `developer` | Development work | `project.view`, `task.*`, `time.track` |
+| `designer` | Design work | `project.view`, `task.*`, `file.upload` |
+| `client` | Client access | `project.view`, `invoice.view` |
+
+### Permission Categories
+
+| Category | Permissions | Description |
+|----------|------------|-------------|
+| **Project** | `project.view`, `project.create`, `project.edit`, `project.delete` | Project management |
+| **Task** | `task.view`, `task.create`, `task.edit`, `task.delete`, `task.assign` | Task management |
+| **User** | `user.view`, `user.create`, `user.edit`, `user.delete` | User management |
+| **Invoice** | `invoice.view`, `invoice.create`, `invoice.edit`, `invoice.send` | Invoice management |
+| **Report** | `report.view`, `report.generate`, `report.export` | Reporting |
+
+---
+
+## Error Responses
+
+### Common Error Codes
+
+| Status Code | Error Type | Description |
+|-------------|------------|-------------|
+| `400` | Bad Request | Invalid request data or missing required fields |
+| `401` | Unauthorized | Invalid or missing X-Secret-Key |
+| `403` | Forbidden | Insufficient permissions |
+| `404` | Not Found | Team member not found |
+| `409` | Conflict | Email or username already exists |
+| `422` | Validation Error | Request data failed validation |
+| `429` | Too Many Requests | Rate limit exceeded |
+
+### Example Error Response
+
+```json
+{
+  "success": false,
+  "error": "Validation Error",
+  "message": "The given data was invalid",
+  "errors": {
+    "email": ["The email field is required.", "The email must be a valid email address."],
+    "role": ["The selected role is invalid."],
+    "permissions": ["Invalid permission: invalid.permission"]
+  },
+  "status_code": 422
+}
+```
+
+---
+
+## Response Schemas
+
+### Team Member Object
+
+```json
+{
+  "id": "integer",
+  "name": "string",
+  "email": "string",
+  "username": "string",
+  "role": "string",
+  "department": "string|null",
+  "position": "string|null",
+  "phone": "string|null",
+  "avatar": "string|null",
+  "status": "string",
+  "timezone": "string",
+  "last_login": "string|null (ISO 8601)",
+  "permissions": "array",
+  "bio": "string|null",
+  "skills": "array|null",
+  "projects": "array|null",
+  "recent_tasks": "array|null",
+  "project_count": "integer",
+  "task_count": "integer",
+  "created_at": "string (ISO 8601)",
+  "updated_at": "string (ISO 8601)"
+}
+```
+
+### Project Summary Object (in team member details)
+
+```json
+{
+  "id": "integer",
+  "name": "string",
+  "role": "string"
+}
+```
+
+### Task Summary Object (in team member details)
+
+```json
+{
+  "id": "integer",
+  "title": "string",
+  "status": "string"
+}
+```
+
+---
+
+## Best Practices
+
+### Team Management
+1. **Role Assignment**: Assign appropriate roles based on job functions
+2. **Permission Control**: Use granular permissions for fine-tuned access control
+3. **Regular Reviews**: Periodically review team member access and permissions
+4. **Secure Passwords**: Enforce strong password policies
+
+### User Onboarding
+1. **Welcome Emails**: Use invitation emails for new team members
+2. **Profile Completion**: Encourage complete profile setup
+3. **Training Resources**: Provide system training and documentation
+4. **Access Reviews**: Regular access reviews and updates
+
+<Callout type="info" emoji="💡">
+  **Tip**: Use the department filter in the GET /team-member endpoint to organize team members by department. This is particularly useful for larger organizations with multiple departments and teams.
+</Callout>

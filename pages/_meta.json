@@ -1,6 +1,14 @@
 {
   "index": "Introduction",
   "authentication": "Authentication",
+  "contact-management": "Contact Management",
+  "company-management": "Company Management",
+  "team-member-management": "Team Member Management",
+  "invoice-management": "Invoice Management",
+  "quotation-management": "Quotation Management",
+  "support-ticket-management": "Support Ticket Management",
+  "document-management": "Document Management",
+  "project-management": "Project Management",
   "api-reference": "API Reference",
   "examples": "Examples",
   "about": {

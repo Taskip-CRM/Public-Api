@@ -1,0 +1,1127 @@
+# Invoice Management API
+
+The Invoice Management API allows you to manage invoices in your TaskIP system. You can create, read, update, and delete invoices, as well as perform advanced operations like status updates, publishing, payment gateway integration, and recurring billing.
+
+## Endpoints Overview
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/public-v1/invoice` | Get all invoices |
+| `POST` | `/api/public-v1/invoice` | Create a new invoice |
+| `GET` | `/api/public-v1/invoice/{id}` | Get a specific invoice |
+| `PUT` | `/api/public-v1/invoice/{id}` | Update an invoice |
+| `DELETE` | `/api/public-v1/invoice/{id}` | Delete an invoice |
+| `POST` | `/api/public-v1/invoice/bulk-actions` | Bulk operations on invoices |
+| `POST` | `/api/public-v1/invoice/{id}/status-update` | Update invoice status |
+| `POST` | `/api/public-v1/invoice/publish/{id}` | Publish/unpublish invoice |
+| `POST` | `/api/public-v1/invoice/{id}/payment-gateway` | Update payment gateway |
+| `POST` | `/api/public-v1/invoice/{id}/recurring` | Set up recurring payments |
+| `GET` | `/api/public-v1/invoice/{id}/download` | Download invoice PDF |
+| `POST` | `/api/public-v1/invoice/sent/{id}` | Send invoice to client |
+
+---
+
+## Get All Invoices
+
+Retrieve a list of all invoices in your system.
+
+```http
+GET /api/public-v1/invoice
+```
+
+### Request Headers
+```http
+X-Secret-Key: your-secret-key-here
+Content-Type: application/json
+```
+
+### Query Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `page` | integer | No | Page number for pagination (default: 1) |
+| `limit` | integer | No | Number of invoices per page (default: 50) |
+| `search` | string | No | Search term for invoice number or client |
+| `status` | string | No | Filter by status (`draft`, `sent`, `paid`, `overdue`, `cancelled`) |
+| `client_id` | integer | No | Filter by client/contact ID |
+| `date_from` | string | No | Filter by date range (start date, YYYY-MM-DD) |
+| `date_to` | string | No | Filter by date range (end date, YYYY-MM-DD) |
+| `sort` | string | No | Sort field (`invoice_number`, `amount`, `date`, `due_date`) |
+| `order` | string | No | Sort order (`asc` or `desc`) |
+
+### Example Request
+
+```bash
+curl -X GET "https://public-api.taskip.net/api/public-v1/invoice?status=sent&page=1&limit=20" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json"
+```
+
+### JavaScript Example
+```javascript
+const response = await fetch('https://public-api.taskip.net/api/public-v1/invoice?status=sent&date_from=2024-01-01', {
+  method: 'GET',
+  headers: {
+    'X-Secret-Key': 'your-secret-key-here',
+    'Content-Type': 'application/json'
+  }
+});
+
+const invoices = await response.json();
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "invoice_number": "INV-2024-001",
+      "client_id": 15,
+      "client_name": "Acme Corporation",
+      "client_email": "billing@acme.com",
+      "status": "sent",
+      "amount": 2500.00,
+      "tax_amount": 250.00,
+      "total_amount": 2750.00,
+      "currency": "USD",
+      "issue_date": "2024-01-15",
+      "due_date": "2024-02-14",
+      "payment_terms": "Net 30",
+      "description": "Website Development Services - January 2024",
+      "is_recurring": false,
+      "payment_gateway": "stripe",
+      "items": [
+        {
+          "id": 1,
+          "description": "Frontend Development",
+          "quantity": 80,
+          "unit_price": 25.00,
+          "total": 2000.00
+        },
+        {
+          "id": 2,
+          "description": "Backend Integration",
+          "quantity": 20,
+          "unit_price": 25.00,
+          "total": 500.00
+        }
+      ],
+      "payments": [],
+      "sent_count": 1,
+      "last_sent": "2024-01-15T09:30:00Z",
+      "created_at": "2024-01-15T09:00:00Z",
+      "updated_at": "2024-01-15T09:30:00Z"
+    },
+    {
+      "id": 2,
+      "invoice_number": "INV-2024-002",
+      "client_id": 22,
+      "client_name": "Tech Solutions Inc",
+      "client_email": "finance@techsolutions.com",
+      "status": "paid",
+      "amount": 1800.00,
+      "tax_amount": 180.00,
+      "total_amount": 1980.00,
+      "currency": "USD",
+      "issue_date": "2024-01-10",
+      "due_date": "2024-02-09",
+      "payment_terms": "Net 30",
+      "description": "Mobile App Development - Phase 1",
+      "is_recurring": false,
+      "payment_gateway": "paypal",
+      "payments": [
+        {
+          "id": 1,
+          "amount": 1980.00,
+          "payment_date": "2024-01-25T14:20:00Z",
+          "payment_method": "credit_card"
+        }
+      ],
+      "sent_count": 2,
+      "last_sent": "2024-01-20T10:15:00Z",
+      "created_at": "2024-01-10T11:30:00Z",
+      "updated_at": "2024-01-25T14:20:00Z"
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "per_page": 20,
+    "total": 156,
+    "total_pages": 8
+  },
+  "summary": {
+    "total_amount": 245680.50,
+    "paid_amount": 185420.75,
+    "outstanding_amount": 60259.75
+  }
+}
+```
+
+---
+
+## Create an Invoice
+
+Create a new invoice in your system.
+
+```http
+POST /api/public-v1/invoice
+```
+
+### Request Headers
+```http
+X-Secret-Key: your-secret-key-here
+Content-Type: application/json
+```
+
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `client_id` | integer | Yes | Client/contact ID |
+| `invoice_number` | string | No | Invoice number (auto-generated if not provided) |
+| `issue_date` | string | No | Issue date (YYYY-MM-DD, default: today) |
+| `due_date` | string | Yes | Due date (YYYY-MM-DD) |
+| `payment_terms` | string | No | Payment terms (e.g., "Net 30") |
+| `description` | string | No | Invoice description |
+| `currency` | string | No | Currency code (default: USD) |
+| `tax_rate` | decimal | No | Tax rate percentage (default: 0) |
+| `discount_amount` | decimal | No | Discount amount (default: 0) |
+| `notes` | string | No | Invoice notes |
+| `items` | array | Yes | Array of invoice items |
+| `payment_gateway` | string | No | Payment gateway (`stripe`, `paypal`, `bank_transfer`) |
+| `status` | string | No | Initial status (`draft`, `sent`) |
+
+### Invoice Item Object
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `description` | string | Yes | Item description |
+| `quantity` | decimal | Yes | Item quantity |
+| `unit_price` | decimal | Yes | Price per unit |
+| `tax_rate` | decimal | No | Item-specific tax rate |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/invoice" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "client_id": 30,
+    "due_date": "2024-02-25",
+    "payment_terms": "Net 30",
+    "description": "Q1 2024 Marketing Services",
+    "currency": "USD",
+    "tax_rate": 8.5,
+    "notes": "Thank you for your business!",
+    "payment_gateway": "stripe",
+    "status": "draft",
+    "items": [
+      {
+        "description": "Social Media Management",
+        "quantity": 3,
+        "unit_price": 800.00
+      },
+      {
+        "description": "Content Creation",
+        "quantity": 10,
+        "unit_price": 150.00
+      },
+      {
+        "description": "Analytics & Reporting",
+        "quantity": 1,
+        "unit_price": 500.00
+      }
+    ]
+  }'
+```
+
+### Python Example
+```python
+import requests
+from datetime import datetime, timedelta
+
+headers = {
+    'X-Secret-Key': 'your-secret-key-here',
+    'Content-Type': 'application/json'
+}
+
+# Calculate due date (30 days from now)
+due_date = (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d')
+
+invoice_data = {
+    "client_id": 30,
+    "due_date": due_date,
+    "payment_terms": "Net 30",
+    "description": "Q1 2024 Marketing Services",
+    "currency": "USD",
+    "tax_rate": 8.5,
+    "notes": "Thank you for your business!",
+    "payment_gateway": "stripe",
+    "status": "draft",
+    "items": [
+        {
+            "description": "Social Media Management",
+            "quantity": 3,
+            "unit_price": 800.00
+        },
+        {
+            "description": "Content Creation", 
+            "quantity": 10,
+            "unit_price": 150.00
+        },
+        {
+            "description": "Analytics & Reporting",
+            "quantity": 1,
+            "unit_price": 500.00
+        }
+    ]
+}
+
+response = requests.post(
+    'https://public-api.taskip.net/api/public-v1/invoice',
+    headers=headers,
+    json=invoice_data
+)
+
+result = response.json()
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "message": "Invoice created successfully",
+  "data": {
+    "id": 157,
+    "invoice_number": "INV-2024-157",
+    "client_id": 30,
+    "client_name": "Digital Marketing Pro",
+    "client_email": "billing@digitalmarketingpro.com",
+    "status": "draft",
+    "amount": 3900.00,
+    "tax_amount": 331.50,
+    "discount_amount": 0.00,
+    "total_amount": 4231.50,
+    "currency": "USD",
+    "issue_date": "2024-01-26",
+    "due_date": "2024-02-25",
+    "payment_terms": "Net 30",
+    "description": "Q1 2024 Marketing Services",
+    "notes": "Thank you for your business!",
+    "is_recurring": false,
+    "payment_gateway": "stripe",
+    "items": [
+      {
+        "id": 401,
+        "description": "Social Media Management",
+        "quantity": 3.00,
+        "unit_price": 800.00,
+        "total": 2400.00
+      },
+      {
+        "id": 402,
+        "description": "Content Creation",
+        "quantity": 10.00,
+        "unit_price": 150.00,
+        "total": 1500.00
+      },
+      {
+        "id": 403,
+        "description": "Analytics & Reporting",
+        "quantity": 1.00,
+        "unit_price": 500.00,
+        "total": 500.00
+      }
+    ],
+    "payments": [],
+    "sent_count": 0,
+    "last_sent": null,
+    "created_at": "2024-01-26T10:30:00Z",
+    "updated_at": "2024-01-26T10:30:00Z"
+  }
+}
+```
+
+---
+
+## Get a Specific Invoice
+
+Retrieve details of a specific invoice by ID.
+
+```http
+GET /api/public-v1/invoice/{id}
+```
+
+### Path Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | integer | Yes | Invoice ID |
+
+### Example Request
+
+```bash
+curl -X GET "https://public-api.taskip.net/api/public-v1/invoice/157" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json"
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": 157,
+    "invoice_number": "INV-2024-157",
+    "client_id": 30,
+    "client_name": "Digital Marketing Pro",
+    "client_email": "billing@digitalmarketingpro.com",
+    "client_address": "456 Marketing Street, Los Angeles, CA 90210",
+    "status": "sent",
+    "amount": 3900.00,
+    "tax_amount": 331.50,
+    "discount_amount": 0.00,
+    "total_amount": 4231.50,
+    "currency": "USD",
+    "issue_date": "2024-01-26",
+    "due_date": "2024-02-25",
+    "payment_terms": "Net 30",
+    "description": "Q1 2024 Marketing Services",
+    "notes": "Thank you for your business!",
+    "is_recurring": false,
+    "recurring_frequency": null,
+    "next_recurring_date": null,
+    "payment_gateway": "stripe",
+    "payment_link": "https://checkout.stripe.com/pay/cs_test_abc123",
+    "items": [
+      {
+        "id": 401,
+        "description": "Social Media Management",
+        "quantity": 3.00,
+        "unit_price": 800.00,
+        "tax_rate": 8.5,
+        "total": 2400.00
+      },
+      {
+        "id": 402,
+        "description": "Content Creation",
+        "quantity": 10.00,
+        "unit_price": 150.00,
+        "tax_rate": 8.5,
+        "total": 1500.00
+      }
+    ],
+    "payments": [],
+    "payment_history": [],
+    "email_history": [
+      {
+        "sent_at": "2024-01-26T11:15:00Z",
+        "sent_to": "billing@digitalmarketingpro.com",
+        "status": "delivered"
+      }
+    ],
+    "sent_count": 1,
+    "last_sent": "2024-01-26T11:15:00Z",
+    "pdf_url": "https://your-domain.com/invoices/157/pdf",
+    "public_url": "https://your-domain.com/invoices/public/abc123def456",
+    "created_at": "2024-01-26T10:30:00Z",
+    "updated_at": "2024-01-26T11:15:00Z"
+  }
+}
+```
+
+---
+
+## Update an Invoice
+
+Update an existing invoice.
+
+```http
+PUT /api/public-v1/invoice/{id}
+```
+
+### Path Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | integer | Yes | Invoice ID to update |
+
+### Request Body
+Same fields as create invoice. All fields are optional - only include fields you want to update.
+
+import { Callout } from 'nextra-theme-docs'
+
+<Callout type="warning" emoji="⚠️">
+  **Note**: You cannot update invoices that have been paid. Only draft and sent invoices can be modified.
+</Callout>
+
+### Example Request
+
+```bash
+curl -X PUT "https://public-api.taskip.net/api/public-v1/invoice/157" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "due_date": "2024-03-01",
+    "notes": "Updated payment terms. Thank you for your business!",
+    "items": [
+      {
+        "id": 401,
+        "description": "Social Media Management (Updated)",
+        "quantity": 3,
+        "unit_price": 850.00
+      },
+      {
+        "id": 402,
+        "description": "Content Creation",
+        "quantity": 10,
+        "unit_price": 150.00
+      },
+      {
+        "description": "SEO Optimization",
+        "quantity": 2,
+        "unit_price": 400.00
+      }
+    ]
+  }'
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "message": "Invoice updated successfully",
+  "data": {
+    "id": 157,
+    "invoice_number": "INV-2024-157",
+    "status": "sent",
+    "amount": 4250.00,
+    "tax_amount": 361.25,
+    "total_amount": 4611.25,
+    "due_date": "2024-03-01",
+    "notes": "Updated payment terms. Thank you for your business!",
+    "items": [
+      {
+        "id": 401,
+        "description": "Social Media Management (Updated)",
+        "quantity": 3.00,
+        "unit_price": 850.00,
+        "total": 2550.00
+      },
+      {
+        "id": 402,
+        "description": "Content Creation",
+        "quantity": 10.00,
+        "unit_price": 150.00,
+        "total": 1500.00
+      },
+      {
+        "id": 404,
+        "description": "SEO Optimization",
+        "quantity": 2.00,
+        "unit_price": 400.00,
+        "total": 800.00
+      }
+    ],
+    "updated_at": "2024-01-26T14:20:00Z"
+  }
+}
+```
+
+---
+
+## Delete an Invoice
+
+Delete a specific invoice from your system.
+
+```http
+DELETE /api/public-v1/invoice/{id}
+```
+
+### Path Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | integer | Yes | Invoice ID to delete |
+
+<Callout type="warning" emoji="⚠️">
+  **Warning**: You cannot delete invoices that have been paid or partially paid. Only draft and sent invoices can be deleted.
+</Callout>
+
+### Example Request
+
+```bash
+curl -X DELETE "https://public-api.taskip.net/api/public-v1/invoice/157" \
+  -H "X-Secret-Key: your-secret-key-here"
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "message": "Invoice deleted successfully"
+}
+```
+
+---
+
+## Bulk Actions on Invoices
+
+Perform bulk operations on multiple invoices.
+
+```http
+POST /api/public-v1/invoice/bulk-actions
+```
+
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `invoice_ids` | array | Yes | Array of invoice IDs |
+| `action` | string | Yes | Action to perform (`delete`, `send`, `mark_sent`, `mark_paid`) |
+| `data` | object | No | Additional data for specific actions |
+
+### Available Actions
+
+| Action | Description | Additional Data |
+|--------|-------------|-----------------|
+| `delete` | Delete invoices | None |
+| `send` | Send invoices via email | `email_template` (optional) |
+| `mark_sent` | Mark as sent | None |
+| `mark_paid` | Mark as paid | `payment_date`, `payment_method` |
+
+### Example Request - Send Multiple Invoices
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/invoice/bulk-actions" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "invoice_ids": [155, 156, 158, 159],
+    "action": "send",
+    "data": {
+      "email_template": "default"
+    }
+  }'
+```
+
+### Example Request - Mark as Paid
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/invoice/bulk-actions" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "invoice_ids": [160, 161, 162],
+    "action": "mark_paid",
+    "data": {
+      "payment_date": "2024-01-26",
+      "payment_method": "bank_transfer"
+    }
+  }'
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "message": "Bulk action completed successfully",
+  "data": {
+    "action": "send",
+    "processed_count": 4,
+    "successful_ids": [155, 156, 158, 159],
+    "failed_ids": [],
+    "results": [
+      {
+        "id": 155,
+        "status": "sent",
+        "sent_to": "client1@example.com"
+      },
+      {
+        "id": 156,
+        "status": "sent",
+        "sent_to": "client2@example.com"
+      }
+    ]
+  }
+}
+```
+
+---
+
+## Update Invoice Status
+
+Update the status of a specific invoice.
+
+```http
+POST /api/public-v1/invoice/{id}/status-update
+```
+
+### Path Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | integer | Yes | Invoice ID |
+
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `status` | string | Yes | New status (`draft`, `sent`, `paid`, `overdue`, `cancelled`) |
+| `payment_date` | string | No | Payment date (required for `paid` status) |
+| `payment_method` | string | No | Payment method (required for `paid` status) |
+| `payment_amount` | decimal | No | Payment amount (defaults to full amount) |
+| `notes` | string | No | Status update notes |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/invoice/157/status-update" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "paid",
+    "payment_date": "2024-01-26",
+    "payment_method": "credit_card",
+    "payment_amount": 4611.25,
+    "notes": "Payment received via Stripe"
+  }'
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "message": "Invoice status updated successfully",
+  "data": {
+    "id": 157,
+    "invoice_number": "INV-2024-157",
+    "status": "paid",
+    "payment_date": "2024-01-26",
+    "payment_method": "credit_card",
+    "amount_paid": 4611.25,
+    "remaining_balance": 0.00,
+    "updated_at": "2024-01-26T15:30:00Z"
+  }
+}
+```
+
+---
+
+## Publish/Unpublish Invoice
+
+Control the public visibility of an invoice.
+
+```http
+POST /api/public-v1/invoice/publish/{id}
+```
+
+### Path Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | integer | Yes | Invoice ID |
+
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `published` | boolean | Yes | Whether to publish (true) or unpublish (false) |
+| `public_notes` | string | No | Public notes visible to clients |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/invoice/publish/157" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "published": true,
+    "public_notes": "Please review and approve this invoice. Payment is due within 30 days."
+  }'
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "message": "Invoice published successfully",
+  "data": {
+    "id": 157,
+    "published": true,
+    "public_url": "https://your-domain.com/invoices/public/abc123def456",
+    "public_notes": "Please review and approve this invoice. Payment is due within 30 days.",
+    "published_at": "2024-01-26T16:00:00Z"
+  }
+}
+```
+
+---
+
+## Update Payment Gateway
+
+Configure payment gateway settings for an invoice.
+
+```http
+POST /api/public-v1/invoice/{id}/payment-gateway
+```
+
+### Path Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | integer | Yes | Invoice ID |
+
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `gateway` | string | Yes | Payment gateway (`stripe`, `paypal`, `square`, `bank_transfer`) |
+| `settings` | object | No | Gateway-specific settings |
+
+### Gateway Settings
+
+#### Stripe Settings
+```json
+{
+  "collect_shipping_address": true,
+  "allow_payment_methods": ["card", "apple_pay", "google_pay"],
+  "success_url": "https://yoursite.com/payment/success",
+  "cancel_url": "https://yoursite.com/payment/cancel"
+}
+```
+
+#### PayPal Settings
+```json
+{
+  "business_email": "business@yourcompany.com",
+  "return_url": "https://yoursite.com/payment/return",
+  "cancel_url": "https://yoursite.com/payment/cancel"
+}
+```
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/invoice/157/payment-gateway" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "gateway": "stripe",
+    "settings": {
+      "collect_shipping_address": false,
+      "allow_payment_methods": ["card", "apple_pay"],
+      "success_url": "https://yoursite.com/payment/success",
+      "cancel_url": "https://yoursite.com/payment/cancel"
+    }
+  }'
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "message": "Payment gateway updated successfully",
+  "data": {
+    "id": 157,
+    "payment_gateway": "stripe",
+    "payment_link": "https://checkout.stripe.com/pay/cs_test_new123",
+    "gateway_settings": {
+      "collect_shipping_address": false,
+      "allow_payment_methods": ["card", "apple_pay"],
+      "success_url": "https://yoursite.com/payment/success",
+      "cancel_url": "https://yoursite.com/payment/cancel"
+    }
+  }
+}
+```
+
+---
+
+## Set Up Recurring Payments
+
+Configure recurring billing for an invoice.
+
+```http
+POST /api/public-v1/invoice/{id}/recurring
+```
+
+### Path Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | integer | Yes | Invoice ID |
+
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `is_recurring` | boolean | Yes | Enable/disable recurring billing |
+| `frequency` | string | No | Frequency (`weekly`, `monthly`, `quarterly`, `yearly`) |
+| `interval` | integer | No | Interval (e.g., 2 for every 2 months) |
+| `end_date` | string | No | End date for recurring billing (YYYY-MM-DD) |
+| `max_cycles` | integer | No | Maximum number of billing cycles |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/invoice/157/recurring" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "is_recurring": true,
+    "frequency": "monthly",
+    "interval": 1,
+    "max_cycles": 12
+  }'
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "message": "Recurring payment configured successfully",
+  "data": {
+    "id": 157,
+    "is_recurring": true,
+    "recurring_frequency": "monthly",
+    "recurring_interval": 1,
+    "max_cycles": 12,
+    "cycles_completed": 0,
+    "next_billing_date": "2024-02-26",
+    "end_date": "2025-01-26"
+  }
+}
+```
+
+---
+
+## Download Invoice PDF
+
+Download a PDF version of an invoice.
+
+```http
+GET /api/public-v1/invoice/{id}/download
+```
+
+### Path Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | integer | Yes | Invoice ID |
+
+### Query Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `template` | string | No | PDF template (`default`, `minimal`, `detailed`) |
+
+### Example Request
+
+```bash
+curl -X GET "https://public-api.taskip.net/api/public-v1/invoice/157/download?template=detailed" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  --output invoice-157.pdf
+```
+
+### JavaScript Example
+```javascript
+const response = await fetch('https://public-api.taskip.net/api/public-v1/invoice/157/download', {
+  method: 'GET',
+  headers: {
+    'X-Secret-Key': 'your-secret-key-here'
+  }
+});
+
+if (response.ok) {
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'invoice-157.pdf';
+  a.click();
+}
+```
+
+### Response
+
+Returns a PDF file with appropriate headers:
+```http
+Content-Type: application/pdf
+Content-Disposition: attachment; filename="INV-2024-157.pdf"
+Content-Length: 85432
+```
+
+---
+
+## Send Invoice to Client
+
+Send an invoice via email to the client.
+
+```http
+POST /api/public-v1/invoice/sent/{id}
+```
+
+### Path Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | integer | Yes | Invoice ID |
+
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `email` | string | No | Custom email address (defaults to client email) |
+| `subject` | string | No | Email subject line |
+| `message` | string | No | Custom email message |
+| `template` | string | No | Email template (`default`, `reminder`, `overdue`) |
+| `attach_pdf` | boolean | No | Attach PDF to email (default: true) |
+| `send_copy_to_self` | boolean | No | Send copy to sender (default: false) |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/invoice/sent/157" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "subject": "Invoice INV-2024-157 - Q1 Marketing Services",
+    "message": "Dear Client,\n\nPlease find attached your invoice for Q1 marketing services. Payment is due within 30 days.\n\nBest regards,\nYour Marketing Team",
+    "template": "default",
+    "attach_pdf": true,
+    "send_copy_to_self": true
+  }'
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "message": "Invoice sent successfully",
+  "data": {
+    "id": 157,
+    "sent_to": "billing@digitalmarketingpro.com",
+    "sent_at": "2024-01-26T17:30:00Z",
+    "subject": "Invoice INV-2024-157 - Q1 Marketing Services",
+    "delivery_status": "sent",
+    "tracking_id": "email_abc123def456",
+    "sent_count": 2
+  }
+}
+```
+
+---
+
+## Error Responses
+
+### Common Error Codes
+
+| Status Code | Error Type | Description |
+|-------------|------------|-------------|
+| `400` | Bad Request | Invalid request data or missing required fields |
+| `401` | Unauthorized | Invalid or missing X-Secret-Key |
+| `403` | Forbidden | Operation not allowed (e.g., updating paid invoice) |
+| `404` | Not Found | Invoice not found |
+| `422` | Validation Error | Request data failed validation |
+| `429` | Too Many Requests | Rate limit exceeded |
+
+### Example Error Response
+
+```json
+{
+  "success": false,
+  "error": "Validation Error",
+  "message": "The given data was invalid",
+  "errors": {
+    "due_date": ["The due date must be a date after today."],
+    "items": ["At least one invoice item is required."],
+    "items.0.unit_price": ["The unit price must be greater than 0."]
+  },
+  "status_code": 422
+}
+```
+
+---
+
+## Response Schemas
+
+### Invoice Object
+
+```json
+{
+  "id": "integer",
+  "invoice_number": "string",
+  "client_id": "integer",
+  "client_name": "string",
+  "client_email": "string",
+  "status": "string",
+  "amount": "decimal",
+  "tax_amount": "decimal",
+  "discount_amount": "decimal",
+  "total_amount": "decimal",
+  "currency": "string",
+  "issue_date": "string (YYYY-MM-DD)",
+  "due_date": "string (YYYY-MM-DD)",
+  "payment_terms": "string",
+  "description": "string",
+  "notes": "string",
+  "is_recurring": "boolean",
+  "recurring_frequency": "string|null",
+  "payment_gateway": "string",
+  "items": "array",
+  "payments": "array",
+  "sent_count": "integer",
+  "last_sent": "string|null (ISO 8601)",
+  "created_at": "string (ISO 8601)",
+  "updated_at": "string (ISO 8601)"
+}
+```
+
+### Invoice Item Object
+
+```json
+{
+  "id": "integer",
+  "description": "string",
+  "quantity": "decimal",
+  "unit_price": "decimal",
+  "tax_rate": "decimal",
+  "total": "decimal"
+}
+```
+
+### Payment Object
+
+```json
+{
+  "id": "integer",
+  "amount": "decimal",
+  "payment_date": "string (ISO 8601)",
+  "payment_method": "string",
+  "transaction_id": "string|null"
+}
+```
+
+---
+
+## Best Practices
+
+### Invoice Management
+1. **Unique Numbers**: Use sequential or formatted invoice numbers
+2. **Clear Descriptions**: Provide detailed item descriptions
+3. **Payment Terms**: Set clear payment terms and due dates
+4. **Regular Follow-ups**: Use status tracking for overdue invoices
+
+### Automation
+1. **Recurring Billing**: Set up automated recurring invoices for subscriptions
+2. **Payment Reminders**: Use bulk actions for payment reminders
+3. **Gateway Integration**: Configure payment gateways for easy client payments
+4. **PDF Generation**: Provide professional PDF invoices
+
+<Callout type="info" emoji="💡">
+  **Tip**: Use the summary data in the GET /invoice endpoint to track your business financial metrics. The response includes total amounts, paid amounts, and outstanding balances for better financial oversight.
+</Callout>

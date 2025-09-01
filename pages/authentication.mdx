@@ -1,26 +1,131 @@
 # Authentication
 
-The TaskIP API uses API keys to authenticate requests. You can view and manage your API keys in the TaskIP Dashboard.
+The TaskIP Public API uses secret key authentication to secure all API requests. All requests must include a valid secret key in the request headers.
 
-## Getting Your API Key
+## Base URL
 
-1. Sign in to your TaskIP account
-2. Navigate to the API section
-3. Generate a new API key
-4. Store your API key securely
-
-## Using Your API Key
-
-Include your API key in all API requests using the `Authorization` header:
-
-```bash
-curl https://api.taskip.com/v1/tasks \
-  -H "Authorization: Bearer YOUR_API_KEY"
+All API requests should be made to:
 ```
+https://public-api.taskip.net/api/public-v1
+```
+
+## Authentication Method
+
+The TaskIP API uses the `X-Secret-Key` header for authentication. This is a simple and secure method that requires you to include your secret key with every API request.
+
+### Header Format
+```http
+X-Secret-Key: your-secret-key-here
+```
+
+## Getting Your Secret Key
+
+1. Log in to your TaskIP dashboard
+2. Navigate to **Settings** > **API Application**
+3. Click **Create App** to create a new API application
+4. Fill in the application details:
+   - **Title**: Enter a descriptive name for your application
+   - **Expired Date**: Optionally set an expiration date for security
+5. Click **Submit** to create the application
+6. Copy and securely store your secret key from the generated application
+7. Use this key in all your API requests
+
+import { Callout } from 'nextra-theme-docs'
+
+<Callout type="warning" emoji="⚠️">
+  **Important**: Your secret key provides full access to your TaskIP account via the API. Keep it secure and never share it publicly.
+</Callout>
+
+## Making Authenticated Requests
+
+### cURL Example
+```bash
+curl -X GET "https://public-api.taskip.net/api/public-v1/contact" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json"
+```
+
+### JavaScript Example
+```javascript
+const response = await fetch('https://public-api.taskip.net/api/public-v1/contact', {
+  method: 'GET',
+  headers: {
+    'X-Secret-Key': 'your-secret-key-here',
+    'Content-Type': 'application/json'
+  }
+});
+
+const data = await response.json();
+```
+
+### Python Example
+```python
+import requests
+
+headers = {
+    'X-Secret-Key': 'your-secret-key-here',
+    'Content-Type': 'application/json'
+}
+
+response = requests.get(
+    'https://public-api.taskip.net/api/public-v1/contact',
+    headers=headers
+)
+
+data = response.json()
+```
+
+## Authentication Errors
+
+If authentication fails, you'll receive a `401 Unauthorized` response:
+
+```json
+{
+  "error": "Unauthorized",
+  "message": "Invalid or missing X-Secret-Key header",
+  "status_code": 401
+}
+```
+
+### Common Authentication Issues
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| `401 Unauthorized` | Missing X-Secret-Key header | Include the header in your request |
+| `401 Unauthorized` | Invalid secret key | Verify your secret key is correct |
+| `403 Forbidden` | Secret key lacks permissions | Check your account permissions |
 
 ## Security Best Practices
 
-- Never expose your API keys in client-side code
-- Rotate your API keys regularly
-- Use environment variables to store API keys
-- Implement IP whitelisting when possible
+### ✅ Do's
+- Store your secret key in environment variables
+- Use HTTPS for all API requests
+- Rotate your secret keys periodically
+- Monitor API usage for unauthorized access
+- Implement proper error handling
+
+### ❌ Don'ts  
+- Never commit secret keys to version control
+- Don't expose keys in client-side code
+- Avoid logging secret keys in application logs
+- Don't share secret keys via email or chat
+
+## Rate Limiting
+
+API requests are subject to rate limiting:
+- **Rate Limit**: 1000 requests per hour per secret key
+- **Rate Limit Headers**: Check `X-RateLimit-Remaining` header
+- **Rate Limit Reset**: Check `X-RateLimit-Reset` header
+
+When rate limit is exceeded, you'll receive a `429 Too Many Requests` response.
+
+## Testing Authentication
+
+You can test your authentication setup with this simple request:
+
+```bash
+curl -X GET "https://public-api.taskip.net/api/public-v1/contact" \
+  -H "X-Secret-Key: your-secret-key-here"
+```
+
+A successful response indicates your authentication is working correctly.
