@@ -178,10 +178,10 @@ POST /api/public-v1/contact
     "timezone": "America/New_York",
     "access_portal": 1,
     "password": "secure123",
-    "custom_fields": {{
+    "custom_fields": {
       "department": "Marketing",
       "lead_source": "Website"
-    }},
+    },
     "invite_client": true
   }}
   description="Create a new contact with the required information. Modify the request body as needed."
@@ -358,11 +358,13 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/contact/151" \
   "data": {
     "id": 151,
     "user_id": 245,
-    "company_id": 7,
     "company": {
       "id": 7,
-      "name": "Marketing Pro"
+      "name": "Marketing Pro",
+      "domain": "marketingpro.com",
+      "email": "info@marketingpro.com"
     },
+    "company_id": 7,
     "first_name": "Alice",
     "last_name": "Johnson",
     "full_name": "Alice Johnson",
@@ -383,23 +385,47 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/contact/151" \
     "reference_name": "Conference Lead",
     "access_portal": 1,
     "billings": {
+      "id": 15,
+      "contact_id": 151,
       "billing_address": "123 Business Ave",
       "billing_city": "New York",
-      "billing_state": "New York",
+      "billing_state": "New York", 
       "billing_country": "United States",
-      "billing_zip": "12345"
+      "billing_zip": "12345",
+      "billing_phone": "555-0125",
+      "tax_number": "TX-123456789",
+      "created_at": "2024-01-25T11:20:00Z",
+      "updated_at": "2024-01-25T11:20:00Z"
     },
-    "languages": ["en"],
+    "languages": [
+      {
+        "id": 1,
+        "code": "en",
+        "name": "English",
+        "is_default": true
+      },
+      {
+        "id": 2,
+        "code": "es",
+        "name": "Spanish",
+        "is_default": false
+      }
+    ],
     "image": {
       "id": 42,
       "url": "https://taskip.net/storage/profile/alice-johnson.jpg",
-      "name": "alice-johnson.jpg"
+      "name": "alice-johnson.jpg",
+      "file_name": "alice-johnson.jpg",
+      "mime_type": "image/jpeg",
+      "size": 125843,
+      "collection_name": "profile"
     },
     "custom_fields": {
       "linkedin": "https://linkedin.com/in/alicejohnson",
       "preferred_contact": "email",
       "department": "Marketing",
-      "lead_source": "Conference"
+      "lead_source": "Conference",
+      "notes": "Met at industry conference 2024"
     }
   }
 }
