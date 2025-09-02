@@ -6,18 +6,18 @@ The Quotation Management API allows you to manage quotations/estimates in your T
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/api/public-v1/quotation` | Get all quotations |
-| `POST` | `/api/public-v1/quotation` | Create a new quotation |
-| `GET` | `/api/public-v1/quotation/{id}` | Get a specific quotation |
-| `PUT` | `/api/public-v1/quotation/{id}` | Update a quotation |
-| `DELETE` | `/api/public-v1/quotation/{id}` | Delete a quotation |
-| `POST` | `/api/public-v1/quotation/{id}/convert-to-invoice` | Convert quotation to invoice |
-| `POST` | `/api/public-v1/quotation/{id}/send-to-client` | Send quotation to client via email |
-| `POST` | `/api/public-v1/quotation/{id}/status-update` | Update quotation status |
-| `POST` | `/api/public-v1/quotation/publish/{id}` | Publish/unpublish quotation |
-| `GET` | `/api/public-v1/quotation/{id}/download` | Download quotation PDF |
-| `POST` | `/api/public-v1/quotation/sent/{id}` | Send quotation to client (rate limited) |
-| `POST` | `/api/public-v1/quotation/bulk-actions` | Perform bulk operations |
+| `GET` | [`/api/public-v1/quotation`](#get-all-quotations) | Get all quotations |
+| `POST` | [`/api/public-v1/quotation`](#create-a-quotation) | Create a new quotation |
+| `GET` | [`/api/public-v1/quotation/{id}`](#get-a-specific-quotation) | Get a specific quotation |
+| `PUT` | [`/api/public-v1/quotation/{id}`](#update-a-quotation) | Update a quotation |
+| `DELETE` | [`/api/public-v1/quotation/{id}`](#delete-a-quotation) | Delete a quotation |
+| `POST` | [`/api/public-v1/quotation/{id}/convert-to-invoice`](#convert-quotation-to-invoice) | Convert quotation to invoice |
+| `POST` | [`/api/public-v1/quotation/{id}/send-to-client`](#send-quotation-to-client-via-email) | Send quotation to client via email |
+| `POST` | [`/api/public-v1/quotation/{id}/status-update`](#update-quotation-status) | Update quotation status |
+| `POST` | [`/api/public-v1/quotation/publish/{id}`](#publish-unpublish-quotation) | Publish/unpublish quotation |
+| `GET` | [`/api/public-v1/quotation/{id}/download`](#download-quotation-pdf) | Download quotation PDF |
+| `POST` | [`/api/public-v1/quotation/sent/{id}`](#send-quotation-to-client-rate-limited) | Send quotation to client (rate limited) |
+| `POST` | [`/api/public-v1/quotation/bulk-actions`](#perform-bulk-operations) | Perform bulk operations |
 
 ---
 
@@ -73,43 +73,115 @@ const quotations = await response.json();
 
 ```json
 {
-  "success": true,
   "data": [
     {
       "id": 1,
-      "quotation_number": "QUO-2024-001",
-      "client_id": 15,
-      "client_name": "Acme Corporation",
-      "client_email": "billing@acme.com",
-      "issue_date": "2024-01-15",
-      "valid_until": "2024-02-14",
-      "status": "sent",
+      "quotation_no": "QUO-001",
+      "generatedId": "QUO-2024-001",
+      "slug": "abc123def456",
+      "company": {
+        "id": 15,
+        "name": "Acme Corporation",
+        "email": "billing@acme.com"
+      },
+      "folder_id": "5",
+      "folder": {
+        "id": 5,
+        "name": "Q1 2024 Quotations"
+      },
+      "contact_id": 45,
+      "contacts": {
+        "id": 45,
+        "first_name": "John",
+        "last_name": "Smith",
+        "email": "john@acme.com"
+      },
+      "subject": "Website Development Quotation",
+      "up_payment_status": true,
+      "up_payment_amount": "1000",
+      "up_payment_type": "fixed",
+      "turnaround_times": 30,
+      "expire_date": "2024-02-14",
       "currency": "USD",
       "subtotal": 4500.00,
-      "tax_rate": 10.00,
-      "tax_amount": 450.00,
-      "discount_amount": 0.00,
-      "total_amount": 4950.00,
-      "notes": "30-day validity period",
-      "terms_conditions": "Standard terms and conditions apply",
+      "tax": [
+        {
+          "id": 1,
+          "name": "VAT",
+          "rate": 10,
+          "amount": 450.00
+        }
+      ],
+      "currentNote": {
+        "id": "QUO-001",
+        "note": "Payment Terms",
+        "term": "50% upfront payment required"
+      },
+      "notes": [
+        {
+          "id": 1,
+          "title": "Payment Terms",
+          "description": "50% upfront payment required",
+          "enable": true,
+          "created_at": "2024-01-15T10:30:00Z",
+          "updated_at": "2024-01-15T10:30:00Z"
+        }
+      ],
+      "total": 4950.00,
       "items": [
         {
           "id": 1,
-          "description": "Web Development Services",
-          "quantity": 1,
-          "unit_price": 4500.00,
-          "line_total": 4500.00
+          "name": "Web Development Services",
+          "qty": 1,
+          "rate": 4500.00,
+          "label": "Project"
         }
       ],
+      "logo": {
+        "id": 101,
+        "url": "https://cdn.taskip.net/logos/company-logo.png",
+        "thumbnail": "https://cdn.taskip.net/logos/company-logo-thumb.png"
+      },
+      "signature": null,
+      "discount": 0,
+      "discount_type": "fixed",
+      "template": 1,
+      "status": "draft",
+      "publish": true,
+      "activities": [],
+      "reminders": {
+        "enabled": true,
+        "days_before": [7, 3, 1],
+        "template": "default"
+      },
+      "created_by": {
+        "id": 1,
+        "name": "Admin User"
+      },
+      "updated_by": {
+        "id": 1,
+        "name": "Admin User"
+      },
       "created_at": "2024-01-15T10:30:00Z",
-      "updated_at": "2024-01-15T10:30:00Z"
+      "updated_at": "2024-01-15T10:30:00Z",
+      "deleted_at": null
     }
   ],
+  "links": {
+    "first": "https://public-api.taskip.net/api/public-v1/quotation?page=1",
+    "last": "https://public-api.taskip.net/api/public-v1/quotation?page=2",
+    "prev": null,
+    "next": "https://public-api.taskip.net/api/public-v1/quotation?page=2"
+  },
   "meta": {
     "current_page": 1,
+    "from": 1,
+    "last_page": 2,
+    "path": "https://public-api.taskip.net/api/public-v1/quotation",
     "per_page": 20,
+    "to": 20,
     "total": 25,
-    "total_pages": 2
+    "search": "website"
   }
 }
 ```
@@ -134,15 +206,19 @@ Content-Type: application/json
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `client_id` | integer | Yes | Client ID for the quotation |
-| `issue_date` | string | Yes | Issue date (YYYY-MM-DD) |
-| `valid_until` | string | Yes | Validity date (YYYY-MM-DD) |
-| `currency` | string | No | Currency code (default: USD) |
-| `tax_rate` | decimal | No | Tax rate percentage |
-| `discount_amount` | decimal | No | Discount amount |
-| `notes` | string | No | Internal notes |
-| `terms_conditions` | string | No | Terms and conditions |
-| `status` | string | No | Status (`draft`, `sent`) |
+| `estimate_no` | string | No | Estimate number (max 191 characters) |
+| `contact_id` | integer | Yes | Contact ID for the quotation |
+| `folder_id` | integer | No | Folder ID for organization |
+| `subject` | string | Yes | Quotation subject (max 191 characters) |
+| `up_payment_status` | integer | No | Upfront payment status (0 or 1) |
+| `up_payment_amount` | decimal | No | Upfront payment amount |
+| `up_payment_type` | string | No | Upfront payment type |
+| `turnaround_times` | string | No | Turnaround time description |
+| `expire_date` | string | No | Expiration date (YYYY-MM-DD) |
+| `currency` | string | No | 3-digit ISO currency code (default: USD) |
+| `status` | string | No | Status (draft, pending, etc.) |
+| `note` | string | No | Internal notes |
+| `terms_condition` | string | No | Terms and conditions |
 | `items` | array | Yes | Array of quotation items |
 
 #### Item Object Structure
@@ -159,15 +235,19 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/quotation" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json" \
   -d '{
-    "client_id": 15,
-    "issue_date": "2024-01-20",
-    "valid_until": "2024-02-19",
+    "estimate_no": "EST-2024-001",
+    "contact_id": 15,
+    "folder_id": 5,
+    "subject": "Custom Website Development Quote",
+    "up_payment_status": 1,
+    "up_payment_amount": 2500.00,
+    "up_payment_type": "percentage",
+    "turnaround_times": "2-3 weeks",
+    "expire_date": "2024-02-19",
     "currency": "USD",
-    "tax_rate": 8.5,
-    "discount_amount": 200.00,
-    "notes": "Custom website development quote",
-    "terms_conditions": "50% upfront payment required",
     "status": "draft",
+    "note": "Custom website development with SEO",
+    "terms_condition": "50% upfront payment required",
     "items": [
       {
         "description": "Custom Website Development",
@@ -193,15 +273,19 @@ headers = {
 }
 
 quotation_data = {
-    "client_id": 15,
-    "issue_date": "2024-01-20",
-    "valid_until": "2024-02-19",
+    "estimate_no": "EST-2024-001",
+    "contact_id": 15,
+    "folder_id": 5,
+    "subject": "Custom Website Development Quote",
+    "up_payment_status": 1,
+    "up_payment_amount": 2500.00,
+    "up_payment_type": "percentage",
+    "turnaround_times": "2-3 weeks",
+    "expire_date": "2024-02-19",
     "currency": "USD",
-    "tax_rate": 8.5,
-    "discount_amount": 200.00,
-    "notes": "Custom website development quote",
-    "terms_conditions": "50% upfront payment required",
     "status": "draft",
+    "note": "Custom website development with SEO",
+    "terms_condition": "50% upfront payment required",
     "items": [
         {
             "description": "Custom Website Development",
@@ -229,44 +313,7 @@ result = response.json()
 
 ```json
 {
-  "success": true,
-  "message": "Quotation created successfully",
-  "data": {
-    "id": 26,
-    "quotation_number": "QUO-2024-026",
-    "client_id": 15,
-    "client_name": "Acme Corporation",
-    "client_email": "billing@acme.com",
-    "issue_date": "2024-01-20",
-    "valid_until": "2024-02-19",
-    "status": "draft",
-    "currency": "USD",
-    "subtotal": 5800.00,
-    "tax_rate": 8.50,
-    "tax_amount": 493.00,
-    "discount_amount": 200.00,
-    "total_amount": 6093.00,
-    "notes": "Custom website development quote",
-    "terms_conditions": "50% upfront payment required",
-    "items": [
-      {
-        "id": 45,
-        "description": "Custom Website Development",
-        "quantity": 1,
-        "unit_price": 5000.00,
-        "line_total": 5000.00
-      },
-      {
-        "id": 46,
-        "description": "SEO Optimization",
-        "quantity": 1,
-        "unit_price": 800.00,
-        "line_total": 800.00
-      }
-    ],
-    "created_at": "2024-01-20T14:30:00Z",
-    "updated_at": "2024-01-20T14:30:00Z"
-  }
+  "msg": "Quotation created successfully"
 }
 ```
 
@@ -297,55 +344,74 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/quotation/26" \
 
 ```json
 {
-  "success": true,
-  "data": {
-    "id": 26,
-    "quotation_number": "QUO-2024-026",
-    "client_id": 15,
-    "client": {
-      "id": 15,
-      "name": "Acme Corporation",
-      "email": "billing@acme.com",
-      "phone": "+1-555-0100",
-      "company": "Acme Corporation"
+  "id": 26,
+  "uuid": "550e8400-e29b-41d4-a716-446655440000",
+  "quotation_no": "QUO-2024-026",
+  "generatedId": "QUO-2024-026",
+  "subject": "Custom Website Development Quote",
+  "contact_id": 15,
+  "up_payment_status": 1,
+  "up_payment_amount": "2500.00",
+  "up_payment_type": "percentage",
+  "turnaround_times": "2-3 weeks",
+  "expire_date": "2024-02-19",
+  "status": "draft",
+  "currency": "USD",
+  "note": "Custom website development with SEO",
+  "terms_condition": "50% upfront payment required",
+  "total": "5800.00",
+  "sub_total": "5800.00",
+  "tax": null,
+  "discount": null,
+  "folder_id": 5,
+  "created_at": "2024-01-20T14:30:00.000000Z",
+  "updated_at": "2024-01-20T14:30:00.000000Z",
+  "company": {
+    "id": 1,
+    "name": "Taskip Agency",
+    "email": "hello@taskip.com"
+  },
+  "contact": {
+    "id": 15,
+    "first_name": "John",
+    "last_name": "Doe",
+    "email": "john@acme.com",
+    "phone": "+1-555-0100"
+  },
+  "folder": {
+    "id": 5,
+    "name": "Web Development Projects"
+  },
+  "items": [
+    {
+      "id": 45,
+      "title": "Custom Website Development",
+      "description": "Full stack website development",
+      "quantity": "1",
+      "price": "5000.00"
     },
-    "issue_date": "2024-01-20",
-    "valid_until": "2024-02-19",
-    "status": "draft",
-    "currency": "USD",
-    "subtotal": 5800.00,
-    "tax_rate": 8.50,
-    "tax_amount": 493.00,
-    "discount_amount": 200.00,
-    "total_amount": 6093.00,
-    "notes": "Custom website development quote",
-    "terms_conditions": "50% upfront payment required",
-    "items": [
-      {
-        "id": 45,
-        "description": "Custom Website Development",
-        "quantity": 1,
-        "unit_price": 5000.00,
-        "line_total": 5000.00
-      },
-      {
-        "id": 46,
-        "description": "SEO Optimization",
-        "quantity": 1,
-        "unit_price": 800.00,
-        "line_total": 800.00
-      }
-    ],
-    "history": [
-      {
-        "action": "created",
-        "user": "John Smith",
-        "timestamp": "2024-01-20T14:30:00Z"
-      }
-    ],
-    "created_at": "2024-01-20T14:30:00Z",
-    "updated_at": "2024-01-20T14:30:00Z"
-  }
+    {
+      "id": 46,
+      "title": "SEO Optimization",
+      "description": "Search engine optimization",
+      "quantity": "1",
+      "price": "800.00"
+    }
+  ],
+  "activities": [
+    {
+      "id": 1,
+      "log_name": "default",
+      "description": "created",
+      "subject_id": 26,
+      "subject_type": "App\\Models\\Estimate",
+      "causer_id": 1,
+      "causer_type": "App\\Models\\User",
+      "properties": {},
+      "created_at": "2024-01-20T14:30:00.000000Z",
+      "updated_at": "2024-01-20T14:30:00.000000Z"
+    }
+  ]
 }
 ```
 
@@ -374,9 +440,10 @@ curl -X PUT "https://public-api.taskip.net/api/public-v1/quotation/26" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json" \
   -d '{
-    "valid_until": "2024-03-20",
-    "tax_rate": 10.0,
-    "notes": "Extended validity period - custom website with advanced features"
+    "expire_date": "2024-03-20",
+    "subject": "Updated Custom Website Development Quote",
+    "turnaround_times": "3-4 weeks",
+    "note": "Extended validity period - custom website with advanced features"
   }'
 ```
 
@@ -384,28 +451,7 @@ curl -X PUT "https://public-api.taskip.net/api/public-v1/quotation/26" \
 
 ```json
 {
-  "success": true,
-  "message": "Quotation updated successfully",
-  "data": {
-    "id": 26,
-    "quotation_number": "QUO-2024-026",
-    "client_id": 15,
-    "client_name": "Acme Corporation",
-    "client_email": "billing@acme.com",
-    "issue_date": "2024-01-20",
-    "valid_until": "2024-03-20",
-    "status": "draft",
-    "currency": "USD",
-    "subtotal": 5800.00,
-    "tax_rate": 10.00,
-    "tax_amount": 580.00,
-    "discount_amount": 200.00,
-    "total_amount": 6180.00,
-    "notes": "Extended validity period - custom website with advanced features",
-    "terms_conditions": "50% upfront payment required",
-    "created_at": "2024-01-20T14:30:00Z",
-    "updated_at": "2024-01-21T09:15:00Z"
-  }
+  "msg": "Quotation updated successfully"
 }
 ```
 
@@ -440,12 +486,7 @@ curl -X DELETE "https://public-api.taskip.net/api/public-v1/quotation/26" \
 
 ```json
 {
-  "success": true,
-  "message": "Quotation deleted successfully",
-  "data": {
-    "deleted_quotation_id": 26,
-    "quotation_number": "QUO-2024-026"
-  }
+  "msg": "Quotation deleted successfully"
 }
 ```
 
@@ -506,15 +547,7 @@ const result = await response.json();
 
 ```json
 {
-  "success": true,
-  "message": "Quotation converted to invoice successfully",
-  "data": {
-    "quotation_id": 25,
-    "quotation_number": "QUO-2024-025",
-    "invoice_id": 150,
-    "invoice_number": "INV-2024-150",
-    "conversion_date": "2024-01-22T11:30:00Z"
-  }
+  "msg": "Quotation converted to invoice successfully"
 }
 ```
 
@@ -559,15 +592,7 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/quotation/25/send-to-c
 
 ```json
 {
-  "success": true,
-  "message": "Quotation sent to client successfully",
-  "data": {
-    "quotation_id": 25,
-    "sent_to": "billing@acme.com",
-    "cc_emails": ["manager@company.com"],
-    "sent_at": "2024-01-22T14:45:00Z",
-    "email_tracking_id": "email_track_789"
-  }
+  "msg": "Quotation sent to client successfully"
 }
 ```
 
@@ -611,15 +636,7 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/quotation/25/status-up
 
 ```json
 {
-  "success": true,
-  "message": "Quotation status updated successfully",
-  "data": {
-    "quotation_id": 25,
-    "old_status": "sent",
-    "new_status": "accepted",
-    "reason": "Client approved via phone",
-    "updated_at": "2024-01-22T16:20:00Z"
-  }
+  "msg": "Quotation status updated successfully"
 }
 ```
 
@@ -694,36 +711,7 @@ const result = await response.json();
 
 ```json
 {
-  "success": true,
-  "message": "Bulk action completed successfully",
-  "data": {
-    "action": "status_update",
-    "processed_count": 4,
-    "successful_ids": [20, 21, 22, 23],
-    "failed_ids": [],
-    "results": [
-      {
-        "quotation_id": 20,
-        "status": "success",
-        "message": "Status updated to expired"
-      },
-      {
-        "quotation_id": 21,
-        "status": "success",
-        "message": "Status updated to expired"
-      },
-      {
-        "quotation_id": 22,
-        "status": "success",
-        "message": "Status updated to expired"
-      },
-      {
-        "quotation_id": 23,
-        "status": "success",
-        "message": "Status updated to expired"
-      }
-    ]
-  }
+  "msg": "Bulk action completed successfully"
 }
 ```
 
