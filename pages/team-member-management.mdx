@@ -6,12 +6,12 @@ The Team Member Management API allows you to manage team members and users in yo
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/api/public-v1/team-member` | Get all team members |
-| `POST` | `/api/public-v1/team-member` | Create a new team member |
-| `GET` | `/api/public-v1/team-member/{id}` | Get a specific team member |
-| `PUT` | `/api/public-v1/team-member/{id}` | Update a team member |
-| `DELETE` | `/api/public-v1/team-member/{id}` | Delete a team member |
-| `POST` | `/api/public-v1/team-member/bulk-delete` | Delete multiple team members |
+| `GET` | [`/api/public-v1/team-member`](#get-all-team-members) | Get all team members |
+| `POST` | [`/api/public-v1/team-member`](#create-a-team-member) | Create a new team member |
+| `GET` | [`/api/public-v1/team-member/{id}`](#get-a-specific-team-member) | Get a specific team member |
+| `PUT` | [`/api/public-v1/team-member/{id}`](#update-a-team-member) | Update a team member |
+| `DELETE` | [`/api/public-v1/team-member/{id}`](#delete-a-team-member) | Delete a team member |
+| `POST` | [`/api/public-v1/team-member/bulk-delete`](#bulk-delete-team-members) | Delete multiple team members |
 
 ---
 
@@ -72,52 +72,77 @@ const teamMembers = await response.json();
 
 ```json
 {
-  "success": true,
+  "message": "Team member list",
   "data": [
     {
       "id": 1,
-      "name": "John Smith",
-      "email": "john.smith@taskip.com",
-      "username": "john.smith",
-      "role": "admin",
-      "department": "Engineering",
+      "first_name": "John",
+      "last_name": "Smith",
+      "full_name": "John Smith",
       "position": "Senior Developer",
-      "phone": "+1-555-0150",
-      "avatar": "https://your-domain.com/avatars/john-smith.jpg",
-      "status": "active",
-      "timezone": "America/New_York",
-      "last_login": "2024-01-25T08:30:00Z",
-      "permissions": ["project.create", "project.edit", "user.manage"],
-      "project_count": 8,
-      "task_count": 25,
-      "created_at": "2024-01-01T09:00:00Z",
-      "updated_at": "2024-01-20T14:30:00Z"
+      "email": "john.smith@taskip.com",
+      "uuid": "550e8400-e29b-41d4-a716-446655440001",
+      "role": "admin",
+      "created_at": "01, Jan, 2024",
+      "teams": [
+        {
+          "id": 1,
+          "name": "Development Team",
+          "description": "Frontend and Backend Development"
+        }
+      ],
+      "image": {
+        "id": 101,
+        "url": "https://cdn.taskip.net/avatars/john-smith.jpg",
+        "thumbnail": "https://cdn.taskip.net/avatars/john-smith-thumb.jpg"
+      },
+      "invitation": {
+        "id": 1,
+        "status": "accepted",
+        "sent_at": "2024-01-01T09:00:00Z",
+        "accepted_at": "2024-01-01T10:30:00Z"
+      }
     },
     {
       "id": 2,
-      "name": "Sarah Davis",
-      "email": "sarah.davis@taskip.com",
-      "username": "sarah.davis",
-      "role": "project_manager",
-      "department": "Operations",
+      "first_name": "Sarah",
+      "last_name": "Davis",
+      "full_name": "Sarah Davis",
       "position": "Project Manager",
-      "phone": "+1-555-0151",
-      "avatar": "https://your-domain.com/avatars/sarah-davis.jpg",
-      "status": "active",
-      "timezone": "America/Los_Angeles",
-      "last_login": "2024-01-24T16:45:00Z",
-      "permissions": ["project.create", "project.edit", "project.view"],
-      "project_count": 12,
-      "task_count": 18,
-      "created_at": "2024-01-02T10:15:00Z",
-      "updated_at": "2024-01-22T11:20:00Z"
+      "email": "sarah.davis@taskip.com",
+      "uuid": "550e8400-e29b-41d4-a716-446655440002",
+      "role": "project_manager",
+      "created_at": "02, Jan, 2024",
+      "teams": [
+        {
+          "id": 2,
+          "name": "Project Management",
+          "description": "Project coordination and management"
+        }
+      ],
+      "image": null,
+      "invitation": {
+        "id": 2,
+        "status": "accepted",
+        "sent_at": "2024-01-02T09:00:00Z",
+        "accepted_at": "2024-01-02T11:15:00Z"
+      }
     }
   ],
+  "links": {
+    "first": "https://public-api.taskip.net/api/public-v1/team-member?page=1",
+    "last": "https://public-api.taskip.net/api/public-v1/team-member?page=3",
+    "prev": null,
+    "next": "https://public-api.taskip.net/api/public-v1/team-member?page=2"
+  },
   "meta": {
     "current_page": 1,
+    "from": 1,
+    "last_page": 3,
+    "path": "https://public-api.taskip.net/api/public-v1/team-member",
     "per_page": 20,
-    "total": 25,
-    "total_pages": 2
+    "to": 20,
+    "total": 45
   }
 }
 ```
@@ -136,16 +161,13 @@ POST /api/public-v1/team-member
   endpoint="/api/public-v1/team-member"
   method="POST"
   defaultBody={{
-    "name": "John Smith",
     "email": "john.smith@taskip.com",
-    "role": "developer",
-    "department": "Engineering",
-    "phone": "+1-555-0123",
+    "first_name": "John",
+    "last_name": "Smith",
     "position": "Senior Developer",
-    "status": "active",
-    "hire_date": "2024-01-15",
-    "salary": 75000,
-    "permissions": ["projects.view", "tasks.edit"]
+    "role_id": 2,
+    "team_id": 1,
+    "image": null
   }}
   description="Test creating a new team member in your TaskIP system"
 />
@@ -160,18 +182,13 @@ Content-Type: application/json
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `name` | string | Yes | Team member's full name |
-| `email` | string | Yes | Team member's email address |
-| `username` | string | No | Username (auto-generated if not provided) |
-| `password` | string | Yes | Initial password |
-| `role` | string | Yes | User role (`admin`, `project_manager`, `developer`, `designer`, `client`) |
-| `department` | string | No | Department name |
-| `position` | string | No | Job position/title |
-| `phone` | string | No | Phone number |
-| `timezone` | string | No | Timezone (default: system timezone) |
-| `status` | string | No | Status (`active`, `inactive`, `pending`) |
-| `permissions` | array | No | Array of permission strings |
-| `send_invitation` | boolean | No | Send welcome email (default: true) |
+| `email` | string | Yes | Team member's email address (must be unique) |
+| `first_name` | string | Yes | Team member's first name (max 191 characters) |
+| `last_name` | string | Yes | Team member's last name (max 191 characters) |
+| `position` | string | No | Job position/title (max 191 characters) |
+| `role_id` | integer | Yes | Role ID (numeric) |
+| `team_id` | integer | No | Team ID (numeric) |
+| `image` | integer | No | Image/Avatar ID (numeric) |
 
 ### Example Request
 
@@ -180,18 +197,13 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/team-member" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "Alice Johnson",
     "email": "alice.johnson@taskip.com",
-    "username": "alice.johnson",
-    "password": "TempPassword123!",
-    "role": "developer",
-    "department": "Engineering",
+    "first_name": "Alice",
+    "last_name": "Johnson",
     "position": "Frontend Developer",
-    "phone": "+1-555-0152",
-    "timezone": "America/Chicago",
-    "status": "active",
-    "permissions": ["project.view", "project.edit", "task.create", "task.edit"],
-    "send_invitation": true
+    "role_id": 2,
+    "team_id": 1,
+    "image": null
   }'
 ```
 
@@ -205,18 +217,13 @@ headers = {
 }
 
 team_member_data = {
-    "name": "Alice Johnson",
     "email": "alice.johnson@taskip.com",
-    "username": "alice.johnson",
-    "password": "TempPassword123!",
-    "role": "developer",
-    "department": "Engineering",
+    "first_name": "Alice",
+    "last_name": "Johnson",
     "position": "Frontend Developer",
-    "phone": "+1-555-0152",
-    "timezone": "America/Chicago",
-    "status": "active",
-    "permissions": ["project.view", "project.edit", "task.create", "task.edit"],
-    "send_invitation": True
+    "role_id": 2,
+    "team_id": 1,
+    "image": None
 }
 
 response = requests.post(
@@ -232,27 +239,31 @@ result = response.json()
 
 ```json
 {
-  "success": true,
-  "message": "Team member created successfully",
+  "msg": "Team Member Invited Successfully",
   "data": {
     "id": 26,
-    "name": "Alice Johnson",
-    "email": "alice.johnson@taskip.com",
-    "username": "alice.johnson",
-    "role": "developer",
-    "department": "Engineering",
+    "first_name": "Alice",
+    "last_name": "Johnson",
+    "full_name": "Alice Johnson",
     "position": "Frontend Developer",
-    "phone": "+1-555-0152",
-    "avatar": null,
-    "status": "active",
-    "timezone": "America/Chicago",
-    "last_login": null,
-    "permissions": ["project.view", "project.edit", "task.create", "task.edit"],
-    "project_count": 0,
-    "task_count": 0,
-    "invitation_sent": true,
-    "created_at": "2024-01-25T11:45:00Z",
-    "updated_at": "2024-01-25T11:45:00Z"
+    "email": "alice.johnson@taskip.com",
+    "uuid": "550e8400-e29b-41d4-a716-446655440026",
+    "role": "developer",
+    "created_at": "25, Jan, 2024",
+    "teams": [
+      {
+        "id": 1,
+        "name": "Development Team",
+        "description": "Frontend and Backend Development"
+      }
+    ],
+    "image": null,
+    "invitation": {
+      "id": 26,
+      "status": "pending",
+      "sent_at": "2024-01-25T11:45:00Z",
+      "accepted_at": null
+    }
   }
 }
 ```
@@ -290,51 +301,35 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/team-member/26" \
 
 ```json
 {
-  "success": true,
+  "message": "Team Member Details",
   "data": {
     "id": 26,
-    "name": "Alice Johnson",
-    "email": "alice.johnson@taskip.com",
-    "username": "alice.johnson",
-    "role": "developer",
-    "department": "Engineering",
+    "first_name": "Alice",
+    "last_name": "Johnson",
+    "full_name": "Alice Johnson",
     "position": "Frontend Developer",
-    "phone": "+1-555-0152",
-    "avatar": "https://your-domain.com/avatars/alice-johnson.jpg",
-    "status": "active",
-    "timezone": "America/Chicago",
-    "last_login": "2024-01-25T14:20:00Z",
-    "permissions": ["project.view", "project.edit", "task.create", "task.edit"],
-    "bio": "Frontend developer with 5 years of experience in React and Vue.js",
-    "skills": ["JavaScript", "React", "Vue.js", "HTML", "CSS"],
-    "projects": [
+    "email": "alice.johnson@taskip.com",
+    "uuid": "550e8400-e29b-41d4-a716-446655440026",
+    "role": "developer",
+    "created_at": "25, Jan, 2024",
+    "teams": [
       {
-        "id": 101,
-        "name": "E-commerce Platform",
-        "role": "Frontend Developer"
-      },
-      {
-        "id": 102,
-        "name": "Mobile App UI",
-        "role": "UI Developer"
+        "id": 1,
+        "name": "Development Team",
+        "description": "Frontend and Backend Development"
       }
     ],
-    "recent_tasks": [
-      {
-        "id": 501,
-        "title": "Implement user dashboard",
-        "status": "in_progress"
-      },
-      {
-        "id": 502,
-        "title": "Fix responsive layout issues",
-        "status": "completed"
-      }
-    ],
-    "project_count": 2,
-    "task_count": 8,
-    "created_at": "2024-01-25T11:45:00Z",
-    "updated_at": "2024-01-25T14:20:00Z"
+    "image": {
+      "id": 126,
+      "url": "https://cdn.taskip.net/avatars/alice-johnson.jpg",
+      "thumbnail": "https://cdn.taskip.net/avatars/alice-johnson-thumb.jpg"
+    },
+    "invitation": {
+      "id": 26,
+      "status": "accepted",
+      "sent_at": "2024-01-25T11:45:00Z",
+      "accepted_at": "2024-01-25T14:20:00Z"
+    }
   }
 }
 ```
@@ -353,10 +348,13 @@ PUT /api/public-v1/team-member/{id}
   endpoint="/api/public-v1/team-member/1"
   method="PUT"
   defaultBody={{
-    "position": "Lead Developer",
-    "salary": 85000,
-    "department": "Engineering",
-    "permissions": ["projects.view", "projects.edit", "tasks.edit", "team.view"]
+    "email": "alice.johnson@company.com",
+    "first_name": "Alice",
+    "last_name": "Johnson",
+    "position": "Lead Frontend Developer",
+    "role_id": 3,
+    "team_id": 1,
+    "image": 150
   }}
   description="Test updating a team member's information"
 />
@@ -367,7 +365,16 @@ PUT /api/public-v1/team-member/{id}
 | `id` | integer | Yes | Team member ID to update |
 
 ### Request Body
-Same fields as create team member (except password). All fields are optional - only include fields you want to update.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `email` | string | Yes | Team member's email address (must be unique, except for current user) |
+| `first_name` | string | Yes | Team member's first name (max 191 characters) |
+| `last_name` | string | Yes | Team member's last name (max 191 characters) |
+| `position` | string | No | Job position/title (max 191 characters) |
+| `role_id` | integer | Yes | Role ID (numeric) |
+| `team_id` | integer | No | Team ID (numeric) |
+| `image` | integer | No | Image/Avatar ID (numeric) |
 
 ### Example Request
 
@@ -376,10 +383,13 @@ curl -X PUT "https://public-api.taskip.net/api/public-v1/team-member/26" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json" \
   -d '{
-    "position": "Senior Frontend Developer",
-    "department": "Engineering",
-    "permissions": ["project.view", "project.edit", "project.create", "task.create", "task.edit"],
-    "bio": "Senior frontend developer with 5+ years of experience in React, Vue.js, and modern JavaScript frameworks"
+    "email": "alice.johnson@company.com",
+    "first_name": "Alice",
+    "last_name": "Johnson",
+    "position": "Lead Frontend Developer",
+    "role_id": 3,
+    "team_id": 1,
+    "image": 150
   }'
 ```
 
@@ -387,28 +397,7 @@ curl -X PUT "https://public-api.taskip.net/api/public-v1/team-member/26" \
 
 ```json
 {
-  "success": true,
-  "message": "Team member updated successfully",
-  "data": {
-    "id": 26,
-    "name": "Alice Johnson",
-    "email": "alice.johnson@taskip.com",
-    "username": "alice.johnson",
-    "role": "developer",
-    "department": "Engineering",
-    "position": "Senior Frontend Developer",
-    "phone": "+1-555-0152",
-    "avatar": "https://your-domain.com/avatars/alice-johnson.jpg",
-    "status": "active",
-    "timezone": "America/Chicago",
-    "last_login": "2024-01-25T14:20:00Z",
-    "permissions": ["project.view", "project.edit", "project.create", "task.create", "task.edit"],
-    "bio": "Senior frontend developer with 5+ years of experience in React, Vue.js, and modern JavaScript frameworks",
-    "project_count": 2,
-    "task_count": 8,
-    "created_at": "2024-01-25T11:45:00Z",
-    "updated_at": "2024-01-26T10:15:00Z"
-  }
+  "msg": "Team member updated successfully"
 }
 ```
 
@@ -449,14 +438,8 @@ curl -X DELETE "https://public-api.taskip.net/api/public-v1/team-member/26" \
 
 ```json
 {
-  "success": true,
-  "message": "Team member deleted successfully",
-  "data": {
-    "deleted_member_id": 26,
-    "transferred_projects": 2,
-    "transferred_tasks": 8,
-    "transferred_to": "System Administrator"
-  }
+  "status": true,
+  "message": "Team Member deleted successfully"
 }
 ```
 
@@ -474,7 +457,7 @@ POST /api/public-v1/team-member/bulk-delete
   endpoint="/api/public-v1/team-member/bulk-delete"
   method="POST"
   defaultBody={{
-    "team_member_ids": [1, 2, 3, 4]
+    "ids": [1, 2, 3, 4]
   }}
   description="Test bulk deleting multiple team members (use with caution)"
 />
@@ -483,9 +466,8 @@ POST /api/public-v1/team-member/bulk-delete
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `member_ids` | array | Yes | Array of team member IDs to delete |
-| `transfer_to` | integer | No | User ID to transfer assignments to |
-| `notify_members` | boolean | No | Send notification emails (default: true) |
+| `ids` | array | Yes | Array of team member IDs to delete |
+| `ids.*` | integer | Yes | Each ID must be a valid integer that exists in users table |
 
 ### Example Request
 
@@ -494,18 +476,14 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/team-member/bulk-delet
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json" \
   -d '{
-    "member_ids": [24, 25, 27, 28],
-    "transfer_to": 1,
-    "notify_members": true
+    "ids": [24, 25, 27, 28]
   }'
 ```
 
 ### JavaScript Example
 ```javascript
 const bulkDeleteData = {
-  member_ids: [24, 25, 27, 28],
-  transfer_to: 1,
-  notify_members: true
+  ids: [24, 25, 27, 28]
 };
 
 const response = await fetch('https://public-api.taskip.net/api/public-v1/team-member/bulk-delete', {
@@ -524,19 +502,7 @@ const result = await response.json();
 
 ```json
 {
-  "success": true,
-  "message": "4 team members deleted successfully",
-  "data": {
-    "deleted_count": 4,
-    "deleted_ids": [24, 25, 27, 28],
-    "failed_ids": [],
-    "total_projects_transferred": 6,
-    "total_tasks_transferred": 22,
-    "transferred_to": {
-      "id": 1,
-      "name": "System Administrator"
-    }
-  }
+  "message": "Team Member deleted successfully"
 }
 ```
 
@@ -605,46 +571,48 @@ const result = await response.json();
 ```json
 {
   "id": "integer",
-  "name": "string",
-  "email": "string",
-  "username": "string",
-  "role": "string",
-  "department": "string|null",
+  "first_name": "string",
+  "last_name": "string",
+  "full_name": "string",
   "position": "string|null",
-  "phone": "string|null",
-  "avatar": "string|null",
-  "status": "string",
-  "timezone": "string",
-  "last_login": "string|null (ISO 8601)",
-  "permissions": "array",
-  "bio": "string|null",
-  "skills": "array|null",
-  "projects": "array|null",
-  "recent_tasks": "array|null",
-  "project_count": "integer",
-  "task_count": "integer",
-  "created_at": "string (ISO 8601)",
-  "updated_at": "string (ISO 8601)"
+  "email": "string",
+  "uuid": "string",
+  "role": "string",
+  "created_at": "string (formatted: 'd, M, Y')",
+  "teams": "array",
+  "image": "object|null",
+  "invitation": "object"
 }
 ```
 
-### Project Summary Object (in team member details)
+### Team Object
 
 ```json
 {
   "id": "integer",
   "name": "string",
-  "role": "string"
+  "description": "string|null"
 }
 ```
 
-### Task Summary Object (in team member details)
+### Image Object
 
 ```json
 {
   "id": "integer",
-  "title": "string",
-  "status": "string"
+  "url": "string",
+  "thumbnail": "string"
+}
+```
+
+### Invitation Object
+
+```json
+{
+  "id": "integer",
+  "status": "string",
+  "sent_at": "string (ISO 8601)",
+  "accepted_at": "string|null (ISO 8601)"
 }
 ```
 
