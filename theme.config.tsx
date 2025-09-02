@@ -26,9 +26,7 @@ const config: DocsThemeConfig = {
     link: 'https://github.com/Taskip-CRM/public-api',
   },
   docsRepositoryBase: 'https://github.com/Taskip-CRM/public-api',
-  footer: {
-    text: 'Taskip API Documentation',
-  },
+  footer: false,
   head: (
     <>
       <link rel="icon" href="/taskip-logo-icon.png" type="image/png" />
