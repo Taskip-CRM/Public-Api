@@ -12,17 +12,6 @@ The Document Management API allows you to manage documents and files in your Tas
 | `PUT` | `/api/public-v1/document/{id}` | Update document metadata |
 | `DELETE` | `/api/public-v1/document/{id}` | Delete a document |
 | `GET` | `/api/public-v1/document/{id}/download` | Download document file |
-| `POST` | `/api/public-v1/document/{id}/share` | Share document with users |
-| `POST` | `/api/public-v1/document/{id}/version` | Upload new document version |
-| `GET` | `/api/public-v1/document/{id}/versions` | Get document version history |
-| `POST` | `/api/public-v1/document/{id}/comment` | Add comment to document |
-| `GET` | `/api/public-v1/document/{id}/comments` | Get document comments |
-| `POST` | `/api/public-v1/document/bulk-actions` | Perform bulk operations |
-| `GET` | `/api/public-v1/document/folders` | Get folder structure |
-| `POST` | `/api/public-v1/document/folders` | Create new folder |
-| `PUT` | `/api/public-v1/document/folders/{id}` | Update folder |
-| `DELETE` | `/api/public-v1/document/folders/{id}` | Delete folder |
-| `GET` | `/api/public-v1/document/search` | Search documents |
 
 ---
 
@@ -80,66 +69,86 @@ const documents = await response.json();
 
 ```json
 {
-  "success": true,
+  "status": 200,
   "data": [
     {
       "id": 1,
-      "name": "Project Proposal - Acme Corp.pdf",
-      "original_filename": "Project Proposal - Acme Corp.pdf",
-      "file_type": "pdf",
-      "file_size": 2048576,
-      "mime_type": "application/pdf",
-      "folder_id": 5,
-      "folder_name": "Proposals",
-      "owner_id": 3,
-      "owner_name": "Sarah Johnson",
-      "description": "Initial project proposal for Acme Corporation website redesign",
-      "tags": ["proposal", "website", "acme"],
-      "version": "1.2",
-      "is_public": false,
-      "download_count": 15,
-      "shared_with": [
+      "uuid": "doc_abc123def456",
+      "created_by": {
+        "id": 3,
+        "name": "Sarah Johnson",
+        "image": {
+          "id": 15,
+          "original_url": "https://storage.googleapis.com/files/profile.jpg"
+        },
+        "type": "user",
+        "email": "sarah@company.com",
+        "contact_id": null
+      },
+      "folder": {
+        "id": 5,
+        "uuid": "folder_xyz789",
+        "name": "Proposals"
+      },
+      "name": "Project Proposal - Acme Corp",
+      "visibility": {
+        "id": 1,
+        "label": "Team"
+      },
+      "permissions": [
         {
+          "id": 1,
+          "document_id": 1,
           "user_id": 8,
-          "user_name": "David Chen",
-          "permission": "view"
+          "access_type": 2,
+          "user": {
+            "name": "David Chen",
+            "image": {
+              "id": 20,
+              "original_url": "https://storage.googleapis.com/files/david.jpg"
+            },
+            "type": "user",
+            "email": "david@company.com",
+            "contact_id": null
+          }
         }
       ],
-      "created_at": "2024-01-15T09:30:00Z",
-      "updated_at": "2024-01-18T14:20:00Z"
+      "created_at": "Jan 15, 2024, 9:30 AM",
+      "access": "Owner",
+      "publish": null,
+      "teams": []
     },
     {
       "id": 2,
-      "name": "Contract Template.docx",
-      "original_filename": "Contract Template.docx",
-      "file_type": "doc",
-      "file_size": 524288,
-      "mime_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      "folder_id": 8,
-      "folder_name": "Templates",
-      "owner_id": 5,
-      "owner_name": "Mike Wilson",
-      "description": "Standard service contract template",
-      "tags": ["template", "contract", "legal"],
-      "version": "2.0",
-      "is_public": true,
-      "download_count": 45,
-      "shared_with": [],
-      "created_at": "2024-01-10T11:15:00Z",
-      "updated_at": "2024-01-16T09:45:00Z"
+      "uuid": "doc_ghi789jkl012",
+      "created_by": {
+        "id": 5,
+        "name": "Mike Wilson",
+        "image": {
+          "id": 25,
+          "original_url": "https://storage.googleapis.com/files/mike.jpg"
+        },
+        "type": "user",
+        "email": "mike@company.com",
+        "contact_id": null
+      },
+      "folder": {
+        "id": 8,
+        "uuid": "folder_def456",
+        "name": "Templates"
+      },
+      "name": "Contract Template",
+      "visibility": {
+        "id": 2,
+        "label": "Public"
+      },
+      "permissions": [],
+      "created_at": "Jan 10, 2024, 11:15 AM",
+      "access": "View",
+      "publish": "https://workspace.taskip.net/document/contract-template-abc123",
+      "teams": []
     }
-  ],
-  "meta": {
-    "current_page": 1,
-    "per_page": 20,
-    "total": 125,
-    "total_pages": 7,
-    "storage_usage": {
-      "used_mb": 1024.5,
-      "total_mb": 5120.0,
-      "percentage": 20.0
-    }
-  }
+  ]
 }
 ```
 
@@ -159,88 +168,80 @@ X-Secret-Key: your-secret-key-here
 Content-Type: multipart/form-data
 ```
 
-### Request Body (multipart/form-data)
+### Request Body
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `file` | file | Yes | Document file to upload |
-| `name` | string | No | Custom document name (uses filename if not provided) |
-| `description` | string | No | Document description |
-| `folder_id` | integer | No | Folder ID to upload to |
-| `tags` | string | No | Comma-separated tags |
-| `is_public` | boolean | No | Make document publicly accessible |
-| `notify_team` | boolean | No | Send notification to team members |
+| `name` | string | Yes | Document name (max 191 characters) |
+| `visibility` | integer | Yes | Visibility level (0=Private, 1=Team, 2=Public) |
+| `folder_id` | string | No | UUID of folder to place document in |
 
 ### Example Request
 
 ```bash
 curl -X POST "https://public-api.taskip.net/api/public-v1/document" \
   -H "X-Secret-Key: your-secret-key-here" \
-  -F "file=@project-requirements.pdf" \
-  -F "name=Project Requirements - TechCorp" \
-  -F "description=Detailed requirements document for TechCorp project" \
-  -F "folder_id=5" \
-  -F "tags=requirements,project,techcorp" \
-  -F "is_public=false" \
-  -F "notify_team=true"
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Project Requirements - TechCorp",
+    "visibility": 1,
+    "folder_id": "folder_xyz789"
+  }'
 ```
 
-### Python Example
-```python
-import requests
+### JavaScript Example
+```javascript
+const response = await fetch('https://public-api.taskip.net/api/public-v1/document', {
+  method: 'POST',
+  headers: {
+    'X-Secret-Key': 'your-secret-key-here',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    name: 'Project Requirements - TechCorp',
+    visibility: 1,
+    folder_id: 'folder_xyz789'
+  })
+});
 
-headers = {
-    'X-Secret-Key': 'your-secret-key-here'
-}
-
-files = {
-    'file': open('project-requirements.pdf', 'rb')
-}
-
-data = {
-    'name': 'Project Requirements - TechCorp',
-    'description': 'Detailed requirements document for TechCorp project',
-    'folder_id': 5,
-    'tags': 'requirements,project,techcorp',
-    'is_public': False,
-    'notify_team': True
-}
-
-response = requests.post(
-    'https://public-api.taskip.net/api/public-v1/document',
-    headers=headers,
-    files=files,
-    data=data
-)
-
-result = response.json()
+const result = await response.json();
 ```
 
 ### Example Response
 
 ```json
 {
-  "success": true,
-  "message": "Document uploaded successfully",
-  "data": {
+  "status": 200,
+  "msg": "Document Created Successfully",
+  "document": {
     "id": 126,
+    "uuid": "doc_mno345pqr678",
+    "created_by": {
+      "id": 3,
+      "name": "Current User",
+      "image": {
+        "id": 30,
+        "original_url": "https://storage.googleapis.com/files/current-user.jpg"
+      },
+      "type": "user",
+      "email": "current@company.com",
+      "contact_id": null
+    },
+    "folder": {
+      "id": 5,
+      "uuid": "folder_xyz789",
+      "name": "Proposals"
+    },
     "name": "Project Requirements - TechCorp",
-    "original_filename": "project-requirements.pdf",
-    "file_type": "pdf",
-    "file_size": 1572864,
-    "mime_type": "application/pdf",
-    "folder_id": 5,
-    "folder_name": "Proposals",
-    "owner_id": 3,
-    "owner_name": "Current User",
-    "description": "Detailed requirements document for TechCorp project",
-    "tags": ["requirements", "project", "techcorp"],
-    "version": "1.0",
-    "is_public": false,
-    "download_count": 0,
-    "file_hash": "sha256:abc123def456...",
-    "created_at": "2024-01-20T10:30:00Z",
-    "updated_at": "2024-01-20T10:30:00Z"
+    "visibility": {
+      "id": 1,
+      "label": "Team"
+    },
+    "permissions": [],
+    "created_at": "Jan 20, 2024, 10:30 AM",
+    "access": "Owner",
+    "publish": null,
+    "teams": []
   }
 }
 ```
@@ -417,15 +418,8 @@ curl -X DELETE "https://public-api.taskip.net/api/public-v1/document/126" \
 
 ```json
 {
-  "success": true,
-  "message": "Document deleted successfully",
-  "data": {
-    "deleted_document_id": 126,
-    "document_name": "Project Requirements - TechCorp (Updated)",
-    "versions_deleted": 2,
-    "comments_deleted": 3,
-    "storage_freed_mb": 1.5
-  }
+  "msg": "Document deleted successfully",
+  "status": 200
 }
 ```
 
@@ -479,616 +473,20 @@ if (response.ok) {
 ```
 
 ### Response
-The response will be the binary file content with appropriate headers:
+The response will be a PDF file generated from the document content with appropriate headers:
 ```http
 Content-Type: application/pdf
-Content-Disposition: attachment; filename="project-requirements.pdf"
-Content-Length: 1572864
+Content-Disposition: attachment; filename="document-name.pdf"
 ```
 
----
-
-## Share Document with Users
-
-Share a document with specific users or teams.
-
-```http
-POST /api/public-v1/document/{id}/share
-```
-
-### Path Parameters
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | integer | Yes | Document ID to share |
-
-### Request Body
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `user_ids` | array | No | Array of user IDs to share with |
-| `team_ids` | array | No | Array of team IDs to share with |
-| `permission` | string | Yes | Permission level (`view`, `edit`, `admin`) |
-| `expires_at` | string | No | Share expiration date (ISO 8601) |
-| `message` | string | No | Custom message to include |
-| `notify_users` | boolean | No | Send notification to users |
-
-### Example Request
-
-```bash
-curl -X POST "https://public-api.taskip.net/api/public-v1/document/125/share" \
-  -H "X-Secret-Key: your-secret-key-here" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "user_ids": [8, 12, 15],
-    "permission": "view",
-    "expires_at": "2024-02-20T23:59:59Z",
-    "message": "Please review this project proposal and provide feedback.",
-    "notify_users": true
-  }'
-```
-
-### Example Response
-
-```json
-{
-  "success": true,
-  "message": "Document shared successfully",
-  "data": {
-    "document_id": 125,
-    "shared_with": [
-      {
-        "user_id": 8,
-        "user_name": "David Chen",
-        "permission": "view",
-        "expires_at": "2024-02-20T23:59:59Z"
-      },
-      {
-        "user_id": 12,
-        "user_name": "Lisa Park",
-        "permission": "view",
-        "expires_at": "2024-02-20T23:59:59Z"
-      },
-      {
-        "user_id": 15,
-        "user_name": "John Smith",
-        "permission": "view",
-        "expires_at": "2024-02-20T23:59:59Z"
-      }
-    ],
-    "notifications_sent": 3,
-    "shared_at": "2024-01-21T16:30:00Z"
-  }
-}
-```
-
----
-
-## Upload New Document Version
-
-Upload a new version of an existing document.
-
-```http
-POST /api/public-v1/document/{id}/version
-```
-
-### Path Parameters
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | integer | Yes | Document ID |
-
-### Request Body (multipart/form-data)
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `file` | file | Yes | New version file |
-| `version_notes` | string | No | Notes about this version |
-| `notify_watchers` | boolean | No | Notify users watching this document |
-
-### Example Request
-
-```bash
-curl -X POST "https://public-api.taskip.net/api/public-v1/document/125/version" \
-  -H "X-Secret-Key: your-secret-key-here" \
-  -F "file=@project-requirements-v2.pdf" \
-  -F "version_notes=Updated with client feedback and additional requirements" \
-  -F "notify_watchers=true"
-```
-
-### Example Response
-
-```json
-{
-  "success": true,
-  "message": "New document version uploaded successfully",
-  "data": {
-    "document_id": 125,
-    "version": "1.3",
-    "file_size": 1843200,
-    "version_notes": "Updated with client feedback and additional requirements",
-    "uploaded_by": "Sarah Johnson",
-    "uploaded_at": "2024-01-22T09:15:00Z",
-    "notifications_sent": 5
-  }
-}
-```
-
----
-
-## Get Document Version History
-
-Retrieve the version history of a document.
-
-```http
-GET /api/public-v1/document/{id}/versions
-```
-
-### Path Parameters
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | integer | Yes | Document ID |
-
-### Example Request
-
-```bash
-curl -X GET "https://public-api.taskip.net/api/public-v1/document/125/versions" \
-  -H "X-Secret-Key: your-secret-key-here" \
-  -H "Content-Type: application/json"
-```
-
-### Example Response
-
-```json
-{
-  "success": true,
-  "data": {
-    "document_id": 125,
-    "current_version": "1.3",
-    "versions": [
-      {
-        "version": "1.3",
-        "file_size": 1843200,
-        "version_notes": "Updated with client feedback and additional requirements",
-        "uploaded_by": "Sarah Johnson",
-        "is_current": true,
-        "download_count": 2,
-        "uploaded_at": "2024-01-22T09:15:00Z"
-      },
-      {
-        "version": "1.2",
-        "file_size": 1756160,
-        "version_notes": "Added technical specifications section",
-        "uploaded_by": "David Chen",
-        "is_current": false,
-        "download_count": 8,
-        "uploaded_at": "2024-01-18T14:20:00Z"
-      },
-      {
-        "version": "1.1",
-        "file_size": 1572864,
-        "version_notes": "Minor formatting updates",
-        "uploaded_by": "Sarah Johnson",
-        "is_current": false,
-        "download_count": 5,
-        "uploaded_at": "2024-01-16T11:30:00Z"
-      },
-      {
-        "version": "1.0",
-        "file_size": 1572864,
-        "version_notes": "Initial version",
-        "uploaded_by": "Sarah Johnson",
-        "is_current": false,
-        "download_count": 15,
-        "uploaded_at": "2024-01-15T09:30:00Z"
-      }
-    ],
-    "total_versions": 4
-  }
-}
-```
-
----
-
-## Add Comment to Document
-
-Add a comment or note to a document.
-
-```http
-POST /api/public-v1/document/{id}/comment
-```
-
-### Path Parameters
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | integer | Yes | Document ID |
-
-### Request Body
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `comment` | string | Yes | Comment text |
-| `is_private` | boolean | No | Private comment (only visible to document owner) |
-| `mention_users` | array | No | Array of user IDs to mention |
-
-### Example Request
-
-```bash
-curl -X POST "https://public-api.taskip.net/api/public-v1/document/125/comment" \
-  -H "X-Secret-Key: your-secret-key-here" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "comment": "The technical specifications in section 3 need clarification. @david can you review?",
-    "is_private": false,
-    "mention_users": [8]
-  }'
-```
-
-### Example Response
-
-```json
-{
-  "success": true,
-  "message": "Comment added successfully",
-  "data": {
-    "comment_id": 45,
-    "document_id": 125,
-    "comment": "The technical specifications in section 3 need clarification. @david can you review?",
-    "author": "Sarah Johnson",
-    "is_private": false,
-    "mentions": [
-      {
-        "user_id": 8,
-        "user_name": "David Chen"
-      }
-    ],
-    "created_at": "2024-01-22T14:30:00Z"
-  }
-}
-```
-
----
-
-## Get Document Comments
-
-Retrieve all comments for a document.
-
-```http
-GET /api/public-v1/document/{id}/comments
-```
-
-### Path Parameters
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | integer | Yes | Document ID |
-
-### Example Request
-
-```bash
-curl -X GET "https://public-api.taskip.net/api/public-v1/document/125/comments" \
-  -H "X-Secret-Key: your-secret-key-here" \
-  -H "Content-Type: application/json"
-```
-
-### Example Response
-
-```json
-{
-  "success": true,
-  "data": {
-    "document_id": 125,
-    "comments": [
-      {
-        "id": 45,
-        "comment": "The technical specifications in section 3 need clarification. @david can you review?",
-        "author": "Sarah Johnson",
-        "author_id": 3,
-        "is_private": false,
-        "mentions": [
-          {
-            "user_id": 8,
-            "user_name": "David Chen"
-          }
-        ],
-        "replies": [],
-        "created_at": "2024-01-22T14:30:00Z"
-      },
-      {
-        "id": 44,
-        "comment": "Great work on the initial draft! Ready for client review.",
-        "author": "Mike Wilson",
-        "author_id": 5,
-        "is_private": false,
-        "mentions": [],
-        "replies": [
-          {
-            "id": 46,
-            "comment": "Thanks! I'll send it over today.",
-            "author": "Sarah Johnson",
-            "created_at": "2024-01-21T16:45:00Z"
-          }
-        ],
-        "created_at": "2024-01-21T16:20:00Z"
-      }
-    ],
-    "total_comments": 2
-  }
-}
-```
-
----
-
-## Bulk Actions
-
-Perform bulk operations on multiple documents.
-
-```http
-POST /api/public-v1/document/bulk-actions
-```
-
-### Request Body
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `document_ids` | array | Yes | Array of document IDs |
-| `action` | string | Yes | Action to perform (`delete`, `move`, `share`, `add_tags`) |
-| `parameters` | object | No | Additional parameters for the action |
-
-#### Action-specific Parameters
-
-**For `move` action:**
-- `folder_id`: Target folder ID
-
-**For `share` action:**
-- `user_ids`: Array of user IDs to share with
-- `permission`: Permission level
-
-**For `add_tags` action:**
-- `tags`: Array of tags to add
-
-### Example Request
-
-```bash
-curl -X POST "https://public-api.taskip.net/api/public-v1/document/bulk-actions" \
-  -H "X-Secret-Key: your-secret-key-here" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "document_ids": [120, 121, 122, 123],
-    "action": "move",
-    "parameters": {
-      "folder_id": 8
-    }
-  }'
-```
-
-### Example Response
-
-```json
-{
-  "success": true,
-  "message": "Bulk action completed successfully",
-  "data": {
-    "action": "move",
-    "processed_count": 4,
-    "successful_ids": [120, 121, 122, 123],
-    "failed_ids": [],
-    "results": [
-      {
-        "document_id": 120,
-        "status": "success",
-        "message": "Moved to Templates folder"
-      },
-      {
-        "document_id": 121,
-        "status": "success",
-        "message": "Moved to Templates folder"
-      },
-      {
-        "document_id": 122,
-        "status": "success",
-        "message": "Moved to Templates folder"
-      },
-      {
-        "document_id": 123,
-        "status": "success",
-        "message": "Moved to Templates folder"
-      }
-    ]
-  }
-}
-```
-
----
-
-## Get Folder Structure
-
-Retrieve the folder structure for document organization.
-
-```http
-GET /api/public-v1/document/folders
-```
-
-### Query Parameters
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `parent_id` | integer | No | Get subfolders of specific parent (0 for root) |
-| `include_documents` | boolean | No | Include document count in each folder |
-
-### Example Request
-
-```bash
-curl -X GET "https://public-api.taskip.net/api/public-v1/document/folders?include_documents=true" \
-  -H "X-Secret-Key: your-secret-key-here" \
-  -H "Content-Type: application/json"
-```
-
-### Example Response
-
-```json
-{
-  "success": true,
-  "data": {
-    "folders": [
-      {
-        "id": 1,
-        "name": "Root",
-        "parent_id": 0,
-        "path": "/",
-        "document_count": 5,
-        "subfolders": [
-          {
-            "id": 5,
-            "name": "Proposals",
-            "parent_id": 1,
-            "path": "/Proposals",
-            "document_count": 12,
-            "subfolders": []
-          },
-          {
-            "id": 8,
-            "name": "Templates",
-            "parent_id": 1,
-            "path": "/Templates",
-            "document_count": 8,
-            "subfolders": []
-          },
-          {
-            "id": 12,
-            "name": "Contracts",
-            "parent_id": 1,
-            "path": "/Contracts",
-            "document_count": 25,
-            "subfolders": [
-              {
-                "id": 15,
-                "name": "Active",
-                "parent_id": 12,
-                "path": "/Contracts/Active",
-                "document_count": 18,
-                "subfolders": []
-              },
-              {
-                "id": 16,
-                "name": "Archived",
-                "parent_id": 12,
-                "path": "/Contracts/Archived",
-                "document_count": 7,
-                "subfolders": []
-              }
-            ]
-          }
-        ],
-        "created_at": "2024-01-01T00:00:00Z",
-        "updated_at": "2024-01-20T10:30:00Z"
-      }
-    ],
-    "total_folders": 6,
-    "total_documents": 75
-  }
-}
-```
-
----
-
-## Search Documents
-
-Search for documents using various criteria.
-
-```http
-GET /api/public-v1/document/search
-```
-
-### Query Parameters
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `q` | string | Yes | Search query |
-| `in` | string | No | Search in (`name`, `content`, `tags`, `all`) |
-| `file_types` | string | No | Comma-separated file types to include |
-| `folder_id` | integer | No | Limit search to specific folder |
-| `date_from` | string | No | Search documents from date |
-| `date_to` | string | No | Search documents to date |
-| `size_min` | integer | No | Minimum file size in bytes |
-| `size_max` | integer | No | Maximum file size in bytes |
-| `page` | integer | No | Page number for pagination |
-| `limit` | integer | No | Results per page |
-
-### Example Request
-
-```bash
-curl -X GET "https://public-api.taskip.net/api/public-v1/document/search?q=project%20proposal&in=all&file_types=pdf,doc" \
-  -H "X-Secret-Key: your-secret-key-here" \
-  -H "Content-Type: application/json"
-```
-
-### JavaScript Example
-```javascript
-const searchParams = new URLSearchParams({
-  q: 'project proposal',
-  in: 'all',
-  file_types: 'pdf,doc',
-  page: 1,
-  limit: 20
-});
-
-const response = await fetch(`https://public-api.taskip.net/api/public-v1/document/search?${searchParams}`, {
-  method: 'GET',
-  headers: {
-    'X-Secret-Key': 'your-secret-key-here',
-    'Content-Type': 'application/json'
-  }
-});
-
-const results = await response.json();
-```
-
-### Example Response
-
-```json
-{
-  "success": true,
-  "data": {
-    "query": "project proposal",
-    "results": [
-      {
-        "id": 125,
-        "name": "Project Requirements - TechCorp (Updated)",
-        "file_type": "pdf",
-        "folder_name": "Proposals",
-        "owner_name": "Sarah Johnson",
-        "relevance_score": 0.95,
-        "matched_in": ["name", "content"],
-        "highlights": [
-          "This <em>project proposal</em> outlines the technical requirements...",
-          "The <em>project</em> will be delivered in three phases..."
-        ],
-        "created_at": "2024-01-20T10:30:00Z"
-      },
-      {
-        "id": 118,
-        "name": "Acme Corp - Website Proposal.pdf",
-        "file_type": "pdf",
-        "folder_name": "Proposals",
-        "owner_name": "Mike Wilson",
-        "relevance_score": 0.87,
-        "matched_in": ["name"],
-        "highlights": [
-          "Website redesign <em>proposal</em> for Acme Corporation..."
-        ],
-        "created_at": "2024-01-18T09:15:00Z"
-      }
-    ],
-    "total_results": 12,
-    "search_time_ms": 145,
-    "suggestions": [
-      "project requirements",
-      "proposal template",
-      "project documentation"
-    ]
-  },
-  "meta": {
-    "current_page": 1,
-    "per_page": 20,
-    "total_pages": 1
-  }
-}
+The Laravel backend generates the PDF using:
+```php
+return pdf()
+    ->margins(top: 20, right: 20, bottom: 10, left: 20)
+    ->format('a4')
+    ->landscape(false)
+    ->view('document::PDF.template', compact('content', 'title'))
+    ->name($pdName);
 ```
 
 ---
