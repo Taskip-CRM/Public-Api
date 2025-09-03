@@ -1,13 +1,12 @@
 # Meeting Management API
 
-The Meeting Management API provides comprehensive meeting scheduling, booking, and management capabilities. This powerful API allows you to create meetings, manage bookings, handle deal-specific meetings, and integrate with calendar systems for seamless scheduling workflows.
+The Meeting Management API provides comprehensive meeting scheduling, booking, and management capabilities. This powerful API allows you to create meetings, manage bookings, and integrate with calendar systems for seamless scheduling workflows.
 
 ## Overview
 
 Meeting Management consists of multiple interconnected features:
 - **Meeting Creation & Scheduling**: Create and schedule meetings with participants
 - **Booking System**: Allow clients to book available time slots
-- **Deal Integration**: Associate meetings with sales pipeline deals
 - **Calendar Integration**: Sync with popular calendar systems
 - **Participant Management**: Handle attendees and notifications
 - **Meeting Status**: Track completion and outcomes
@@ -17,23 +16,11 @@ Meeting Management consists of multiple interconnected features:
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/api/public-v1/meeting-list` | Get all meetings |
-| `GET` | `/api/public-v1/meeting/details/{uuid}` | Get meeting details |
-| `GET` | `/api/public-v1/meeting/{uuid}/booking-list` | Get booking list for a meeting |
-| `GET` | `/api/public-v1/meeting/{uuid}/booking/details/{id}` | Get specific booking details |
-| `POST` | `/api/public-v1/meeting/{uuid}/booking` | Book a meeting slot |
-
-## Deal-Specific Meeting Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/public-v1/sales-pipeline/{uuid}/deal/{id}/meeting` | Get all meetings for a deal |
-| `POST` | `/api/public-v1/sales-pipeline/{uuid}/deal/{id}/meeting` | Create a meeting for a deal |
-| `GET` | `/api/public-v1/sales-pipeline/{uuid}/deal/{id}/meeting/{meeting_id}` | Get specific deal meeting |
-| `PUT` | `/api/public-v1/sales-pipeline/{uuid}/deal/{id}/meeting/{meeting_id}` | Update a deal meeting |
-| `DELETE` | `/api/public-v1/sales-pipeline/{uuid}/deal/{id}/meeting/{meeting_id}` | Delete a deal meeting |
-| `POST` | `/api/public-v1/sales-pipeline/{uuid}/deal/{id}/meeting/bulk-actions` | Bulk meeting actions |
-| `POST` | `/api/public-v1/sales-pipeline/{uuid}/deal/{id}/meeting/{meeting_id}/complete` | Mark meeting as complete |
+| `GET` | [`/api/public-v1/meeting-list`](#get-all-meetings) | Get all meetings |
+| `GET` | [`/api/public-v1/meeting/details/{uuid}`](#get-meeting-details) | Get meeting details |
+| `GET` | [`/api/public-v1/meeting/{uuid}/booking-list`](#get-meeting-booking-list) | Get booking list for a meeting |
+| `GET` | [`/api/public-v1/meeting/{uuid}/booking/details/{id}`](#get-booking-details) | Get specific booking details |
+| `POST` | [`/api/public-v1/meeting/{uuid}/booking`](#book-a-meeting) | Book a meeting slot |
 
 ---
 
@@ -82,58 +69,58 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/meeting-list?status=upc
 
 ```json
 {
-  "success": true,
   "data": [
     {
       "id": 1,
-      "uuid": "meeting-abc123def456",
-      "title": "Client Discovery Call",
-      "description": "Initial discovery call with potential client",
-      "type": "sales",
-      "status": "upcoming",
-      "start_time": "2024-01-30T14:00:00Z",
-      "end_time": "2024-01-30T15:00:00Z",
-      "timezone": "America/New_York",
-      "location": {
-        "type": "online",
-        "details": "Google Meet",
-        "url": "https://meet.google.com/xyz-abc-def"
-      },
-      "organizer": {
+      "uuid": "meeting_abc123def456",
+      "user_id": 12,
+      "host": {
         "id": 12,
         "name": "Jane Smith",
         "email": "jane@taskip.com"
       },
-      "participants": [
-        {
-          "id": 45,
-          "name": "John Doe",
-          "email": "john.doe@client.com",
-          "status": "accepted",
-          "type": "external"
-        }
-      ],
-      "deal": {
-        "id": 156,
-        "title": "Acme Corp Website Redesign",
-        "pipeline": "Main Sales Pipeline"
+      "created_by": {
+        "id": 12,
+        "name": "Jane Smith",
+        "email": "jane@taskip.com"
       },
-      "booking_details": {
-        "is_bookable": true,
-        "available_slots": 8,
-        "booking_window": "2 weeks"
-      },
-      "created_at": "2024-01-25T10:30:00Z",
-      "updated_at": "2024-01-26T14:15:00Z"
+      "title": "Client Discovery Call",
+      "description": "Initial discovery call with potential client",
+      "duration": 60,
+      "method": "online",
+      "phone_option": false,
+      "phone": null,
+      "location": "Google Meet",
+      "status": "active",
+      "slug": "client-discovery-call",
+      "applicable_from": "2024-01-01",
+      "applicable_to": "2024-12-31",
+      "reminder": true,
+      "booking_status": "open",
+      "timezone": "America/New_York",
+      "booking_count": 3,
+      "meeting_integration_id": null,
+      "allow_guest": true,
+      "logo": {
+        "id": 45,
+        "original_url": "https://storage.taskip.net/logos/meeting-logo.png"
+      }
     }
   ],
+  "links": {
+    "first": "https://public-api.taskip.net/api/public-v1/meeting-list?page=1",
+    "last": "https://public-api.taskip.net/api/public-v1/meeting-list?page=2",
+    "prev": null,
+    "next": "https://public-api.taskip.net/api/public-v1/meeting-list?page=2"
+  },
   "meta": {
     "current_page": 1,
-    "per_page": 20,
-    "total": 35,
-    "total_pages": 2,
-    "upcoming_meetings": 15,
-    "completed_meetings": 20
+    "from": 1,
+    "last_page": 2,
+    "path": "https://public-api.taskip.net/api/public-v1/meeting-list",
+    "per_page": 15,
+    "to": 15,
+    "total": 25
   }
 }
 ```
@@ -171,109 +158,124 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/meeting/details/meeting
 
 ```json
 {
-  "success": true,
-  "data": {
+  "id": 1,
+  "uuid": "meeting_abc123def456",
+  "user_id": 12,
+  "host": {
+    "id": 12,
+    "name": "Jane Smith",
+    "email": "jane@taskip.com"
+  },
+  "allowed_team_members": [
+    {
+      "id": 15,
+      "user_id": 15,
+      "name": "Mike Wilson",
+      "email": "mike@taskip.com"
+    },
+    {
+      "id": 18,
+      "user_id": 18,
+      "name": "Sarah Johnson",
+      "email": "sarah@taskip.com"
+    }
+  ],
+  "created_by": {
+    "id": 12,
+    "name": "Jane Smith",
+    "email": "jane@taskip.com"
+  },
+  "title": "Client Discovery Call",
+  "description": "Initial discovery call with potential client to understand requirements",
+  "duration": 60,
+  "method": "online",
+  "phone_option": false,
+  "phone": null,
+  "location": "Google Meet",
+  "status": "active",
+  "slug": "client-discovery-call",
+  "availability": [
+    {
+      "id": 1,
+      "meeting_uuid": "meeting_abc123def456",
+      "day": "monday",
+      "status": "active",
+      "times": [
+        {
+          "id": 1,
+          "meetings_day_id": 1,
+          "time_slot_start": "09:00",
+          "time_slot_end": "17:00"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "meeting_uuid": "meeting_abc123def456",
+      "day": "tuesday",
+      "status": "active",
+      "times": [
+        {
+          "id": 2,
+          "meetings_day_id": 2,
+          "time_slot_start": "09:00",
+          "time_slot_end": "17:00"
+        }
+      ]
+    }
+  ],
+  "form": {
     "id": 1,
-    "uuid": "meeting-abc123def456",
-    "title": "Client Discovery Call",
-    "description": "Initial discovery call with potential client to understand requirements",
-    "type": "sales",
-    "status": "upcoming",
-    "start_time": "2024-01-30T14:00:00Z",
-    "end_time": "2024-01-30T15:00:00Z",
-    "timezone": "America/New_York",
-    "duration_minutes": 60,
-    "location": {
-      "type": "online",
-      "platform": "google_meet",
-      "details": "Google Meet Video Conference",
-      "url": "https://meet.google.com/xyz-abc-def",
-      "phone_numbers": ["+1-555-123-4567"],
-      "meeting_id": "xyz-abc-def"
-    },
-    "organizer": {
-      "id": 12,
-      "name": "Jane Smith",
-      "email": "jane@taskip.com",
-      "avatar": "https://example.com/avatars/jane.jpg"
-    },
-    "participants": [
+    "meeting_id": 1,
+    "fields": [
       {
-        "id": 45,
-        "name": "John Doe",
-        "email": "john.doe@client.com",
-        "status": "accepted",
-        "type": "external",
-        "response_time": "2024-01-26T10:30:00Z"
+        "label": "Full Name",
+        "type": "text",
+        "required": true
       },
       {
-        "id": 15,
-        "name": "Mike Wilson",
-        "email": "mike@taskip.com",
-        "status": "tentative",
-        "type": "team_member"
-      }
-    ],
-    "deal": {
-      "id": 156,
-      "uuid": "deal-xyz789",
-      "title": "Acme Corp Website Redesign",
-      "value": 15000.00,
-      "stage": "Qualified",
-      "pipeline": "Main Sales Pipeline"
-    },
-    "agenda": [
-      {
-        "item": "Introduction and company overview",
-        "duration": 10
-      },
-      {
-        "item": "Requirements discussion",
-        "duration": 30
-      },
-      {
-        "item": "Next steps and proposal timeline",
-        "duration": 20
-      }
-    ],
-    "attachments": [
-      {
-        "id": 25,
-        "name": "Company Presentation.pdf",
-        "size": 2048576,
-        "url": "/api/documents/25/download"
-      }
-    ],
-    "reminders": [
-      {
+        "label": "Email",
         "type": "email",
-        "time": "30 minutes before",
-        "sent": false
+        "required": true
       },
       {
-        "type": "sms",
-        "time": "15 minutes before",
-        "sent": false
+        "label": "Company",
+        "type": "text",
+        "required": false
       }
-    ],
-    "booking_settings": {
-      "is_bookable": true,
-      "booking_window_days": 14,
-      "min_notice_hours": 24,
-      "max_bookings_per_day": 5,
-      "available_days": ["monday", "tuesday", "wednesday", "thursday", "friday"],
-      "available_times": {
-        "start": "09:00",
-        "end": "17:00"
-      }
+    ]
+  },
+  "customise": {
+    "id": 1,
+    "meeting_id": 1,
+    "success_message": "Thank you for booking! We'll send you a confirmation email shortly.",
+    "button_text": "Book Meeting",
+    "primary_color": "#2563eb"
+  },
+  "reminders": [
+    {
+      "id": 1,
+      "meeting_id": 1,
+      "type": "email",
+      "time": 30,
+      "time_unit": "minutes"
     },
-    "calendar_integration": {
-      "google_calendar_event_id": "abc123def456ghi789",
-      "outlook_event_id": null,
-      "ics_url": "https://api.taskip.net/calendar/meeting-abc123def456.ics"
-    },
-    "created_at": "2024-01-25T10:30:00Z",
-    "updated_at": "2024-01-26T14:15:00Z"
+    {
+      "id": 2,
+      "meeting_id": 1,
+      "type": "email",
+      "time": 24,
+      "time_unit": "hours"
+    }
+  ],
+  "booking_count": 3,
+  "applicable_from": "2024-01-01",
+  "applicable_to": "2024-12-31",
+  "allow_guest": true,
+  "meeting_integration_id": null,
+  "logo": {
+    "id": 45,
+    "original_url": "https://storage.taskip.net/logos/meeting-logo.png"
   }
 }
 ```
@@ -296,6 +298,9 @@ GET /api/public-v1/meeting/{uuid}/booking-list
 ### Query Parameters
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
+| `page` | integer | No | Page number for pagination (default: 1) |
+| `limit` | integer | No | Number of bookings per page (default: 15) |
+| `search` | string | No | Search term for booking details |
 | `status` | string | No | Filter by booking status (`confirmed`, `pending`, `cancelled`) |
 | `date_from` | date | No | Filter bookings from date |
 | `date_to` | date | No | Filter bookings to date |
@@ -318,45 +323,95 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/meeting/meeting-abc123d
 
 ```json
 {
-  "success": true,
   "data": [
     {
       "id": 1,
-      "booking_reference": "BK-2024-001",
-      "status": "confirmed",
-      "booked_time": "2024-01-30T14:00:00Z",
-      "duration_minutes": 60,
-      "attendee": {
-        "name": "John Doe",
-        "email": "john.doe@client.com",
-        "phone": "+1-555-987-6543",
-        "company": "Acme Corporation"
+      "uuid": "booking_abc123def456",
+      "cancel_reason": null,
+      "meeting": {
+        "id": 1,
+        "uuid": "meeting_abc123def456",
+        "user_id": 12,
+        "host": {
+          "id": 12,
+          "name": "Jane Smith",
+          "email": "jane@taskip.com"
+        },
+        "created_by": {
+          "id": 12,
+          "name": "Jane Smith",
+          "email": "jane@taskip.com"
+        },
+        "title": "Client Discovery Call",
+        "description": "Initial discovery call with potential client",
+        "duration": 60,
+        "method": "online",
+        "phone_option": false,
+        "phone": null,
+        "location": "Google Meet",
+        "status": "active",
+        "slug": "client-discovery-call",
+        "applicable_from": "2024-01-01",
+        "applicable_to": "2024-12-31",
+        "reminder": true,
+        "booking_status": "open",
+        "timezone": "America/New_York",
+        "booking_count": 3,
+        "meeting_integration_id": null,
+        "allow_guest": true,
+        "logo": {
+          "id": 45,
+          "original_url": "https://storage.taskip.net/logos/meeting-logo.png"
+        }
       },
-      "booking_details": {
-        "meeting_purpose": "Discuss website redesign requirements",
-        "special_requirements": "Screen sharing needed",
-        "preferred_language": "English"
-      },
-      "confirmation": {
-        "confirmation_sent": true,
-        "confirmation_sent_at": "2024-01-26T15:30:00Z",
-        "reminder_sent": false
-      },
-      "booking_url": "https://taskip.net/meetings/meeting-abc123def456/book",
-      "calendar_links": {
-        "google": "https://calendar.google.com/calendar/render?action=TEMPLATE&text=...",
-        "outlook": "https://outlook.live.com/calendar/0/deeplink/compose?subject=...",
-        "ics": "https://api.taskip.net/calendar/booking-1.ics"
-      },
-      "created_at": "2024-01-26T15:20:00Z",
-      "updated_at": "2024-01-26T15:30:00Z"
+      "first_name": "John",
+      "last_name": "Doe",
+      "email": "john.doe@client.com",
+      "booking_data": [
+        {
+          "label": "Company",
+          "value": "Acme Corporation"
+        },
+        {
+          "label": "Phone",
+          "value": "+1-555-987-6543"
+        },
+        {
+          "label": "Meeting Purpose",
+          "value": "Discuss website redesign requirements"
+        }
+      ],
+      "date": "30-Jan-2024",
+      "country": "United States",
+      "ip": "192.168.1.1",
+      "browser": "Chrome",
+      "os": "MacOS",
+      "device": "Desktop",
+      "created_at": "26-Jan-2024",
+      "time_slot_start": "2:00 PM",
+      "time_slot_end": "3:00 PM",
+      "meeting_link": "https://meet.google.com/xyz-abc-def",
+      "meeting_provider": "Google Meet",
+      "timezone": "America/New_York",
+      "is_over": false,
+      "status": "confirmed"
     }
   ],
+  "links": {
+    "first": "https://public-api.taskip.net/api/public-v1/meeting/meeting_abc123def456/booking-list?page=1",
+    "last": "https://public-api.taskip.net/api/public-v1/meeting/meeting_abc123def456/booking-list?page=1",
+    "prev": null,
+    "next": null
+  },
   "meta": {
-    "total_bookings": 3,
-    "confirmed_bookings": 2,
-    "pending_bookings": 1,
-    "available_slots": 5
+    "current_page": 1,
+    "from": 1,
+    "last_page": 1,
+    "path": "https://public-api.taskip.net/api/public-v1/meeting/meeting_abc123def456/booking-list",
+    "per_page": 15,
+    "to": 3,
+    "total": 3,
+    "search": null
   }
 }
 ```
@@ -395,75 +450,112 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/meeting/meeting-abc123d
 
 ```json
 {
-  "success": true,
   "data": {
     "id": 1,
-    "booking_reference": "BK-2024-001",
-    "status": "confirmed",
-    "booked_time": "2024-01-30T14:00:00Z",
-    "end_time": "2024-01-30T15:00:00Z",
-    "duration_minutes": 60,
-    "timezone": "America/New_York",
+    "uuid": "booking_abc123def456",
+    "cancel_reason": null,
     "meeting": {
       "id": 1,
-      "uuid": "meeting-abc123def456",
+      "uuid": "meeting_abc123def456",
+      "user_id": 12,
+      "host": {
+        "id": 12,
+        "name": "Jane Smith",
+        "email": "jane@taskip.com"
+      },
+      "created_by": {
+        "id": 12,
+        "name": "Jane Smith",
+        "email": "jane@taskip.com"
+      },
       "title": "Client Discovery Call",
-      "type": "sales"
+      "description": "Initial discovery call with potential client",
+      "duration": 60,
+      "method": "online",
+      "phone_option": false,
+      "phone": null,
+      "location": "Google Meet",
+      "status": "active",
+      "slug": "client-discovery-call",
+      "applicable_from": "2024-01-01",
+      "applicable_to": "2024-12-31",
+      "reminder": true,
+      "booking_status": "open",
+      "timezone": "America/New_York",
+      "booking_count": 3,
+      "meeting_integration_id": null,
+      "allow_guest": true,
+      "logo": {
+        "id": 45,
+        "original_url": "https://storage.taskip.net/logos/meeting-logo.png"
+      }
     },
-    "attendee": {
-      "name": "John Doe",
-      "email": "john.doe@client.com",
-      "phone": "+1-555-987-6543",
-      "company": "Acme Corporation",
-      "position": "Marketing Director"
-    },
-    "booking_form_data": {
-      "meeting_purpose": "Discuss website redesign requirements",
-      "current_website": "https://acme.com",
-      "budget_range": "$10,000 - $20,000",
-      "timeline": "3 months",
-      "special_requirements": "Screen sharing needed for design review"
-    },
-    "organizer": {
-      "id": 12,
-      "name": "Jane Smith",
-      "email": "jane@taskip.com"
-    },
-    "location": {
-      "type": "online",
-      "platform": "google_meet",
-      "url": "https://meet.google.com/xyz-abc-def",
-      "meeting_id": "xyz-abc-def"
-    },
-    "confirmations": {
-      "email_confirmation_sent": true,
-      "email_sent_at": "2024-01-26T15:30:00Z",
-      "sms_confirmation_sent": false,
-      "calendar_invite_sent": true
-    },
-    "reminders": [
+    "first_name": "John",
+    "last_name": "Doe",
+    "email": "john.doe@client.com",
+    "booking_data": [
       {
-        "type": "email",
-        "time": "24 hours before",
-        "sent": false,
-        "scheduled_at": "2024-01-29T14:00:00Z"
+        "label": "Company",
+        "value": "Acme Corporation"
       },
       {
-        "type": "email",
-        "time": "1 hour before",
-        "sent": false,
-        "scheduled_at": "2024-01-30T13:00:00Z"
+        "label": "Phone",
+        "value": "+1-555-987-6543"
+      },
+      {
+        "label": "Meeting Purpose",
+        "value": "Discuss website redesign requirements"
       }
     ],
-    "reschedule_count": 0,
-    "cancellation_reason": null,
-    "payment_info": {
-      "is_paid_meeting": false,
-      "price": 0.00,
-      "currency": "USD"
+    "date": "30-Jan-2024",
+    "country": "United States",
+    "ip": "192.168.1.1",
+    "browser": "Chrome",
+    "os": "MacOS",
+    "device": "Desktop",
+    "created_at": "26-Jan-2024",
+    "time_slot_start": "2:00 PM",
+    "time_slot_end": "3:00 PM",
+    "meeting_link": "https://meet.google.com/xyz-abc-def",
+    "meeting_provider": "Google Meet",
+    "timezone": "America/New_York",
+    "is_over": false,
+    "status": "confirmed"
+  },
+  "availibility": [
+    {
+      "id": 1,
+      "meeting_uuid": "meeting_abc123def456",
+      "day": "monday",
+      "status": "active",
+      "times": [
+        {
+          "id": 1,
+          "meetings_day_id": 1,
+          "time_slot_start": "09:00",
+          "time_slot_end": "17:00"
+        }
+      ]
     },
-    "created_at": "2024-01-26T15:20:00Z",
-    "updated_at": "2024-01-26T15:30:00Z"
+    {
+      "id": 2,
+      "meeting_uuid": "meeting_abc123def456",
+      "day": "tuesday",
+      "status": "active",
+      "times": [
+        {
+          "id": 2,
+          "meetings_day_id": 2,
+          "time_slot_start": "09:00",
+          "time_slot_end": "17:00"
+        }
+      ]
+    }
+  ],
+  "booking_data": {
+    "company": "Acme Corporation",
+    "phone": "+1-555-987-6543",
+    "meeting_purpose": "Discuss website redesign requirements"
   }
 }
 ```
@@ -487,18 +579,11 @@ POST /api/public-v1/meeting/{uuid}/booking
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `attendee_name` | string | Yes | Attendee full name |
-| `attendee_email` | string | Yes | Attendee email address |
-| `attendee_phone` | string | No | Attendee phone number |
-| `company` | string | No | Attendee company name |
-| `position` | string | No | Attendee position/title |
-| `booked_time` | datetime | Yes | Preferred meeting time (ISO 8601) |
-| `timezone` | string | No | Attendee timezone (default: UTC) |
-| `meeting_purpose` | string | No | Purpose of the meeting |
-| `message` | string | No | Additional message or requirements |
-| `custom_fields` | object | No | Custom form fields data |
-| `send_confirmation` | boolean | No | Send confirmation email (default: true) |
-| `language` | string | No | Preferred language for communications |
+| `date` | string | Yes | Booking date (YYYY-MM-DD) |
+| `time_slot_start` | string | Yes | Start time (HH:MM) |
+| `time_slot_end` | string | Yes | End time (HH:MM) |
+| `booking_data` | array | Yes | Array of booking form data |
+| `timezone` | string | No | Timezone for the booking |
 
 <ApiTester
   endpoint="/api/public-v1/meeting/meeting-abc123def456/booking"
@@ -531,13 +616,18 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/meeting/meeting-abc123
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json" \
   -d '{
-    "attendee_name": "John Doe",
-    "attendee_email": "john.doe@client.com",
-    "attendee_phone": "+1-555-987-6543",
-    "company": "Acme Corporation",
-    "booked_time": "2024-02-15T14:00:00Z",
-    "meeting_purpose": "Discuss website redesign project",
-    "send_confirmation": true
+    "date": "2024-02-15",
+    "time_slot_start": "14:00",
+    "time_slot_end": "15:00",
+    "booking_data": {
+      "first_name": "John",
+      "last_name": "Doe",
+      "email": "john.doe@client.com",
+      "company": "Acme Corporation",
+      "phone": "+1-555-987-6543",
+      "meeting_purpose": "Discuss website redesign project"
+    },
+    "timezone": "America/New_York"
   }'
 ```
 
@@ -545,173 +635,43 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/meeting/meeting-abc123
 
 ```json
 {
-  "success": true,
-  "message": "Meeting booked successfully",
+  "success_msg": "Thank you for booking! We'll send you a confirmation email shortly.",
   "data": {
-    "booking": {
-      "id": 15,
-      "booking_reference": "BK-2024-015",
-      "status": "confirmed",
-      "booked_time": "2024-02-15T14:00:00Z",
-      "end_time": "2024-02-15T15:00:00Z",
-      "duration_minutes": 60,
+    "meeting": {
+      "id": 1,
+      "uuid": "meeting_abc123def456",
+      "title": "Client Discovery Call",
+      "description": "Initial discovery call with potential client",
+      "duration": 60,
+      "method": "online",
+      "location": "Google Meet",
       "timezone": "America/New_York",
-      "attendee": {
-        "name": "John Doe",
-        "email": "john.doe@client.com",
-        "phone": "+1-555-987-6543",
-        "company": "Acme Corporation"
-      },
-      "meeting": {
-        "uuid": "meeting-abc123def456",
-        "title": "Client Discovery Call",
-        "organizer": "Jane Smith"
-      },
-      "location": {
-        "type": "online",
-        "platform": "google_meet",
-        "url": "https://meet.google.com/new-generated-link"
+      "host": {
+        "id": 12,
+        "name": "Jane Smith",
+        "email": "jane@taskip.com"
       }
     },
-    "confirmations": {
-      "email_sent": true,
-      "calendar_invite_sent": true,
-      "confirmation_url": "https://taskip.net/meetings/confirm/BK-2024-015"
+    "user": {
+      "first_name": "John",
+      "last_name": "Doe",
+      "email": "john.doe@client.com"
     },
-    "calendar_links": {
-      "google": "https://calendar.google.com/calendar/render?action=TEMPLATE&text=Client+Discovery+Call...",
-      "outlook": "https://outlook.live.com/calendar/0/deeplink/compose?subject=Client+Discovery+Call...",
-      "ics": "https://api.taskip.net/calendar/booking-15.ics"
-    },
-    "next_steps": [
-      "Check your email for confirmation details",
-      "Add the meeting to your calendar using the provided links",
-      "Join the meeting using the provided Google Meet link"
-    ]
+    "time_slot_start": "14:00",
+    "time_slot_end": "15:00",
+    "date": "2024-02-15",
+    "timezone": "America/New_York",
+    "allow_guest": true
   }
 }
 ```
 
 ---
 
-# Deal-Specific Meeting Management
-
-Manage meetings that are specifically associated with sales pipeline deals.
-
-## Get All Deal Meetings
-
-Retrieve all meetings associated with a specific deal.
-
-```http
-GET /api/public-v1/sales-pipeline/{uuid}/deal/{id}/meeting
-```
-
-### Path Parameters
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `uuid` | string | Yes | Sales pipeline UUID |
-| `id` | integer | Yes | Deal ID |
-
-<ApiTester
-  endpoint="/api/public-v1/sales-pipeline/pipeline-abc123def456/deal/156/meeting"
-  method="GET"
-  description="Test getting all meetings for a specific deal"
-/>
-
----
-
-## Create Deal Meeting
-
-Create a new meeting associated with a specific deal.
-
-```http
-POST /api/public-v1/sales-pipeline/{uuid}/deal/{id}/meeting
-```
-
-### Path Parameters
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `uuid` | string | Yes | Sales pipeline UUID |
-| `id` | integer | Yes | Deal ID |
-
-### Request Body
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `title` | string | Yes | Meeting title |
-| `description` | string | No | Meeting description |
-| `start_time` | datetime | Yes | Meeting start time |
-| `duration_minutes` | integer | Yes | Meeting duration in minutes |
-| `participants` | array | No | Array of participant emails |
-| `location_type` | string | Yes | Location type (`online`, `in_person`, `phone`) |
-| `location_details` | string | No | Location details or URL |
-
-<ApiTester
-  endpoint="/api/public-v1/sales-pipeline/pipeline-abc123def456/deal/156/meeting"
-  method="POST"
-  defaultBody={{
-    title: "Contract Review Meeting",
-    description: "Review and discuss contract terms with the client",
-    start_time: "2024-02-20T15:00:00Z",
-    duration_minutes: 90,
-    participants: ["john.doe@client.com", "legal@taskip.com"],
-    location_type: "online",
-    location_details: "Google Meet (link will be generated)"
-  }}
-  description="Test creating a meeting for a specific deal"
-/>
-
----
-
-## Mark Meeting as Complete
-
-Mark a deal meeting as completed and record outcomes.
-
-```http
-POST /api/public-v1/sales-pipeline/{uuid}/deal/{id}/meeting/{meeting_id}/complete
-```
-
-### Path Parameters
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `uuid` | string | Yes | Sales pipeline UUID |
-| `id` | integer | Yes | Deal ID |
-| `meeting_id` | integer | Yes | Meeting ID |
-
-### Request Body
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `outcome` | string | Yes | Meeting outcome (`successful`, `needs_followup`, `cancelled`) |
-| `notes` | string | No | Meeting notes and summary |
-| `next_actions` | array | No | Array of follow-up actions |
-| `attendees_present` | array | No | List of attendees who were present |
-
-<ApiTester
-  endpoint="/api/public-v1/sales-pipeline/pipeline-abc123def456/deal/156/meeting/1/complete"
-  method="POST"
-  defaultBody={{
-    outcome: "successful",
-    notes: "Client approved the proposal with minor modifications. Ready to proceed to contract phase.",
-    next_actions: [
-      "Send updated proposal by Friday",
-      "Schedule contract signing meeting",
-      "Prepare project kickoff materials"
-    ],
-    attendees_present: ["john.doe@client.com", "jane@taskip.com"]
-  }}
-  description="Test marking a deal meeting as complete"
-/>
-
----
-
 <Callout type="info" emoji="📅">
-  **Calendar Integration**: Meeting Management seamlessly integrates with Google Calendar, Outlook, and other popular calendar systems for automatic synchronization and reminders.
+  **Meeting Integration**: Meeting Management integrates with Google Meet and Zoom for seamless video conferencing and automatic meeting link generation.
 </Callout>
 
-<Callout type="success" emoji="🎯">
-  **Deal Tracking**: Meetings can be directly associated with sales pipeline deals, providing complete context and improving deal management workflows.
-</Callout>
 
 <Callout type="warning" emoji="⏰">
   **Time Zones**: Always specify time zones when scheduling meetings to avoid confusion. The system supports automatic time zone conversion for participants.
