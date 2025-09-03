@@ -129,14 +129,6 @@ Content-Type: application/json
 | `PUT` | `/document/{id}` | [Update document metadata](/document-management#update-document-metadata) |
 | `DELETE` | `/document/{id}` | [Delete a document](/document-management#delete-a-document) |
 | `GET` | `/document/{id}/download` | [Download document file](/document-management#download-document-file) |
-| `POST` | `/document/{id}/share` | [Share document with users](/document-management#share-document-with-users) |
-| `POST` | `/document/{id}/version` | [Upload new document version](/document-management#upload-new-document-version) |
-| `GET` | `/document/{id}/versions` | [Get document version history](/document-management#get-document-version-history) |
-| `POST` | `/document/{id}/comment` | [Add comment to document](/document-management#add-comment-to-document) |
-| `GET` | `/document/{id}/comments` | [Get document comments](/document-management#get-document-comments) |
-| `POST` | `/document/bulk-actions` | [Bulk document operations](/document-management#bulk-actions) |
-| `GET` | `/document/folders` | [Get folder structure](/document-management#get-folder-structure) |
-| `GET` | `/document/search` | [Search documents](/document-management#search-documents) |
 
 ---
 
@@ -146,29 +138,136 @@ Content-Type: application/json
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `GET` | `/project` | [Get all projects](/project-management#get-all-projects) |
-| `POST` | `/project` | [Create a new project](/project-management#create-a-new-project) |
-| `GET` | `/project/{id}` | [Get a specific project](/project-management#get-a-specific-project) |
-| `PUT` | `/project/{id}` | [Update a project](/project-management#update-a-project) |
-| `DELETE` | `/project/{id}` | [Delete a project](/project-management#delete-a-project) |
-| `POST` | `/project/{id}/status-update` | [Update project status](/project-management#update-project-status) |
-| `POST` | `/project/{id}/assign-team` | [Assign team members to project](/project-management#assign-team-to-project) |
-| `GET` | `/project/{id}/team` | [Get project team members](/project-management#get-project-team) |
-| `GET` | `/project/{id}/analytics` | [Get project analytics](/project-management#get-project-analytics) |
+| `POST` | `/project` | [Create a new project](/project-management#create-new-project) |
+| `GET` | `/project/{id}` | [Get a specific project](/project-management#get-specific-project) |
+| `PUT` | `/project/{id}` | [Update a project](/project-management#update-project) |
+| `DELETE` | `/project/{id}` | [Delete a project](/project-management#delete-project) |
+| `POST` | `/project/dashboard/activity` | [Get dashboard activities](/project-management#get-dashboard-activities) |
+| `POST` | `/project/{uuid}/activity` | [Get project activities](/project-management#get-project-activities) |
+| `POST` | `/project/all-tasks/list` | [Get all tasks list](/project-management#get-all-tasks-list) |
+| `POST` | `/project/{uuid}/change-priority` | [Change project priority](/project-management#change-project-priority) |
+| `POST` | `/project/{uuid}/change-status` | [Change project status](/project-management#change-project-status) |
+| `POST` | `/project/{uuid}/change-category` | [Change project category](/project-management#change-project-category) |
 
-### Task Operations
+### Task Management
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/project/{project_id}/task` | [Get all tasks in project](/project-management#get-all-tasks) |
-| `POST` | `/project/{project_id}/task` | [Create a new task](/project-management#create-a-new-task) |
-| `GET` | `/task/{id}` | [Get a specific task](/project-management#get-specific-task) |
-| `PUT` | `/task/{id}` | [Update a task](/project-management#update-task) |
-| `DELETE` | `/task/{id}` | [Delete a task](/project-management#delete-task) |
-| `POST` | `/task/{id}/assign` | [Assign task to team member](/project-management#assign-task) |
-| `POST` | `/task/{id}/status-update` | [Update task status](/project-management#update-task-status) |
-| `POST` | `/task/{id}/time-log` | [Log time spent on task](/project-management#log-time-spent-on-task) |
-| `GET` | `/task/{id}/time-logs` | [Get task time logs](/project-management#get-task-time-logs) |
-| `POST` | `/task/bulk-actions` | [Perform bulk task operations](/project-management#bulk-task-operations) |
-| `GET` | `/task/my-tasks` | [Get current user's tasks](/project-management#get-my-tasks) |
+| `GET` | `/project/{uuid}/task` | [Get all tasks in project](/project-management#get-project-tasks) |
+| `POST` | `/project/{uuid}/task` | [Create a new task](/project-management#create-task) |
+| `GET` | `/project/{uuid}/task/{id}` | [Get a specific task](/project-management#get-specific-task) |
+| `PUT` | `/project/{uuid}/task/{id}` | [Update a task](/project-management#update-task) |
+| `DELETE` | `/project/{uuid}/task/{id}` | [Delete a task](/project-management#delete-task) |
+| `POST` | `/project/{uuid}/task/change-order` | [Change task order](/project-management#change-task-order) |
+| `POST` | `/project/{uuid}/task/{id}/change-container` | [Change task container](/project-management#change-task-container) |
+| `POST` | `/project/{uuid}/task/{id}/change-priority` | [Change task priority](/project-management#change-task-priority) |
+| `POST` | `/project/{uuid}/task/{id}/mark-as-complete` | [Mark task as complete](/project-management#mark-task-complete) |
+
+### Task Labels & Assignees
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/project/{uuid}/task/{id}/label` | [Add label to task](/project-management#add-task-label) |
+| `DELETE` | `/project/{uuid}/task/{id}/label` | [Remove label from task](/project-management#remove-task-label) |
+| `POST` | `/project/{uuid}/task/{id}/assignee` | [Add assignee to task](/project-management#add-task-assignee) |
+| `DELETE` | `/project/{uuid}/task/{id}/assignee` | [Remove assignee from task](/project-management#remove-task-assignee) |
+
+### Task Files Management
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/project/{uuid}/task/files` | [Get all task files in project](/project-management#get-all-task-files) |
+| `GET` | `/project/{uuid}/task/{id}/files` | [Get task files](/project-management#get-task-files) |
+| `POST` | `/project/{uuid}/task/{id}/files` | [Upload file to task](/project-management#upload-task-file) |
+| `DELETE` | `/project/{uuid}/task/{id}/files` | [Delete file from task](/project-management#delete-task-file) |
+| `GET` | `/project/{uuid}/files` | [Get all project files](/project-management#get-project-files) |
+
+### Discussion Management
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/project/{uuid}/discussion` | [Get project discussions](/project-management#get-project-discussions) |
+| `POST` | `/project/{uuid}/discussion` | [Create new discussion](/project-management#create-discussion) |
+| `GET` | `/project/{uuid}/discussion/files` | [Get discussion files](/project-management#get-discussion-files) |
+
+### Container Management
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/project/{uuid}/container` | [Create new container](/project-management#create-container) |
+| `PUT` | `/project/{uuid}/container/{id}/rename` | [Rename container](/project-management#rename-container) |
+| `POST` | `/project/{uuid}/container/{id}/change-color` | [Change container color](/project-management#change-container-color) |
+| `POST` | `/project/{uuid}/container/change-order` | [Change container order](/project-management#change-container-order) |
+| `DELETE` | `/project/{uuid}/container/{id}/delete` | [Delete container](/project-management#delete-container) |
+| `POST` | `/project/{uuid}/container/{id}/move-all-tasks` | [Move all tasks from container](/project-management#move-all-tasks) |
+
+### Project Attributes
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/project/attribute/all` | [Get all project attributes](/project-management#get-all-attributes) |
+| `POST` | `/project/attribute` | [Create new attribute](/project-management#create-attribute) |
+| `PUT` | `/project/attribute/{id}/update` | [Update attribute](/project-management#update-attribute) |
+| `DELETE` | `/project/attribute/{id}/delete` | [Delete attribute](/project-management#delete-attribute) |
+| `POST` | `/project/attribute/tags/update` | [Bulk update tags](/project-management#bulk-update-tags) |
+| `POST` | `/project/attribute/categories/update` | [Bulk update categories](/project-management#bulk-update-categories) |
+
+---
+
+## Sales Pipeline Management
+
+### Sales Pipeline Operations
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/sales-pipeline` | [Get all sales pipelines](/sales-pipeline-management#get-all-sales-pipelines) |
+| `POST` | `/sales-pipeline` | [Create a new sales pipeline](/sales-pipeline-management#create-sales-pipeline) |
+| `GET` | `/sales-pipeline/{uuid}` | [Get a specific sales pipeline](/sales-pipeline-management#get-specific-sales-pipeline) |
+| `PUT` | `/sales-pipeline/{uuid}` | [Update a sales pipeline](/sales-pipeline-management#update-sales-pipeline) |
+| `DELETE` | `/sales-pipeline/{uuid}` | [Delete a sales pipeline](/sales-pipeline-management#delete-sales-pipeline) |
+
+### Deal Management
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/sales-pipeline/{uuid}/deal` | [Get all deals in pipeline](/sales-pipeline-management#get-all-deals-in-pipeline) |
+| `POST` | `/sales-pipeline/{uuid}/deal` | [Create a new deal](/sales-pipeline-management#create-deal) |
+| `GET` | `/sales-pipeline/{uuid}/deal/{id}` | [Get a specific deal](/sales-pipeline-management#get-specific-deal) |
+| `PUT` | `/sales-pipeline/{uuid}/deal/{id}` | [Update a deal](/sales-pipeline-management#update-deal) |
+| `DELETE` | `/sales-pipeline/{uuid}/deal/{id}` | [Delete a deal](/sales-pipeline-management#delete-deal) |
+| `POST` | `/sales-pipeline/{uuid}/deal/{id}/change-stage` | [Change deal stage](/sales-pipeline-management#change-deal-stage) |
+| `POST` | `/sales-pipeline/{uuid}/deal/{id}/add-note` | [Add note to deal](/sales-pipeline-management#add-note-to-deal) |
+| `POST` | `/sales-pipeline/{uuid}/deal/{id}/add-activity` | [Add activity to deal](/sales-pipeline-management#add-activity-to-deal) |
+| `POST` | `/sales-pipeline/{uuid}/deal/bulk-actions` | [Bulk deal operations](/sales-pipeline-management#bulk-deal-operations) |
+
+### Stage Management
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/sales-pipeline/{uuid}/stage` | [Get all stages in pipeline](/sales-pipeline-management#get-all-stages-in-pipeline) |
+| `POST` | `/sales-pipeline/{uuid}/stage` | [Create a new stage](/sales-pipeline-management#create-stage) |
+| `PUT` | `/sales-pipeline/{uuid}/stage/{id}` | [Update a stage](/sales-pipeline-management#update-stage) |
+| `DELETE` | `/sales-pipeline/{uuid}/stage/{id}` | [Delete a stage](/sales-pipeline-management#delete-stage) |
+| `POST` | `/sales-pipeline/{uuid}/stage/reorder` | [Reorder stages](/sales-pipeline-management#reorder-stages) |
+
+---
+
+## Meeting Management
+
+### Meeting Operations
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/meeting-list` | [Get all meetings](/meeting-management#get-all-meetings) |
+| `GET` | `/meeting/details/{uuid}` | [Get meeting details](/meeting-management#get-meeting-details) |
+| `GET` | `/meeting/{uuid}/booking-list` | [Get booking list for a meeting](/meeting-management#get-meeting-booking-list) |
+| `GET` | `/meeting/{uuid}/booking/details/{id}` | [Get specific booking details](/meeting-management#get-booking-details) |
+| `POST` | `/meeting/{uuid}/booking` | [Book a meeting slot](/meeting-management#book-a-meeting) |
+
+---
+
+## Inbox Management
+
+### Conversation Operations
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/inbox/conversation/all` | [Get all inbox conversations](/inbox-management#get-all-conversations) |
+| `POST` | `/inbox/conversation/new-message` | [Create a new message/conversation](/inbox-management#create-new-messageconversation) |
+| `POST` | `/inbox/conversation/{uuid}/reply` | [Reply to a conversation](/inbox-management#reply-to-conversation) |
+| `POST` | `/inbox/conversation/{uuid}/assign-tags` | [Assign tags to a conversation](/inbox-management#assign-tags-to-conversation) |
+| `GET` | `/get-email-address` | [Get inbox email address](/inbox-management#get-email-address) |
+| `PUT` | `/inbox/assign-tags/{id}` | [Update tag assignments](/inbox-management#update-tag-assignment) |
+| `DELETE` | `/inbox/assign-tags/{id}` | [Remove tag assignments](/inbox-management#remove-tag-assignment) |
 
 ---
 
