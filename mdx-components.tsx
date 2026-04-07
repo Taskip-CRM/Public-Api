@@ -1,23 +1,23 @@
-import type { MDXComponents } from 'mdx/types'
+import { useMDXComponents as getDocsMDXComponents } from 'nextra-theme-docs'
 import dynamic from 'next/dynamic'
+import Callout from './components/Callout'
 
 const ApiTester = dynamic(() => import('./components/ApiTester'), {
-  ssr: false,
-})
-
-const Callout = dynamic(() => import('./components/Callout'), {
-  ssr: true,
+  ssr: false
 })
 
 const BackToTop = dynamic(() => import('./components/BackToTop'), {
-  ssr: false,
+  ssr: false
 })
- 
-export function useMDXComponents(components: MDXComponents): MDXComponents {
+
+const docsComponents = getDocsMDXComponents()
+
+export function useMDXComponents(components = {}) {
   return {
+    ...docsComponents,
     ...components,
     ApiTester,
     Callout,
-    BackToTop,
+    BackToTop
   }
 }
