@@ -5,18 +5,19 @@ import 'nextra-theme-docs/style.css'
 import type { ReactNode } from 'react'
 
 export const metadata = {
+  metadataBase: new URL('https://public-api-doc.taskip.net'),
   title: {
     default: 'Taskip API Documentation',
-    template: '%s – Taskip API Documentation'
+    template: '%s – Taskip REST API Docs'
   },
   description:
-    'Comprehensive API documentation for Taskip - All-in-one client portal software for agencies and freelancers.',
+    'Taskip REST API documentation: authentication, endpoints and examples for contacts, projects, invoices, support tickets and more.',
   openGraph: {
     title: 'Taskip API Documentation',
     description:
-      'Build powerful integrations with Taskip API. Access 100+ endpoints for projects, invoices, contacts, support tickets, and more. Complete with code examples in JavaScript, Python, and PHP.',
+      'Build powerful integrations with Taskip API. Access 100+ endpoints for projects, invoices, contacts, support tickets, and more. With code examples in JavaScript, Python and PHP.',
     images: ['/screenshort.png'],
-    url: 'https://public-api.taskip.net',
+    url: 'https://public-api-doc.taskip.net',
     type: 'website',
     siteName: 'Taskip API Documentation'
   },
@@ -31,9 +32,8 @@ export const metadata = {
     'Taskip API, CRM API, Project Management API, Invoice API, Agency Software API, REST API, API Documentation',
   authors: [{ name: 'Taskip' }],
   robots: 'index, follow',
-  alternates: {
-    canonical: 'https://public-api.taskip.net'
-  },
+  // Each page sets its own self-referencing canonical in app/[[...mdxPath]]/page.tsx. A canonical
+  // here would be inherited by every page and mark them all as duplicates of one URL.
   icons: {
     icon: '/taskip-logo-icon.png'
   }
