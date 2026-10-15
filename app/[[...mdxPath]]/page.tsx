@@ -8,7 +8,10 @@ export async function generateMetadata(props: {
 }) {
   const params = await props.params
   const { metadata } = await importPage(params.mdxPath)
-  return metadata
+  const path = `/${(params.mdxPath ?? []).join('/')}`
+  // The home page's H1 already names the site, so skip the layout's title template there.
+  const title = path === '/' ? { absolute: 'Taskip REST API Documentation' } : metadata.title
+  return { ...metadata, title, alternates: { canonical: path } }
 }
 
 const Wrapper = getMDXComponents().wrapper
