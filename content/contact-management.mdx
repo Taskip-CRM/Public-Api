@@ -1,6 +1,10 @@
 # Contact Management API
 
-The Contact Management API allows you to manage contacts in your TaskIP CRM system. You can create, read, update, and delete contacts, as well as perform bulk operations and client invitations.
+The Contact Management API allows you to manage contacts (clients) in your TaskIP CRM system. You can create, read, update, and delete contacts, look a contact up by email, perform bulk deletes, and invite contacts to the client portal.
+
+<Callout type="info" emoji="💡">
+  **Resource IDs**: The `{id}` / `{contact}` segment of the contact routes only accepts digits. A non-numeric segment (for example `/contact/foo`) is a `404`.
+</Callout>
 
 ## Endpoints Overview
 
@@ -9,10 +13,11 @@ The Contact Management API allows you to manage contacts in your TaskIP CRM syst
 | `GET` | [`/api/public-v1/contact`](#get-all-contacts) | Get all contacts |
 | `POST` | [`/api/public-v1/contact`](#create-a-contact) | Create a new contact |
 | `GET` | [`/api/public-v1/contact/{id}`](#get-a-specific-contact) | Get a specific contact |
-| `PUT` | [`/api/public-v1/contact/{id}`](#update-a-contact) | Update a contact |
-| `DELETE` | [`/api/public-v1/contact/{contact}`](#delete-a-contact) | Delete a contact |
+| `GET` | [`/api/public-v1/contact/find-by-email`](#find-a-contact-by-email) | Find a contact by email address |
+| `PUT` / `PATCH` | [`/api/public-v1/contact/{id}`](#update-a-contact) | Update a contact |
+| `DELETE` | [`/api/public-v1/contact/{id}`](#delete-a-contact) | Delete a contact |
 | `POST` | [`/api/public-v1/contact/bulk-delete`](#bulk-delete-contacts) | Delete multiple contacts |
-| `POST` | [`/api/public-v1/contact/invite-client/{id}`](#invite-client) | Invite a contact as client |
+| `POST` | [`/api/public-v1/contact/invite-client/{id}`](#invite-client) | Invite a contact to the client portal |
 
 ---
 
@@ -40,15 +45,16 @@ Content-Type: application/json
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `page` | integer | No | Page number for pagination (default: 1) |
-| `limit` | integer | No | Number of contacts per page (default: 50) |
-| `search` | string | No | Search term for contact name or email |
-| `sort` | string | No | Sort field (`name`, `email`, `created_at`) |
-| `order` | string | No | Sort order (`asc` or `desc`) |
+| `item` | integer | No | Contacts per page (default: 10). Use `0` to return all contacts without pagination |
+| `search` | string | No | Search by contact name, email, phone number, or company name |
+| `has_portal_access` | any non-empty value | No | When present (and not `0`), only contacts that have client portal access are returned |
+
+Results are ordered by `id` descending.
 
 ### Example Request
 
 ```bash
-curl -X GET "https://public-api.taskip.net/api/public-v1/contact?page=1&limit=20" \
+curl -X GET "https://public-api.taskip.net/api/public-v1/contact?page=1&item=20" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json"
 ```
@@ -57,16 +63,17 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/contact?page=1&limit=20
 
 ```json
 {
-  "message": "All contacts fetched successfully",
+  "message": "All contacts successfully fetched",
   "data": [
     {
       "id": 1,
       "user_id": 123,
+      "user_uuid": "9c1d2c7e-6d8e-4a43-b0b4-0a5a5f3c1e11",
       "company": {
         "id": 5,
         "name": "Acme Corp",
-        "domain": "acmecorp.com",
-        "email": "info@acmecorp.com"
+        "email": "info@acmecorp.com",
+        "website": "https://acmecorp.com"
       },
       "company_id": 5,
       "first_name": "John",
@@ -75,6 +82,8 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/contact?page=1&limit=20
       "email": "john.doe@example.com",
       "position": "Software Engineer",
       "phone_number": "555-0123",
+      "mobile_phone": null,
+      "preferred_contact_method_id": null,
       "country_id": 1,
       "country": "United States",
       "state_id": 5,
@@ -89,102 +98,42 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/contact?page=1&limit=20
       "reference_name": null,
       "access_portal": 1,
       "billings": {
-        "id": 10,
-        "contact_id": 1,
-        "billing_address": null,
-        "billing_city": null,
-        "billing_state": null,
-        "billing_country": null,
-        "billing_zip": null,
-        "billing_phone": null,
-        "tax_number": null,
-        "created_at": "2024-01-15T10:30:00Z",
-        "updated_at": "2024-01-15T10:30:00Z"
-      },
-      "languages": [],
-      "image": null,
-      "custom_fields": {
-        "department": "Engineering",
-        "lead_source": "Referral"
-      }
-    },
-    {
-      "id": 2,
-      "user_id": 124,
-      "company": {
-        "id": 3,
-        "name": "Tech Solutions",
-        "domain": "techsolutions.com",
-        "email": "hello@techsolutions.com"
-      },
-      "company_id": 3,
-      "first_name": "Jane",
-      "last_name": "Smith",
-      "full_name": "Jane Smith",
-      "email": "jane.smith@example.com",
-      "position": "Product Manager",
-      "phone_number": "555-0124",
-      "country_id": 1,
-      "country": "United States",
-      "state_id": 6,
-      "state": "New York",
-      "city_id": 11,
-      "city": "New York",
-      "address": "456 Business Ave",
-      "zip_code": "10001",
-      "timezone": "America/New_York",
-      "details": "Experienced product manager",
-      "reference": "REF-2024-002",
-      "reference_name": "Website Lead",
-      "access_portal": 0,
-      "billings": {
-        "id": 11,
-        "contact_id": 2,
-        "billing_address": "456 Business Ave",
-        "billing_city": "New York",
-        "billing_state": "New York",
-        "billing_country": "United States",
-        "billing_zip": "10001",
-        "billing_phone": "555-0124",
-        "tax_number": "TX-987654321",
-        "created_at": "2024-01-10T09:20:00Z",
-        "updated_at": "2024-01-18T16:30:00Z"
+        "name": "John Doe",
+        "email": "billing@example.com",
+        "tax_id": "TX-123456789",
+        "address": "123 Tech Street",
+        "phone_number": "555-0123"
       },
       "languages": [
-        {
-          "id": 1,
-          "code": "en",
-          "name": "English",
-          "is_default": true
-        },
-        {
-          "id": 2,
-          "code": "es",
-          "name": "Spanish",
-          "is_default": false
-        }
+        { "value": 1, "label": "🇺🇸 English [en]" }
       ],
-      "image": {
-        "id": 25,
-        "url": "https://taskip.net/storage/profile/jane-smith.jpg",
-        "name": "jane-smith.jpg",
-        "file_name": "jane-smith.jpg",
-        "mime_type": "image/jpeg",
-        "size": 98765,
-        "collection_name": "profile"
-      },
-      "custom_fields": {
-        "department": "Product",
-        "lead_source": "Website",
-        "linkedin": "https://linkedin.com/in/janesmith"
-      }
+      "image": null,
+      "custom_fields": [],
+      "tags": [
+        { "id": 3, "name": "VIP", "color": "#ef4444" }
+      ],
+      "activities": []
     }
   ],
+  "links": {
+    "first": "https://public-api.taskip.net/api/public-v1/contact?page=1",
+    "last": "https://public-api.taskip.net/api/public-v1/contact?page=3",
+    "prev": null,
+    "next": "https://public-api.taskip.net/api/public-v1/contact?page=2"
+  },
   "meta": {
-    "search": null
+    "current_page": 1,
+    "from": 1,
+    "last_page": 3,
+    "path": "https://public-api.taskip.net/api/public-v1/contact",
+    "per_page": 20,
+    "to": 20,
+    "total": 45
   }
 }
 ```
+
+When `search` is supplied, `meta.search` echoes the search term. When `item=0`, the response contains only `message` and `data` (no `links` / `meta` pagination block).
 
 ---
 
@@ -203,22 +152,14 @@ POST /api/public-v1/contact
     "first_name": "Alice",
     "last_name": "Johnson",
     "email": "alice.johnson@example.com",
-    "phone_code": "+1",
     "phone_number": "555-0125",
     "company_id": 7,
-    "position": "Marketing Director",
     "country_id": 1,
     "state_id": 5,
     "city_id": 10,
     "address": "123 Business Ave",
     "zip_code": "12345",
     "timezone": "America/New_York",
-    "access_portal": 1,
-    "password": "secure123",
-    "custom_fields": {
-      "department": "Marketing",
-      "lead_source": "Website"
-    },
     "invite_client": true
   }}
   description="Create a new contact with the required information. Modify the request body as needed."
@@ -234,24 +175,38 @@ Content-Type: application/json
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `first_name` | string | Yes | Contact's first name |
-| `last_name` | string | No | Contact's last name |
-| `email` | string | Yes | Contact's email address (must be unique) |
+| `first_name` | string | Yes | Contact's first name (max 191 chars). Markup and characters other than letters, spaces, apostrophes, hyphens and dots are stripped |
+| `last_name` | string | No | Contact's last name (max 191 chars). Sanitized the same way as `first_name` |
+| `email` | string | No | Valid email address. Must not already belong to a user, another contact, or a lead. **Required** when `is_company_contact` is `1`, when `access_portal` is `1`, or when `invite_client` is `true` |
 | `phone_code` | string | No | Phone country code (max 5 chars) |
 | `phone_number` | string | No | Contact's phone number (max 18 chars) |
-| `company_id` | integer | No | Associated company ID |
+| `mobile_phone` | string | No | Mobile number (max 18 chars) |
+| `preferred_contact_method_id` | integer | No | ID of an existing preferred contact method |
+| `company_id` | integer | No | Associated company ID (must exist) |
 | `position` | string | No | Job position/title |
 | `country_id` | integer | No | Country ID |
 | `state_id` | integer | No | State ID |
 | `city_id` | integer | No | City ID |
 | `address` | string | No | Contact's address |
-| `zip_code` | string | No | ZIP/postal code (max 8 chars) |
-| `timezone` | string | No | Contact's timezone |
+| `zip_code` | string | No | ZIP/postal code (max 20 chars) |
+| `vat_id` | string | No | VAT ID (max 100 chars) |
+| `industry_id` | integer | No | Industry ID |
+| `number_of_employees` | integer | No | Number of employees (min 0) |
+| `timezone` | string | No | Contact's timezone (max 191 chars) |
 | `image` | integer | No | Profile image media ID |
-| `access_portal` | integer | No | Portal access (0 or 1) |
-| `password` | string | Required if access_portal=1 | Password (min 6, max 191 chars) |
-| `custom_fields` | object | No | Custom field data |
-| `invite_client` | boolean | No | Send client invitation email |
+| `access_portal` | integer | No | Portal access (`0` or `1`) |
+| `password` | string | Required if `access_portal` = 1 | Password (min 6, max 191 chars) |
+| `description` | string | No | Free-text description |
+| `tags` | array | No | Array of tags |
+| `groups` | array | No | Array of groups |
+| `company_members` | array | No | Array of company members |
+| `is_company_contact` | boolean | No | Marks the contact as a company contact |
+| `custom_fields` | array | No | Custom field data. Required custom fields defined in your workspace are enforced |
+| `invite_client` | boolean | No | Send the client portal invitation email (requires `email`) |
+
+<Callout type="info" emoji="💡">
+  **Persisted fields**: On create, `first_name`, `last_name`, `email`, `company_id`, `phone_number`, `country_id`, `state_id`, `city_id`, `address`, `zip_code`, `timezone`, `access_portal`, `custom_fields` and `invite_client` are stored. On update, `position` and `image` are stored as well. Other validated fields are currently accepted but not saved by this endpoint.
+</Callout>
 
 ### Example Request
 
@@ -263,14 +218,11 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/contact" \
     "first_name": "Alice",
     "last_name": "Johnson",
     "email": "alice.johnson@example.com",
-    "phone_code": "+1",
     "phone_number": "555-0125",
     "company_id": 7,
-    "position": "Marketing Director",
     "address": "123 Business Ave",
     "zip_code": "12345",
-    "access_portal": 1,
-    "password": "secure123",
+    "timezone": "America/New_York",
     "invite_client": true
   }'
 ```
@@ -281,19 +233,11 @@ const contactData = {
   first_name: "Alice",
   last_name: "Johnson",
   email: "alice.johnson@example.com",
-  phone_code: "+1",
   phone_number: "555-0125",
   company_id: 7,
-  position: "Marketing Director",
   address: "123 Business Ave",
   zip_code: "12345",
   timezone: "America/New_York",
-  access_portal: 1,
-  password: "secure123",
-  custom_fields: {
-    department: "Marketing",
-    lead_source: "Website"
-  },
   invite_client: true
 };
 
@@ -313,22 +257,25 @@ const result = await response.json();
 
 ```json
 {
-  "success": true,
-  "message": "Contact created successfully",
+  "msg": "Contact Created",
   "data": {
     "id": 151,
     "user_id": 245,
-    "company_id": 7,
+    "user_uuid": "9c1d2c7e-6d8e-4a43-b0b4-0a5a5f3c1e11",
     "company": {
       "id": 7,
-      "name": "Marketing Pro"
+      "name": "Marketing Pro",
+      "email": "info@marketingpro.com"
     },
+    "company_id": 7,
     "first_name": "Alice",
     "last_name": "Johnson",
     "full_name": "Alice Johnson",
     "email": "alice.johnson@example.com",
-    "position": "Marketing Director",
+    "position": null,
     "phone_number": "555-0125",
+    "mobile_phone": null,
+    "preferred_contact_method_id": null,
     "country_id": 1,
     "country": "United States",
     "state_id": 5,
@@ -338,25 +285,21 @@ const result = await response.json();
     "address": "123 Business Ave",
     "zip_code": "12345",
     "timezone": "America/New_York",
+    "details": null,
+    "reference": null,
+    "reference_name": null,
     "access_portal": 1,
-    "billings": {
-      "billing_address": null,
-      "billing_city": null,
-      "billing_state": null,
-      "billing_country": null,
-      "billing_zip": null
-    },
+    "billings": null,
     "languages": [],
     "image": null,
-    "custom_fields": {
-      "department": "Marketing",
-      "lead_source": "Website"
-    },
-    "created_at": "2024-01-25T11:20:00Z",
-    "updated_at": "2024-01-25T11:20:00Z"
+    "custom_fields": [],
+    "tags": [],
+    "activities": []
   }
 }
 ```
+
+The response status is `200`.
 
 ---
 
@@ -377,7 +320,7 @@ GET /api/public-v1/contact/{id}
 ### Path Parameters
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `id` | integer | Yes | Contact ID |
+| `id` | integer | Yes | Contact ID (digits only) |
 
 ### Example Request
 
@@ -391,15 +334,16 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/contact/151" \
 
 ```json
 {
-  "success": true,
+  "msg": "Contact Details",
   "data": {
     "id": 151,
     "user_id": 245,
+    "user_uuid": "9c1d2c7e-6d8e-4a43-b0b4-0a5a5f3c1e11",
     "company": {
       "id": 7,
       "name": "Marketing Pro",
-      "domain": "marketingpro.com",
-      "email": "info@marketingpro.com"
+      "email": "info@marketingpro.com",
+      "website": "https://marketingpro.com"
     },
     "company_id": 7,
     "first_name": "Alice",
@@ -408,6 +352,8 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/contact/151" \
     "email": "alice.johnson@example.com",
     "position": "Marketing Director",
     "phone_number": "555-0125",
+    "mobile_phone": null,
+    "preferred_contact_method_id": null,
     "country_id": 1,
     "country": "United States",
     "state_id": 5,
@@ -417,56 +363,91 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/contact/151" \
     "address": "123 Business Ave",
     "zip_code": "12345",
     "timezone": "America/New_York",
-    "details": "Met at industry conference 2024",
-    "reference": "REF-2024-001",
-    "reference_name": "Conference Lead",
+    "details": null,
+    "reference": null,
+    "reference_name": null,
     "access_portal": 1,
     "billings": {
-      "id": 15,
-      "contact_id": 151,
-      "billing_address": "123 Business Ave",
-      "billing_city": "New York",
-      "billing_state": "New York", 
-      "billing_country": "United States",
-      "billing_zip": "12345",
-      "billing_phone": "555-0125",
-      "tax_number": "TX-123456789",
-      "created_at": "2024-01-25T11:20:00Z",
-      "updated_at": "2024-01-25T11:20:00Z"
+      "name": "Alice Johnson",
+      "email": "billing@example.com",
+      "tax_id": "TX-123456789",
+      "address": "123 Business Ave",
+      "phone_number": "555-0125"
     },
     "languages": [
-      {
-        "id": 1,
-        "code": "en",
-        "name": "English",
-        "is_default": true
-      },
-      {
-        "id": 2,
-        "code": "es",
-        "name": "Spanish",
-        "is_default": false
-      }
+      { "value": 1, "label": "🇺🇸 English [en]" }
     ],
     "image": {
       "id": 42,
-      "url": "https://taskip.net/storage/profile/alice-johnson.jpg",
-      "name": "alice-johnson.jpg",
-      "file_name": "alice-johnson.jpg",
-      "mime_type": "image/jpeg",
+      "title": "alice-johnson.jpg",
+      "ext": "jpg",
       "size": 125843,
-      "collection_name": "profile"
+      "url": "https://taskip.net/storage/profile/alice-johnson.jpg",
+      "media_type": "profile",
+      "createdAt": "25-01-2024 11:20:00"
     },
-    "custom_fields": {
-      "linkedin": "https://linkedin.com/in/alicejohnson",
-      "preferred_contact": "email",
-      "department": "Marketing",
-      "lead_source": "Conference",
-      "notes": "Met at industry conference 2024"
-    }
+    "custom_fields": [],
+    "tags": [],
+    "activities": []
   }
 }
 ```
+
+A contact that does not exist returns `404`.
+
+---
+
+## Find a Contact by Email
+
+Look up a single contact by its email address. The response is the same contact object returned by [Get a Specific Contact](#get-a-specific-contact).
+
+```http
+GET /api/public-v1/contact/find-by-email
+```
+
+<ApiTester
+  endpoint="/contact/find-by-email?email=alice.johnson@example.com"
+  method="GET"
+  description="Find a contact by email address. Change the email query parameter to the address you want to look up."
+/>
+
+### Query Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `email` | string | Yes | A valid email address |
+
+### Example Request
+
+```bash
+curl -X GET "https://public-api.taskip.net/api/public-v1/contact/find-by-email?email=alice.johnson@example.com" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json"
+```
+
+### Example Response
+
+```json
+{
+  "msg": "Contact Details",
+  "data": {
+    "id": 151,
+    "user_id": 245,
+    "first_name": "Alice",
+    "last_name": "Johnson",
+    "full_name": "Alice Johnson",
+    "email": "alice.johnson@example.com"
+  }
+}
+```
+
+(Abbreviated; the `data` object contains every field shown in [Get a Specific Contact](#get-a-specific-contact).)
+
+### Error Responses
+
+| Status | When | Body |
+|--------|------|------|
+| `422` | `email` is missing or not a valid email address | `{"msg": "Please provide a valid email address.", "data": null}` |
+| `404` | No contact has that email address | `{"msg": "No contact found with that email address.", "data": null}` |
 
 ---
 
@@ -476,26 +457,29 @@ Update an existing contact's information.
 
 ```http
 PUT /api/public-v1/contact/{id}
+PATCH /api/public-v1/contact/{id}
 ```
+
+`PUT` and `PATCH` are handled identically and share the same validation rules as create. Updates are **partial**: fields you omit keep their stored values.
 
 <ApiTester
   endpoint="/contact/1"
   method="PUT"
   defaultBody={{
-    "position": "Senior Marketing Director", 
-    "phone_number": "555-0126",
-    "details": "Promoted to senior position"
+    "first_name": "Alice",
+    "position": "Senior Marketing Director",
+    "phone_number": "555-0126"
   }}
-  description="Update an existing contact. Replace '1' in the endpoint with the actual contact ID. Only include fields you want to update."
+  description="Update an existing contact. Replace '1' in the endpoint with the actual contact ID. first_name is always required."
 />
 
 ### Path Parameters
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `id` | integer | Yes | Contact ID to update |
+| `id` | integer | Yes | Contact ID to update (digits only) |
 
 ### Request Body
-Same fields as create contact. All fields are optional - only include fields you want to update.
+Same fields as [Create a Contact](#create-a-contact). `first_name` is required on every update. Every other field is optional: an omitted field keeps its stored value (only the fields you send are changed). To clear a field, send it explicitly as `null`. The contact's own current email is not treated as a duplicate. A contact that already has portal access cannot have its email removed.
 
 ### Example Request
 
@@ -504,9 +488,11 @@ curl -X PUT "https://public-api.taskip.net/api/public-v1/contact/151" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json" \
   -d '{
+    "first_name": "Alice",
+    "last_name": "Johnson",
+    "email": "alice.johnson@example.com",
     "position": "Senior Marketing Director",
-    "phone_number": "555-0126",
-    "details": "Promoted to senior position. Met at industry conference 2024"
+    "phone_number": "555-0126"
   }'
 ```
 
@@ -520,9 +506,11 @@ headers = {
 }
 
 update_data = {
+    "first_name": "Alice",
+    "last_name": "Johnson",
+    "email": "alice.johnson@example.com",
     "position": "Senior Marketing Director",
-    "phone": "+1-555-0126",
-    "notes": "Promoted to senior position. Met at industry conference 2024"
+    "phone_number": "555-0126"
 }
 
 response = requests.put(
@@ -549,7 +537,7 @@ result = response.json()
 Delete a specific contact from your system.
 
 ```http
-DELETE /api/public-v1/contact/{contact}
+DELETE /api/public-v1/contact/{id}
 ```
 
 <ApiTester
@@ -561,7 +549,7 @@ DELETE /api/public-v1/contact/{contact}
 ### Path Parameters
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `contact` | integer | Yes | Contact ID to delete |
+| `id` | integer | Yes | Contact ID to delete (digits only) |
 
 ### Example Request
 
@@ -578,6 +566,8 @@ curl -X DELETE "https://public-api.taskip.net/api/public-v1/contact/151" \
 }
 ```
 
+If the contact does not exist the API returns `422` with `{"error": {"msg": ["Contact not found"]}}`.
+
 ---
 
 ## Bulk Delete Contacts
@@ -592,7 +582,7 @@ POST /api/public-v1/contact/bulk-delete
   endpoint="/api/public-v1/contact/bulk-delete"
   method="POST"
   defaultBody={{
-    "contact_ids": [1, 2, 3]
+    "ids": [1, 2, 3]
   }}
   description="Delete multiple contacts at once. Replace the IDs in the array with actual contact IDs. This action cannot be undone."
 />
@@ -601,7 +591,7 @@ POST /api/public-v1/contact/bulk-delete
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `contact_ids` | array | Yes | Array of contact IDs to delete |
+| `ids` | array | Yes | Array of contact IDs to delete |
 
 ### Example Request
 
@@ -610,7 +600,7 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/contact/bulk-delete" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json" \
   -d '{
-    "contact_ids": [151, 152, 153, 154]
+    "ids": [151, 152, 153, 154]
   }'
 ```
 
@@ -622,21 +612,21 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/contact/bulk-delete" \
 }
 ```
 
+| Status | When | Body |
+|--------|------|------|
+| `422` | `ids` is missing or empty | `{"error": {"msg": ["Missing or invalid contact"]}}` |
+| `404` | None of the supplied IDs match a contact | `{"msg": "Contacts not found"}` |
+
 ---
 
 ## Invite Client
 
-Send an invitation to a contact to join as a client in your system.
+Send (or re-send) the client portal invitation email to a contact. The contact is granted portal access and must have an email address.
 
 <ApiTester
   endpoint="/api/public-v1/contact/invite-client/1"
   method="POST"
-  defaultBody={{
-    "message": "Welcome to our client portal! You now have access to track your projects and invoices.",
-    "send_email": true,
-    "access_level": "standard"
-  }}
-  description="Send an invitation to a contact to become a client. Replace '1' in the endpoint with the actual contact ID."
+  description="Send a client portal invitation to a contact. Replace '1' in the endpoint with the actual contact ID. No request body is needed."
 />
 
 ```http
@@ -650,32 +640,28 @@ POST /api/public-v1/contact/invite-client/{id}
 
 ### Request Body
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `message` | string | No | Custom invitation message |
-| `send_email` | boolean | No | Whether to send email invitation (default: true) |
-| `access_level` | string | No | Client access level (`basic`, `standard`, `premium`) |
+This endpoint takes no request body.
 
 ### Example Request
 
 ```bash
 curl -X POST "https://public-api.taskip.net/api/public-v1/contact/invite-client/150" \
   -H "X-Secret-Key: your-secret-key-here" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "message": "Welcome to our client portal! You now have access to track your projects and invoices.",
-    "send_email": true,
-    "access_level": "standard"
-  }'
+  -H "Content-Type: application/json"
 ```
 
 ### Example Response
 
 ```json
 {
-  "msg": "Invitation sent success"
+  "msg": "Invitation sent successfully"
 }
 ```
+
+| Status | When | Body |
+|--------|------|------|
+| `422` | Contact not found, or the contact has no email address | `{"error": {"msg": ["Contact not found"]}}` / `{"error": {"msg": ["This contact has no email address."]}}` |
+| `429` | An invitation was sent less than 2 minutes ago | `{"msg": "Please wait before resending the invitation", "retry_after_sec": 87}` |
 
 ---
 
@@ -685,25 +671,31 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/contact/invite-client/
 
 | Status Code | Error Type | Description |
 |-------------|------------|-------------|
-| `400` | Bad Request | Invalid request data or missing required fields |
 | `401` | Unauthorized | Invalid or missing X-Secret-Key |
-| `404` | Not Found | Contact not found |
-| `409` | Conflict | Email already exists (for create/update) |
-| `422` | Validation Error | Request data failed validation |
-| `429` | Too Many Requests | Rate limit exceeded |
+| `404` | Not Found | Contact not found (show, or a non-numeric ID in the path) |
+| `422` | Validation Error | Request data failed validation, or the operation was rejected (for example a duplicate email) |
+| `429` | Too Many Requests | Rate limit exceeded, or an invitation was re-sent too soon |
 
-### Example Error Response
+### Example Validation Error Response
+
+Validation failures return `422` with the failing fields under `error`:
 
 ```json
 {
-  "success": false,
-  "error": "Validation Error",
-  "message": "The given data was invalid",
-  "errors": {
-    "email": ["The email field is required."],
-    "name": ["The name field is required."]
-  },
-  "status_code": 422
+  "error": {
+    "first_name": ["The first name field is required."],
+    "email": ["The email field must be a valid email address."]
+  }
+}
+```
+
+Operation errors (for example a plan limit or missing permission) return `422` in this shape. When creating a contact, the workspace's contacts plan limit is checked first, and once it is reached the request is rejected with the plan's limit message:
+
+```json
+{
+  "error": {
+    "msg": ["You do not have permission to add contacts"]
+  }
 }
 ```
 
@@ -716,19 +708,51 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/contact/invite-client/
 ```json
 {
   "id": "integer",
-  "name": "string",
-  "email": "string",
-  "phone": "string|null",
+  "user_id": "integer",
+  "user_uuid": "string|null",
+  "company": "object|null",
   "company_id": "integer|null",
-  "company_name": "string|null",
+  "first_name": "string",
+  "last_name": "string",
+  "full_name": "string|null",
+  "email": "string|null",
   "position": "string|null",
+  "phone_number": "string|null",
+  "mobile_phone": "string|null",
+  "preferred_contact_method_id": "integer|null",
+  "country_id": "integer|null",
+  "country": "string|null",
+  "state_id": "integer|null",
+  "state": "string|null",
+  "city_id": "integer|null",
+  "city": "string|null",
   "address": "string|null",
-  "notes": "string|null",
-  "status": "string",
-  "tags": "array|null",
-  "custom_fields": "object|null",
-  "created_at": "string (ISO 8601)",
-  "updated_at": "string (ISO 8601)"
+  "zip_code": "string|null",
+  "timezone": "string|null",
+  "details": "string|null",
+  "reference": "string|null",
+  "reference_name": "string|null",
+  "access_portal": "integer (0 or 1)",
+  "billings": "object|null",
+  "languages": "array of {value, label}",
+  "image": "object|null",
+  "custom_fields": "array|object",
+  "tags": "array of {id, name, color}",
+  "activities": "array"
+}
+```
+
+### Image Object
+
+```json
+{
+  "id": "integer",
+  "title": "string",
+  "ext": "string",
+  "size": "integer",
+  "url": "string|null",
+  "media_type": "string",
+  "createdAt": "string (d-m-Y h:i:s)"
 }
 ```
 
@@ -737,15 +761,18 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/contact/invite-client/
 ```json
 {
   "current_page": "integer",
-  "per_page": "integer", 
-  "total": "integer",
-  "total_pages": "integer"
+  "from": "integer|null",
+  "last_page": "integer",
+  "path": "string",
+  "per_page": "integer",
+  "to": "integer|null",
+  "total": "integer"
 }
 ```
 
 
 <Callout type="info" emoji="💡">
-  **Tip**: Use the search parameter in the GET /contact endpoint to quickly find contacts by name or email. You can also combine it with pagination for efficient searching through large contact lists.
+  **Tip**: Use the search parameter in the GET /contact endpoint to quickly find contacts by name, email, phone number or company name, or use `GET /contact/find-by-email` when you already know the exact address.
 </Callout>
 
 <BackToTop />

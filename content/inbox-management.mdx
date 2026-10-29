@@ -4,67 +4,80 @@ The Inbox Management API provides comprehensive email conversation handling and 
 
 ## Overview
 
-Inbox Management consists of multiple communication features:
-- **Conversation Management**: Handle email threads and conversations
-- **Message Handling**: Send and receive messages within conversations
-- **Tag Assignment**: Organize conversations with tags and labels
-- **Reply System**: Respond to emails and maintain conversation flow
-- **Inbox Configuration**: Manage inbox settings and email addresses
-- **Team Assignment**: Assign conversations to team members
-- **Thread Organization**: Group related messages together
+Inbox Management consists of:
+- **Conversations**: List inbox conversations (threads) by folder
+- **Messaging**: Send a new email and reply to an existing conversation (queued for delivery)
+- **Tags**: Create, list, update and delete inbox tags, and assign tags to conversations
+- **Inbox Address**: Get the workspace inbox (forwarding / connected) email address
 
-## Main Endpoints Overview
+## Authentication, Limits and Common Behavior
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | [`/api/public-v1/inbox/conversation/all`](#get-all-conversations) | Get all inbox conversations |
-| `POST` | [`/api/public-v1/inbox/conversation/new-message`](#create-new-messageconversation) | Create a new message/conversation |
-| `POST` | [`/api/public-v1/inbox/conversation/{uuid}/reply`](#reply-to-conversation) | Reply to a conversation |
-| `POST` | [`/api/public-v1/inbox/conversation/{uuid}/assign-tags`](#assign-tags-to-conversation) | Assign tags to a conversation |
-| `GET` | [`/api/public-v1/get-email-address`](#get-email-address) | Get inbox email address |
-| `PUT` | [`/api/public-v1/inbox/assign-tags/{id}`](#update-tag-assignment) | Update tag assignments |
-| `DELETE` | [`/api/public-v1/inbox/assign-tags/{id}`](#remove-tag-assignment) | Remove tag assignments |
+Every request must send the secret key header:
 
----
-
-## Get All Conversations
-
-Retrieve all email conversations from your inbox.
-
-```http
-GET /api/public-v1/inbox/conversation/all
-```
-
-### Request Headers
 ```http
 X-Secret-Key: your-secret-key-here
 Content-Type: application/json
 ```
 
+The two sending endpoints (`new-message` and `{uuid}/reply`) are protected by extra middleware:
+
+| Rule | Behavior |
+|------|----------|
+| Paid workspace only | On a non-paid workspace the request is not processed and the API responds `403` with `{"success": false, "message": "Only paid users are allowed"}` |
+| Inbox email send limit | **10 requests per day and 100 per month per workspace** (counted for the `inbox` type). Over the limit: `429` with `{"success": false, "message": "Your workspace has exceeded the inbox email sending limit"}` |
+| Request throttle | 10 requests per minute (`429` when exceeded) |
+| Plan inbox email limit | If the plan's inbox email limit is reached: `422` with `{"status": 422, "msg": "...", "limit_info": {...}, "upgrade_required": true}` |
+
+Validation failures return `422` with `{"error": {"field": ["message"]}}`. Business-rule errors return `422` with `{"error": {"msg": ["message"]}}`, unless a section below shows a different shape.
+
+## Main Endpoints Overview
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | [`/api/public-v1/inbox/conversation/all`](#get-all-conversations) | Get inbox conversations |
+| `POST` | [`/api/public-v1/inbox/conversation/new-message`](#create-new-messageconversation) | Send a new email (creates a conversation) |
+| `POST` | [`/api/public-v1/inbox/conversation/{uuid}/reply`](#reply-to-conversation) | Reply to a conversation |
+| `POST` | [`/api/public-v1/inbox/conversation/{uuid}/assign-tags`](#assign-tags-to-conversation) | Set the tags of a conversation |
+| `GET` | [`/api/public-v1/get-email-address`](#get-email-address) | Get the inbox email address |
+| `GET` | [`/api/public-v1/inbox/assign-tags`](#list-tags) | List tags |
+| `POST` | [`/api/public-v1/inbox/assign-tags`](#create-a-tag) | Create a tag |
+| `PUT` / `PATCH` | [`/api/public-v1/inbox/assign-tags/{id}`](#update-a-tag) | Update a tag |
+| `DELETE` | [`/api/public-v1/inbox/assign-tags/{id}`](#delete-a-tag) | Delete a tag |
+
+<Callout type="info" emoji="💡">
+  There is no `GET /inbox/assign-tags/{id}` (show) endpoint.
+</Callout>
+
+---
+
+## Get All Conversations
+
+Retrieve conversations (root messages of each thread) for a folder, ordered by latest activity (newest first).
+
+```http
+GET /api/public-v1/inbox/conversation/all
+```
+
 ### Query Parameters
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `page` | integer | No | Page number for pagination (default: 1) |
-| `limit` | integer | No | Number of conversations per page (default: 50) |
-| `status` | string | No | Filter by status (`unread`, `read`, `archived`) |
-| `tag_id` | integer | No | Filter by tag ID |
-| `assigned_to` | integer | No | Filter by assigned team member |
-| `date_from` | date | No | Filter conversations from date (YYYY-MM-DD) |
-| `date_to` | date | No | Filter conversations to date (YYYY-MM-DD) |
-| `search` | string | No | Search term for subject or content |
-| `sort` | string | No | Sort field (`created_at`, `updated_at`, `subject`) |
-| `order` | string | No | Sort order (`asc` or `desc`) |
+| `folder` | string | No | `inbox` (default), `sent`, `drafts`, `outbox`, `archive`, `trash`, `spam` |
+| `item` | integer | No | Items per page (default: `10`). Use `0` to return all |
+| `page` | integer | No | Page number |
+| `search` | string | No | Search term for conversations |
+
+Results are limited to the mailboxes the secret key's user is allowed to access.
 
 <ApiTester
   endpoint="/api/public-v1/inbox/conversation/all"
   method="GET"
-  description="Test getting all inbox conversations with optional filtering"
+  description="Test getting all inbox conversations"
 />
 
 ### Example Request
 
 ```bash
-curl -X GET "https://public-api.taskip.net/api/public-v1/inbox/conversation/all?status=unread&limit=20" \
+curl -X GET "https://public-api.taskip.net/api/public-v1/inbox/conversation/all?folder=inbox&item=20" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json"
 ```
@@ -78,34 +91,22 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/inbox/conversation/all?
       "message_id": "msg_abc123def456",
       "in_reply_to": null,
       "reply_to": "john.doe@client.com",
-      "from_email": "support@taskip.net",
-      "from_name": "TaskIP Support",
-      "to_email": "john.doe@client.com",
+      "from_email": "john.doe@client.com",
+      "from_name": "John Doe",
+      "to_email": "support@yourcompany.com",
+      "cc_emails": null,
+      "bcc_emails": null,
       "subject": "Project Discussion - Website Redesign",
       "is_read": false,
-      "created_at": "2 hours ago",
-      "uuid": "conv_abc123def456",
-      "body_plain": "Looking forward to the updated mockups and design concepts for the new website. Please let me know if you need any additional information or resour...",
+      "created_at": "2024-01-15T10:30:00+00:00",
+      "uuid": "9c4a1f4e-6c1b-4b6e-9a55-0d6a1c7f2e11",
+      "body_plain": "Looking forward to the updated mockups and design concepts...",
       "tags": [
-        {
-          "id": 1,
-          "title": "Client Communication",
-          "color": "blue",
-          "type": "project"
-        },
-        {
-          "id": 3,
-          "title": "High Priority",
-          "color": "red",
-          "type": "priority"
-        }
+        { "id": 1, "name": "Client Communication", "color": "blue" }
       ],
-      "replied_by": {
-        "id": 12,
-        "name": "Jane Smith",
-        "email": "jane@taskip.com"
-      },
-      "send_type": true
+      "replied_by": null,
+      "send_type": false,
+      "send_emails": null
     }
   ],
   "links": {
@@ -119,54 +120,63 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/inbox/conversation/all?
     "from": 1,
     "last_page": 3,
     "path": "https://public-api.taskip.net/api/public-v1/inbox/conversation/all",
-    "per_page": 15,
-    "to": 15,
-    "total": 45
+    "per_page": 10,
+    "to": 10,
+    "total": 25
   }
 }
 ```
+
+### Response Field Notes
+
+| Field | Description |
+|-------|-------------|
+| `created_at` | ISO 8601 timestamp. When the thread has replies, this is the time of the latest reply |
+| `body_plain` | Plain text body, truncated to 200 characters. When the thread has replies, this is the latest reply's body |
+| `replied_by` | User who sent the latest reply (`id`, `uuid`, `name`, `media`, `email`), otherwise `null` |
+| `is_read` | `true` if the message was read |
+| `send_type` | `true` for messages sent from the workspace |
+| `tags` | Tags attached to the conversation (`id`, `name`, `color`) |
 
 ---
 
 ## Create New Message/Conversation
 
-Start a new email conversation or send a new message.
+Send a new email. The message is queued for delivery. One conversation is created for each address in `to_emails`.
 
 ```http
 POST /api/public-v1/inbox/conversation/new-message
 ```
 
-### Request Headers
-```http
-X-Secret-Key: your-secret-key-here
-Content-Type: application/json
-```
+See [Authentication, Limits and Common Behavior](#authentication-limits-and-common-behavior) for the paid-plan check, 10/day and 100/month limits, and throttling.
 
 ### Request Body
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `to_emails` | array | Yes | Array of recipient email addresses |
 | `subject` | string | Yes | Email subject |
-| `message` | string | No | Message content (HTML supported) |
-| `cc` | string | No | Comma-separated CC recipient emails |
-| `bcc` | string | No | Comma-separated BCC recipient emails |
-| `from_email` | string | No | Sender email (uses connected email if not provided) |
-| `template_id` | integer | No | Email template ID to use |
+| `to_emails` | array | Yes (in practice) | Recipient email addresses. Also accepts a comma-separated string or a JSON array string. It is not validated by the request class; if no valid recipient results, the API returns `422` `{"msg": "No valid recipient addresses were provided."}` |
+| `message` | string | No | Message body (HTML supported) |
+| `cc` | string | No | Comma-separated CC addresses |
+| `bcc` | string | No | Comma-separated BCC addresses |
+| `cc_emails` | array | No | CC addresses as an array (takes precedence over `cc`) |
+| `bcc_emails` | array | No | BCC addresses as an array (takes precedence over `bcc`) |
+| `from_email` | string | No | Sending address. Defaults to the workspace connected email |
+| `attachments` | array | No | Array of objects with a media ID: `[{"id": 12}]` |
+| `draft_uuid` | string | No | UUID of a draft (or failed outbox item) to send instead of creating a new conversation |
+
+The sending address must have verified DNS and cannot be a platform default `*.taskip.email` address.
 
 <ApiTester
   endpoint="/api/public-v1/inbox/conversation/new-message"
   method="POST"
   defaultBody={{
-    to: "client@example.com",
+    to_emails: ["client@example.com"],
     subject: "Project Update - Website Development",
-    content: "<p>Hi there,</p><p>I wanted to provide you with an update on the website development project...</p><p>Best regards,<br>Your Team</p>",
-    cc: ["manager@taskip.com"],
-    tags: [1, 3],
-    priority: "normal",
-    send_copy_to_self: true
+    message: "<p>Hi there,</p><p>I wanted to provide you with an update...</p>",
+    cc: "manager@taskip.com"
   }}
-  description="Test creating a new message/conversation"
+  description="Test sending a new message"
 />
 
 ### Example Request
@@ -177,7 +187,7 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/inbox/conversation/new
   -H "Content-Type: application/json" \
   -d '{
     "to_emails": ["client@example.com"],
-    "subject": "Project Update - Website Development", 
+    "subject": "Project Update - Website Development",
     "message": "<p>Hi there,</p><p>I wanted to provide you with an update...</p>",
     "cc": "manager@taskip.com",
     "bcc": "archive@taskip.com"
@@ -186,37 +196,58 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/inbox/conversation/new
 
 ### Example Response
 
+Status `202 Accepted`:
+
 ```json
 {
   "data": {
-    "message_id": "msg_xyz789abc123",
+    "message_id": "0b2f8c9e-3a7d-4f5e-8b1c-6d4e2a9f7c10",
     "in_reply_to": null,
     "reply_to": "client@example.com",
-    "from_email": "support@taskip.net",
-    "from_name": "TaskIP Support",
+    "from_email": "support@yourcompany.com",
+    "from_name": "Your Company",
     "to_email": "client@example.com",
+    "cc_emails": "manager@taskip.com",
+    "bcc_emails": "archive@taskip.com",
     "subject": "Project Update - Website Development",
     "is_read": true,
-    "created_at": "just now",
-    "uuid": "conv_xyz789abc123",
-    "body_plain": "Hi there, I wanted to provide you with an update on the website development project. We have made significant progress and should have the initial...",
+    "created_at": "2024-01-15T10:30:00+00:00",
+    "uuid": "7e1d5a3c-2b4f-4c8a-9d6e-1f0a3b5c7d92",
+    "body_plain": "Hi there, I wanted to provide you with an update...",
     "tags": [],
     "replied_by": null,
-    "send_type": true
+    "send_type": true,
+    "send_emails": null
   },
-  "msg": "Message Send Successful"
+  "send_emails": ["client@example.com"],
+  "msg": "Email queued — you will be notified when it is sent"
 }
 ```
+
+When several recipients are given, `data` is the last conversation created and `send_emails` lists every recipient.
+
+### Errors
+
+| Status | Response |
+|--------|----------|
+| `422` | Missing `subject`: `{"error": {"subject": ["The subject field is required."]}}` |
+| `422` | `{"msg": "Workspace connected mail not found"}` |
+| `422` | `{"msg": "...", "error_type": "dns_not_verified", "email": "...", "domain": "...", "action_required": "...", "help_url": "..."}` |
+| `422` | `{"msg": "...", "error_type": "taskip_email_not_allowed", "email": "..."}` |
+| `422` | Plan inbox email limit reached (`upgrade_required: true`) |
+| `429` | Daily/monthly send limit or per-minute throttle exceeded |
 
 ---
 
 ## Reply to Conversation
 
-Reply to an existing email conversation.
+Reply to an existing conversation. The reply is queued for delivery.
 
 ```http
 POST /api/public-v1/inbox/conversation/{uuid}/reply
 ```
+
+See [Authentication, Limits and Common Behavior](#authentication-limits-and-common-behavior) for the paid-plan check, 10/day and 100/month limits, and throttling.
 
 ### Path Parameters
 | Parameter | Type | Required | Description |
@@ -227,19 +258,21 @@ POST /api/public-v1/inbox/conversation/{uuid}/reply
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `message` | string | Yes | Reply content (HTML supported) |
-| `reply_all` | boolean | No | Reply to all participants (default: false) |
-| `attachments` | array | No | Array of attachment file IDs |
-| `internal_note` | boolean | No | Mark as internal team note |
+| `msg` | string | Yes | Reply body (HTML supported) |
+| `type` | integer | Yes | `0` or `1`. Required by validation; the reply logic does not use it |
+| `replyFrom` | string | No | Sending address. Defaults to the address the conversation was received on |
+| `to_emails` | array | No | Replaces the default recipient (the original `Reply-To`, or the sender) |
+| `cc` / `bcc` | string | No | Comma-separated addresses |
+| `cc_emails` / `bcc_emails` | array | No | Addresses as an array (take precedence over `cc` / `bcc`) |
+| `attachments` | array | No | Array of objects with a media ID: `[{"id": 12}]` |
+| `schedule_time` | string | No | Accepted by validation but not used by the reply logic |
 
 <ApiTester
-  endpoint="/api/public-v1/inbox/conversation/conv-abc123def456/reply"
+  endpoint="/api/public-v1/inbox/conversation/9c4a1f4e-6c1b-4b6e-9a55-0d6a1c7f2e11/reply"
   method="POST"
   defaultBody={{
-    content: "<p>Thank you for your message.</p><p>I'll review the details and get back to you shortly.</p><p>Best regards,<br>Support Team</p>",
-    reply_all: false,
-    internal_note: false,
-    mark_resolved: false
+    msg: "<p>Thank you for your message. I will review and respond soon.</p>",
+    type: 0
   }}
   description="Test replying to a conversation"
 />
@@ -247,49 +280,68 @@ POST /api/public-v1/inbox/conversation/{uuid}/reply
 ### Example Request
 
 ```bash
-curl -X POST "https://public-api.taskip.net/api/public-v1/inbox/conversation/conv-abc123def456/reply" \
+curl -X POST "https://public-api.taskip.net/api/public-v1/inbox/conversation/9c4a1f4e-6c1b-4b6e-9a55-0d6a1c7f2e11/reply" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json" \
   -d '{
-    "message": "<p>Thank you for your message. I will review and respond soon.</p>",
-    "reply_all": false
+    "msg": "<p>Thank you for your message. I will review and respond soon.</p>",
+    "type": 0
   }'
 ```
 
 ### Example Response
 
+Status `202 Accepted`:
+
 ```json
 {
   "data": {
-    "message_id": "msg_reply789abc123",
+    "message_id": "5a9e3b7c-1d2f-4a6b-8c0e-9f1d3b5a7c24",
     "in_reply_to": "msg_abc123def456",
-    "from_email": "jane@taskip.com",
-    "from_name": "Jane Smith",
+    "from_email": "support@yourcompany.com",
+    "from_name": "Your Company",
     "to_email": "john.doe@client.com",
+    "cc_emails": null,
+    "bcc_emails": null,
     "subject": "Re: Project Discussion - Website Redesign",
     "is_read": true,
-    "delivered": true,
+    "delivered": false,
     "created_at": "just now",
-    "uuid": "conv_abc123def456",
+    "uuid": "2c8d4f6a-0b1e-4d3c-9a5f-7e9b1d3f5a60",
     "body_plain": "Thank you for your message. I will review and respond soon.",
     "body_html": "<p>Thank you for your message. I will review and respond soon.</p>",
     "error_message": null,
     "attachments": [],
     "reply_by": {
       "id": 12,
+      "uuid": "user-uuid",
       "name": "Jane Smith",
+      "media": null,
       "email": "jane@taskip.com"
     }
   },
-  "msg": "Message Send Successfully"
+  "msg": "Reply queued — you will be notified when it is sent"
 }
 ```
+
+`delivered` becomes `true` only after the queued email is sent.
+
+### Errors
+
+| Status | Response |
+|--------|----------|
+| `422` | Missing `msg` or `type`: `{"error": {"msg": ["The msg field is required."]}}` |
+| `422` | `{"error": {"msg": ["Conversation not found"]}}` |
+| `422` | `{"error": {"msg": ["You do not have permission to access this conversation"]}}` |
+| `422` | `{"msg": "...", "error_type": "no_reply_address"}`, `dns_not_verified`, or `taskip_email_not_allowed` |
+| `422` | Plan inbox email limit reached (`upgrade_required: true`) |
+| `429` | Daily/monthly send limit or per-minute throttle exceeded |
 
 ---
 
 ## Assign Tags to Conversation
 
-Assign tags to organize and categorize conversations.
+Set the tags of a conversation. The submitted list **replaces** the conversation's current tags. Send an empty list (or omit `tags`) to remove all tags.
 
 ```http
 POST /api/public-v1/inbox/conversation/{uuid}/assign-tags
@@ -304,14 +356,13 @@ POST /api/public-v1/inbox/conversation/{uuid}/assign-tags
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `tags` | array | Yes | Array of tag objects with label and optional color |
+| `tags` | array of integers | No | IDs of existing tags (see [List Tags](#list-tags)). An empty array or omitted field detaches all tags |
 
 <ApiTester
-  endpoint="/api/public-v1/inbox/conversation/conv-abc123def456/assign-tags"
+  endpoint="/api/public-v1/inbox/conversation/9c4a1f4e-6c1b-4b6e-9a55-0d6a1c7f2e11/assign-tags"
   method="POST"
   defaultBody={{
-    tag_ids: [1, 2, 5],
-    replace_existing: false
+    tags: [1, 2]
   }}
   description="Test assigning tags to a conversation"
 />
@@ -319,31 +370,30 @@ POST /api/public-v1/inbox/conversation/{uuid}/assign-tags
 ### Example Request
 
 ```bash
-curl -X POST "https://public-api.taskip.net/api/public-v1/inbox/conversation/conv-abc123def456/assign-tags" \
+curl -X POST "https://public-api.taskip.net/api/public-v1/inbox/conversation/9c4a1f4e-6c1b-4b6e-9a55-0d6a1c7f2e11/assign-tags" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json" \
-  -d '{
-    "tags": [
-      {"label": "Client Communication", "color": "blue"},
-      {"label": "High Priority", "color": "red"},
-      {"label": "Website Project"}
-    ]
-  }'
+  -d '{ "tags": [1, 2] }'
 ```
 
 ### Example Response
 
 ```json
-{
-  "msg": "Tag Assigned"
-}
+{ "msg": "Tag assigned" }
 ```
+
+When all tags are removed: `{"msg": "Tag detached"}`.
+
+### Errors
+
+- `404` `{"msg": "Conversation not found"}`
+- `403` `{"msg": "You do not have permission to access this conversation"}`
 
 ---
 
 ## Get Email Address
 
-Retrieve the inbox email address configuration for receiving messages.
+Retrieve the workspace inbox email configuration. If the workspace has no inbox address yet, one is created; if creation fails the API returns `422` `{"error": {"msg": ["Failed to create email address"]}}`.
 
 ```http
 GET /api/public-v1/get-email-address
@@ -359,40 +409,80 @@ GET /api/public-v1/get-email-address
 
 ```bash
 curl -X GET "https://public-api.taskip.net/api/public-v1/get-email-address" \
-  -H "X-Secret-Key: your-secret-key-here" \
-  -H "Content-Type: application/json"
+  -H "X-Secret-Key: your-secret-key-here"
 ```
 
 ### Example Response
 
 ```json
 {
-  "forwarding_email": "inbox-12345@taskip.net",
+  "forwarding_email": "inbox-12345@example.com",
   "connected_email": "support@yourcompany.com",
-  "verified_at": "2024-01-15T10:30:00Z",
-  "forwarding_verified_at": "2024-01-15T11:00:00Z",
-  "dns_verified_at": "2024-01-15T11:15:00Z"
+  "verified_at": "2024-01-15T10:30:00.000000Z",
+  "forwarding_verified_at": "2024-01-15T11:00:00.000000Z",
+  "dns_verified_at": "2024-01-15T11:15:00.000000Z",
+  "from_name": "Your Company"
 }
 ```
 
 ---
 
+## List Tags
+
+Retrieve inbox tags, newest first.
+
+```http
+GET /api/public-v1/inbox/assign-tags
 ```
+
+### Query Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `item` | integer | No | Items per page (default: `10`). Use `0` to return all |
+| `page` | integer | No | Page number |
+| `search` | string | No | Search by tag name |
+
+### Example Request
+
+```bash
+curl -X GET "https://public-api.taskip.net/api/public-v1/inbox/assign-tags?item=0" \
+  -H "X-Secret-Key: your-secret-key-here"
+```
+
+### Example Response
+
+```json
+{
+  "data": [
+    { "id": 2, "name": "High Priority", "color": "red" },
+    { "id": 1, "name": "Client Communication", "color": "blue" }
+  ],
+  "links": {
+    "first": "https://public-api.taskip.net/api/public-v1/inbox/assign-tags?page=1",
+    "last": "https://public-api.taskip.net/api/public-v1/inbox/assign-tags?page=1",
+    "prev": null,
+    "next": null
+  },
+  "meta": {
+    "current_page": 1,
+    "from": 1,
+    "last_page": 1,
+    "per_page": 10,
+    "to": 2,
+    "total": 2
+  }
+}
+```
+
+With `item=0` the response contains only `data` (no pagination).
 
 ---
 
-## Update Tag Assignment
-
-Update existing tag information.
+## Create a Tag
 
 ```http
-PUT /api/public-v1/inbox/assign-tags/{id}
+POST /api/public-v1/inbox/assign-tags
 ```
-
-### Path Parameters
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | integer | Yes | Tag ID to update |
 
 ### Request Body
 
@@ -404,22 +494,65 @@ PUT /api/public-v1/inbox/assign-tags/{id}
 ### Example Request
 
 ```bash
-curl -X PUT "https://public-api.taskip.net/api/public-v1/inbox/assign-tags/1" \
+curl -X POST "https://public-api.taskip.net/api/public-v1/inbox/assign-tags" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json" \
-  -d '{
-    "name": "Updated Client Communication",
-    "color": "green"
-  }'
+  -d '{ "name": "Client Communication", "color": "blue" }'
 ```
 
 ### Example Response
 
 ```json
 {
-  "msg": "Tag Updated Successfully"
+  "msg": "Tag added successfully",
+  "tag": { "id": 3, "name": "Client Communication", "color": "blue" }
 }
 ```
+
+### Errors
+
+- `422` `{"error": {"name": ["The name field is required."]}}`
+
+---
+
+## Update a Tag
+
+```http
+PUT /api/public-v1/inbox/assign-tags/{id}
+PATCH /api/public-v1/inbox/assign-tags/{id}
+```
+
+### Path Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | integer | Yes | Tag ID to update |
+
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | string | Yes | Tag name (max 191 characters). Required for both `PUT` and `PATCH` |
+| `color` | string | No | Tag color (max 98 characters) |
+
+### Example Request
+
+```bash
+curl -X PUT "https://public-api.taskip.net/api/public-v1/inbox/assign-tags/1" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{ "name": "Updated Client Communication", "color": "green" }'
+```
+
+### Example Response
+
+```json
+{ "msg": "Tag updated successfully" }
+```
+
+### Errors
+
+- `404` `{"msg": "Tag not found"}`
+- `422` `{"error": {"name": ["The name field is required."]}}`
 
 <ApiTester
   endpoint="/api/public-v1/inbox/assign-tags/1"
@@ -428,14 +561,12 @@ curl -X PUT "https://public-api.taskip.net/api/public-v1/inbox/assign-tags/1" \
     name: "Updated Client Communication",
     color: "green"
   }}
-  description="Test updating tag information"
+  description="Test updating a tag"
 />
 
 ---
 
-## Remove Tag Assignment
-
-Delete a tag completely.
+## Delete a Tag
 
 ```http
 DELETE /api/public-v1/inbox/assign-tags/{id}
@@ -456,10 +587,12 @@ curl -X DELETE "https://public-api.taskip.net/api/public-v1/inbox/assign-tags/1"
 ### Example Response
 
 ```json
-{
-  "msg": "Tag Deleted Successfully"
-}
+{ "msg": "Tag deleted successfully" }
 ```
+
+### Errors
+
+- `404` `{"msg": "Tag not found"}`
 
 <ApiTester
   endpoint="/api/public-v1/inbox/assign-tags/1"
@@ -469,14 +602,3 @@ curl -X DELETE "https://public-api.taskip.net/api/public-v1/inbox/assign-tags/1"
 
 ---
 
-<Callout type="info" emoji="📧">
-  **Email Integration**: The Inbox API seamlessly integrates with popular email providers and supports IMAP/SMTP protocols for real-time message synchronization.
-</Callout>
-
-<Callout type="warning" emoji="🔒">
-  **Security & Privacy**: All email communications are encrypted in transit and at rest. Access controls ensure only authorized team members can view conversations.
-</Callout>
-
-<Callout type="success" emoji="⚡">
-  **Real-time Updates**: Conversations and messages are updated in real-time using WebSocket connections for instant notification delivery.
-</Callout>

@@ -124,7 +124,7 @@ paths:
       tags:
         - Company
       summary: Create a company
-      description: Create a company
+      description: Create a company. Send tags as an array of tag IDs from /company-tag
       operationId: createCompany
       responses:
         '201':
@@ -150,7 +150,7 @@ paths:
       tags:
         - Company
       summary: Update a company
-      description: Update a company
+      description: Update a company. Tags, when sent, replace the company's current tags
       operationId: updateCompany
       parameters:
         - name: id
@@ -187,6 +187,25 @@ paths:
       operationId: bulkDeleteCompanies
       responses:
         '200':
+          description: Successful operation
+  /company-tag:
+    get:
+      tags:
+        - Company
+      summary: Get all company tags
+      description: Get all company tags
+      operationId: getAllCompanyTags
+      responses:
+        '200':
+          description: Successful operation
+    post:
+      tags:
+        - Company
+      summary: Create a company tag
+      description: Create a company tag. Use its ID in the tags field when creating or updating a company
+      operationId: createCompanyTag
+      responses:
+        '201':
           description: Successful operation
   /team-member:
     get:

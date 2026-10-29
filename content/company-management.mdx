@@ -1,6 +1,10 @@
 # Company Management API
 
-The Company Management API allows you to manage companies in your TaskIP CRM system. You can create, read, update, and delete companies, as well as perform bulk operations.
+The Company Management API allows you to manage companies in your TaskIP CRM system. You can create, read, update, search, and delete companies, as well as perform bulk deletes.
+
+<Callout type="info" emoji="💡">
+  **Resource IDs**: The `{id}` segment of the company routes only accepts digits. A non-numeric segment (for example `/company/tags`) is a `404`.
+</Callout>
 
 ## Endpoints Overview
 
@@ -9,15 +13,18 @@ The Company Management API allows you to manage companies in your TaskIP CRM sys
 | `GET` | [`/api/public-v1/company`](#get-all-companies) | Get all companies |
 | `POST` | [`/api/public-v1/company`](#create-a-company) | Create a new company |
 | `GET` | [`/api/public-v1/company/{id}`](#get-a-specific-company) | Get a specific company |
-| `PUT` | [`/api/public-v1/company/{id}`](#update-a-company) | Update a company |
+| `PUT` / `PATCH` | [`/api/public-v1/company/{id}`](#update-a-company) | Update a company |
 | `DELETE` | [`/api/public-v1/company/{id}`](#delete-a-company) | Delete a company |
 | `POST` | [`/api/public-v1/company/bulk-delete`](#bulk-delete-companies) | Delete multiple companies |
+| `GET` | [`/api/public-v1/company-search`](#search-companies) | Search companies by name |
+| `GET` | [`/api/public-v1/company-tag`](#list-company-tags) | List company tags |
+| `POST` | [`/api/public-v1/company-tag`](#create-a-company-tag) | Create a company tag |
 
 ---
 
 ## Get All Companies
 
-Retrieve a list of all companies in your system.
+Retrieve a paginated list of all companies in your system.
 
 ```http
 GET /api/public-v1/company
@@ -39,24 +46,28 @@ Content-Type: application/json
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `page` | integer | No | Page number for pagination (default: 1) |
-| `limit` | integer | No | Number of companies per page (default: 50) |
-| `search` | string | No | Search term for company name or domain |
-| `sort` | string | No | Sort field (`name`, `domain`, `created_at`) |
-| `order` | string | No | Sort order (`asc` or `desc`) |
-| `industry` | string | No | Filter by industry |
-| `status` | string | No | Filter by status (`active`, `inactive`) |
+| `item` | integer | No | Companies per page (default: 10). Use `0` to return all companies without pagination |
+| `search` | string | No | Search by company name, email, or phone number |
+| `industry_id` | integer or array | No | Filter by industry ID(s), e.g. `industry_id[]=2&industry_id[]=5` |
+| `industry_is_empty` | boolean | No | When true, only companies without an industry are returned (overrides `industry_id`) |
+| `number_of_employees_operator` | string | No | Employee-count comparison: `equals`, `gt`, `gte`, `lt`, `lte`, or `between`. Used together with `number_of_employees_value` |
+| `number_of_employees_value` | integer | No | Value to compare against |
+| `number_of_employees_value2` | integer | No | Upper bound when the operator is `between` |
+| `number_of_employees_is_empty` | boolean | No | When true, only companies without an employee count are returned (overrides the operator filter) |
+
+Results are ordered by `id` descending.
 
 ### Example Request
 
 ```bash
-curl -X GET "https://public-api.taskip.net/api/public-v1/company?page=1&limit=20&industry=technology" \
+curl -X GET "https://public-api.taskip.net/api/public-v1/company?page=1&item=20&search=acme" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json"
 ```
 
 ### JavaScript Example
 ```javascript
-const response = await fetch('https://public-api.taskip.net/api/public-v1/company?page=1&limit=20', {
+const response = await fetch('https://public-api.taskip.net/api/public-v1/company?page=1&item=20', {
   method: 'GET',
   headers: {
     'X-Secret-Key': 'your-secret-key-here',
@@ -83,6 +94,9 @@ const companies = await response.json();
       "c_type": 5,
       "size": "51-200 employees",
       "type": "Technology",
+      "number_of_employees": 120,
+      "industry_id": 4,
+      "industry": "Software",
       "country_id": 1,
       "city_id": 10,
       "state_id": 5,
@@ -90,32 +104,35 @@ const companies = await response.json();
       "state": "New York",
       "city": "New York City",
       "address": "123 Business Street, New York, NY 10001",
-      "created_at": "2024-01-10T09:30:00Z",
-      "image": {
-        "id": 101,
-        "url": "https://cdn.taskip.net/companies/acme-logo.png",
-        "thumbnail": "https://cdn.taskip.net/companies/acme-logo-thumb.png"
-      }
-    },
-    {
-      "id": 2,
-      "name": "Tech Solutions Inc",
-      "email": "hello@techsolutions.com",
-      "phone_number": "+1-555-0101",
-      "website": "https://www.techsolutions.com",
-      "c_size": 2,
-      "c_type": 8,
-      "size": "11-50 employees",
-      "type": "Software",
-      "country_id": 1,
-      "city_id": 15,
-      "state_id": 8,
-      "country": "United States",
-      "state": "California",
-      "city": "San Francisco",
-      "address": "456 Innovation Ave, San Francisco, CA 94105",
-      "created_at": "2024-01-05T11:20:00Z",
-      "image": null
+      "zip_code": "10001",
+      "vat_id": null,
+      "description": null,
+      "created_at": "2024-01-10T09:30:00.000000Z",
+      "image": null,
+      "tags": [
+        { "id": 3, "name": "Partner", "color": "#22c55e" }
+      ],
+      "custom_fields": [],
+      "company_members": [],
+      "deals_count": 2,
+      "invoices_count": 5,
+      "clients": [
+        {
+          "id": 12,
+          "user_id": 40,
+          "company_id": 1,
+          "first_name": "John",
+          "last_name": "Doe",
+          "full_name": "John Doe",
+          "email": "john.doe@acme.com",
+          "position": "CTO",
+          "phone_number": "555-0123",
+          "details": null,
+          "reference": null,
+          "access_portal": 0,
+          "image": null
+        }
+      ]
     }
   ],
   "links": {
@@ -135,6 +152,8 @@ const companies = await response.json();
   }
 }
 ```
+
+When `search` is supplied, `meta.search` echoes the search term. When `item=0`, the response contains only `message` and `data`.
 
 ---
 
@@ -156,10 +175,12 @@ POST /api/public-v1/company
     "website": "https://www.greenenergy.com",
     "c_size": 4,
     "c_type": 12,
+    "number_of_employees": 250,
     "country_id": 1,
     "state_id": 15,
     "city_id": 120,
-    "address": "789 Sustainability Blvd, Austin, TX 78701"
+    "address": "789 Sustainability Blvd, Austin, TX 78701",
+    "zip_code": "78701"
   }}
   description="Test creating a new company in your TaskIP system"
 />
@@ -175,15 +196,27 @@ Content-Type: application/json
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `name` | string | Yes | Company name (max 191 characters) |
-| `email` | string | Yes | Company email (must be unique) |
+| `email` | string | Yes | Company email. Must not already belong to a user, another company, or a lead (unless your workspace allows duplicate company emails) |
 | `phone_number` | string | No | Company phone number |
-| `website` | string | No | Company website URL (max 191 characters) |
+| `website` | string | No | Company website, must be a valid URL such as `https://example.com` (max 191 characters) |
 | `c_size` | integer | No | Company size ID (numeric) |
-| `c_type` | integer | No | Company/Industry type ID (numeric) |
+| `c_type` | integer | No | Company type ID (numeric) |
+| `number_of_employees` | integer | No | Number of employees (min 0) |
+| `industry_id` | integer | No | Industry ID |
 | `country_id` | integer | No | Country ID |
 | `state_id` | integer | No | State/Province ID |
 | `city_id` | integer | No | City ID |
 | `address` | string | No | Company address |
+| `zip_code` | string | No | ZIP/postal code (max 20 characters) |
+| `vat_id` | string | No | VAT ID (max 100 characters) |
+| `tags` | array of integers | No | Tag IDs to put on the company, from [Company Tags](#company-tags). An ID that does not exist is a `422` and nothing is saved |
+| `company_members` | array | No | Array of user IDs (each must exist in users) |
+| `custom_fields` | array | No | Custom field data. Required custom fields defined in your workspace are enforced |
+| `description` | string | No | Free-text description |
+
+<Callout type="info" emoji="💡">
+  **Persisted fields**: Create and update store `name`, `email`, `phone_number`, `website`, `c_size`, `c_type`, `number_of_employees`, `industry_id`, `country_id`, `state_id`, `city_id`, `address`, `zip_code`, `vat_id`, `description`, `tags`, `company_members` and `custom_fields`. When `tags`, `company_members` or `custom_fields` is empty or left out, the company keeps what it already has.
+</Callout>
 
 ### Example Request
 
@@ -201,7 +234,8 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/company" \
     "country_id": 1,
     "state_id": 15,
     "city_id": 120,
-    "address": "789 Sustainability Blvd, Austin, TX 78701"
+    "address": "789 Sustainability Blvd, Austin, TX 78701",
+    "tags": [12]
   }'
 ```
 
@@ -238,6 +272,8 @@ result = response.json()
 
 ### Example Response
 
+The response status is `201 Created`.
+
 ```json
 {
   "msg": "Company Created",
@@ -251,6 +287,9 @@ result = response.json()
     "c_type": 12,
     "size": "201-500 employees",
     "type": "Renewable Energy",
+    "number_of_employees": null,
+    "industry_id": null,
+    "industry": null,
     "country_id": 1,
     "city_id": 120,
     "state_id": 15,
@@ -258,8 +297,17 @@ result = response.json()
     "state": "Texas",
     "city": "Austin",
     "address": "789 Sustainability Blvd, Austin, TX 78701",
-    "created_at": "2024-01-25T10:30:00Z",
-    "image": null
+    "zip_code": null,
+    "vat_id": null,
+    "description": null,
+    "created_at": "2024-01-25T10:30:00.000000Z",
+    "image": null,
+    "tags": [],
+    "custom_fields": [],
+    "company_members": [],
+    "deals_count": 0,
+    "invoices_count": 0,
+    "clients": []
   }
 }
 ```
@@ -283,7 +331,7 @@ GET /api/public-v1/company/{id}
 ### Path Parameters
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `id` | integer | Yes | Company ID |
+| `id` | integer | Yes | Company ID (digits only) |
 
 ### Example Request
 
@@ -297,7 +345,7 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/company/46" \
 
 ```json
 {
-  "msg": "Company Created",
+  "message": "Company detail",
   "data": {
     "id": 46,
     "name": "Green Energy Solutions",
@@ -308,6 +356,9 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/company/46" \
     "c_type": 12,
     "size": "201-500 employees",
     "type": "Renewable Energy",
+    "number_of_employees": null,
+    "industry_id": null,
+    "industry": null,
     "country_id": 1,
     "city_id": 120,
     "state_id": 15,
@@ -315,15 +366,30 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/company/46" \
     "state": "Texas",
     "city": "Austin",
     "address": "789 Sustainability Blvd, Austin, TX 78701",
-    "created_at": "2024-01-25T10:30:00Z",
+    "zip_code": null,
+    "vat_id": null,
+    "description": null,
+    "created_at": "2024-01-25T10:30:00.000000Z",
     "image": {
       "id": 205,
+      "title": "green-energy-logo.png",
+      "ext": "png",
+      "size": 20480,
       "url": "https://cdn.taskip.net/companies/green-energy-logo.png",
-      "thumbnail": "https://cdn.taskip.net/companies/green-energy-logo-thumb.png"
-    }
+      "media_type": "company",
+      "createdAt": "25-01-2024 10:30:00"
+    },
+    "tags": [],
+    "custom_fields": [],
+    "company_members": [],
+    "deals_count": 0,
+    "invoices_count": 0,
+    "clients": []
   }
 }
 ```
+
+If the company does not exist the API returns `404` with `{"message": "Company not found"}`.
 
 ---
 
@@ -333,7 +399,10 @@ Update an existing company's information.
 
 ```http
 PUT /api/public-v1/company/{id}
+PATCH /api/public-v1/company/{id}
 ```
+
+`PUT` and `PATCH` are handled identically and share the same validation rules as create. The company in the URL is the one updated; no new company is created.
 
 <ApiTester
   endpoint="/api/public-v1/company/1"
@@ -356,22 +425,17 @@ PUT /api/public-v1/company/{id}
 ### Path Parameters
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `id` | integer | Yes | Company ID to update |
+| `id` | integer | Yes | Company ID to update (digits only) |
 
 ### Request Body
 
+Same fields as [Create a Company](#create-a-company). `name` and `email` are required on every update, even with `PATCH`. A company can keep its own current email.
+
+`tags` **replaces** the company's tags with the IDs you send. To add a tag without touching the others, send the full list including the existing ones. Leaving `tags` out, or sending an empty list, keeps the current tags. Additionally:
+
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `name` | string | Yes | Company name (max 191 characters) |
-| `email` | string | Yes | Company email (must be unique, except for current company) |
-| `phone_number` | string | No | Company phone number |
-| `website` | string | No | Company website URL (max 191 characters) |
-| `c_size` | integer | No | Company size ID (numeric) |
-| `c_type` | integer | No | Company/Industry type ID (numeric) |
-| `country_id` | integer | No | Country ID |
-| `state_id` | integer | No | State/Province ID |
-| `city_id` | integer | No | City ID |
-| `address` | string | No | Company address |
+| `image` | integer | No | Media upload ID. Replaces the company's current image |
 
 ### Example Request
 
@@ -389,6 +453,8 @@ curl -X PUT "https://public-api.taskip.net/api/public-v1/company/46" \
 ```
 
 ### Example Response
+
+The response status is `202 Accepted`.
 
 ```json
 {
@@ -415,11 +481,10 @@ DELETE /api/public-v1/company/{id}
 ### Path Parameters
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `id` | integer | Yes | Company ID to delete |
-
+| `id` | integer | Yes | Company ID to delete (digits only) |
 
 <Callout type="warning" emoji="⚠️">
-  **Warning**: Deleting a company will also remove all associated contacts and projects. This action cannot be undone.
+  **Warning**: Deleting a company also removes its image. This action cannot be undone.
 </Callout>
 
 ### Example Request
@@ -431,13 +496,7 @@ curl -X DELETE "https://public-api.taskip.net/api/public-v1/company/46" \
 
 ### Example Response
 
-```json
-{
-  "msg": "Company Deleted"
-}
-```
-
-**Note**: The response status code will be `204 No Content`.
+The response status is `204 No Content` and the body is empty. A company that does not exist returns `404`.
 
 ---
 
@@ -462,8 +521,8 @@ POST /api/public-v1/company/bulk-delete
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `ids` | array | Yes | Array of company IDs to delete |
-| `ids.*` | integer | Yes | Each ID must be a valid integer that exists in companies table |
+| `ids` | array | Yes | Array of company IDs to delete (1 to 1000 items) |
+| `ids.*` | integer | Yes | Each ID must be an integer that exists in the companies table |
 
 ### Example Request
 
@@ -496,13 +555,151 @@ const result = await response.json();
 
 ### Example Response
 
+The response status is `202 Accepted`.
+
 ```json
 {
   "msg": "companies deleted."
 }
 ```
 
-**Note**: The response status code will be `202 Accepted`.
+---
+
+## Search Companies
+
+Search companies by name. Returns every company whose name contains the search term.
+
+```http
+GET /api/public-v1/company-search
+```
+
+<ApiTester
+  endpoint="/api/public-v1/company-search?search=acme"
+  method="GET"
+  description="Search companies by name. Change the search query parameter to the text you want to match."
+/>
+
+### Query Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `search` | string | No | Text to match against the company name (partial match). When omitted, all companies are returned |
+
+### Example Request
+
+```bash
+curl -X GET "https://public-api.taskip.net/api/public-v1/company-search?search=acme" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json"
+```
+
+### Example Response
+
+This endpoint is not paginated and returns the raw company records (not the [Company Object](#company-object)).
+
+```json
+{
+  "msg": "Company list found",
+  "data": [
+    {
+      "id": 1,
+      "name": "Acme Corporation",
+      "email": "info@acme.com",
+      "phone_number": "+1-555-0100",
+      "website": "https://www.acme.com",
+      "c_size": 3,
+      "c_type": 5,
+      "country_id": 1,
+      "city_id": 10,
+      "state_id": 5,
+      "address": "123 Business Street, New York, NY 10001",
+      "created_at": "2024-01-10T09:30:00.000000Z",
+      "updated_at": "2024-01-10T09:30:00.000000Z"
+    }
+  ]
+}
+```
+
+---
+
+## Company Tags
+
+A tag is a coloured label such as `Company`, `Individual` or `Trust`. Companies take tags by **ID**, so create each tag once, keep its ID, and send that ID in `tags` when you create or update companies. Tags created here are always company tags, whatever `type` you send.
+
+### List Company Tags
+
+```http
+GET /api/public-v1/company-tag
+```
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `search` | string | No | Search tags by name |
+| `item` | integer | No | Tags per page |
+| `page` | integer | No | Page number |
+
+```bash
+curl -X GET "https://public-api.taskip.net/api/public-v1/company-tag?search=trust" \
+  -H "X-Secret-Key: your-secret-key-here"
+```
+
+```json
+{
+  "data": [
+    { "id": 12, "name": "Trust", "color": "#336699", "type": "company" }
+  ],
+  "links": { "first": "...", "last": "...", "prev": null, "next": null },
+  "meta": { "current_page": 1, "per_page": 10, "total": 1 }
+}
+```
+
+### Create a Company Tag
+
+```http
+POST /api/public-v1/company-tag
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | string | Yes | Tag name (max 191 characters) |
+| `color` | string | Yes | Tag colour, for example `#336699` (max 50 characters) |
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/company-tag" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{ "name": "Trust", "color": "#336699" }'
+```
+
+The response status is `201 Created`.
+
+```json
+{
+  "msg": "Tag created",
+  "data": { "id": 12, "name": "Trust", "color": "#336699", "type": "company" }
+}
+```
+
+<Callout type="info" emoji="💡">
+  **Tag IDs can be large.** Keep them as 64-bit integers (or strings) in your own code, and send the IDs exactly as the API returned them.
+</Callout>
+
+### Unknown tag IDs
+
+If any ID in `tags` does not exist, the request is refused with `422` and no company is created or changed:
+
+```json
+{
+  "error": {
+    "tags.0": ["The selected tags.0 is invalid."]
+  }
+}
+```
+
+### Tag companies when you import them
+
+1. `GET /company-tag?search=Trust` and, if it is not there, `POST /company-tag`. Store the ID for `Company`, `Individual` and `Trust`.
+2. `POST /company` with `"tags": [<id>]` for each new company.
+3. For a company that already exists, `PUT /company/{id}` with the tag in `tags`. Send every tag the company should have, since the list replaces the current one.
 
 ---
 
@@ -512,26 +709,22 @@ const result = await response.json();
 
 | Status Code | Error Type | Description |
 |-------------|------------|-------------|
-| `400` | Bad Request | Invalid request data or missing required fields |
 | `401` | Unauthorized | Invalid or missing X-Secret-Key |
-| `404` | Not Found | Company not found |
-| `409` | Conflict | Company name or domain already exists |
+| `404` | Not Found | Company not found, or a non-numeric ID in the path |
 | `422` | Validation Error | Request data failed validation |
 | `429` | Too Many Requests | Rate limit exceeded |
 
 ### Example Error Response
 
+Validation failures return `422` with the failing fields under `error`:
+
 ```json
 {
-  "success": false,
-  "error": "Validation Error",
-  "message": "The given data was invalid",
-  "errors": {
+  "error": {
     "name": ["The name field is required."],
-    "email": ["The email format is invalid."],
-    "website": ["The website must be a valid URL."]
-  },
-  "status_code": 422
+    "email": ["The email field must be a valid email address."],
+    "website": ["Website must be a valid URL (example: https://example.com)."]
+  }
 }
 ```
 
@@ -552,6 +745,9 @@ const result = await response.json();
   "c_type": "integer|null",
   "size": "string|null",
   "type": "string|null",
+  "number_of_employees": "integer|null",
+  "industry_id": "integer|null",
+  "industry": "string|null",
   "country_id": "integer|null",
   "city_id": "integer|null",
   "state_id": "integer|null",
@@ -559,8 +755,17 @@ const result = await response.json();
   "state": "string|null",
   "city": "string|null",
   "address": "string|null",
+  "zip_code": "string|null",
+  "vat_id": "string|null",
+  "description": "string|null",
   "created_at": "string (ISO 8601)",
-  "image": "object|null"
+  "image": "object|null",
+  "tags": "array of {id, name, color}",
+  "custom_fields": "array|object",
+  "company_members": "array",
+  "deals_count": "integer",
+  "invoices_count": "integer",
+  "clients": "array"
 }
 ```
 
@@ -569,8 +774,12 @@ const result = await response.json();
 ```json
 {
   "id": "integer",
-  "url": "string",
-  "thumbnail": "string"
+  "title": "string",
+  "ext": "string",
+  "size": "integer",
+  "url": "string|null",
+  "media_type": "string",
+  "createdAt": "string (d-m-Y h:i:s)"
 }
 ```
 
@@ -580,16 +789,15 @@ const result = await response.json();
 
 ### Company Creation
 1. **Use consistent naming**: Keep company names consistent across your CRM
-2. **Verify domains**: Ensure company domains are valid and unique
-3. **Industry categorization**: Use standardized industry categories for better filtering
+2. **Use unique emails**: Company emails are checked against users, other companies and leads
+3. **Industry categorization**: Use standardized industry IDs for better filtering
 4. **Complete profiles**: Add as much company information as possible for better CRM insights
 
 ### Data Management
 1. **Regular updates**: Keep company information current
 2. **Bulk operations**: Use bulk delete for efficient data management
-3. **Associated data**: Consider associated contacts and projects before deletion
-4. **Search optimization**: Use descriptive names and domains for better searchability
+3. **Search optimization**: Use descriptive names for better searchability with `company-search`
 
 <Callout type="info" emoji="💡">
-  **Tip**: Use the industry filter in the GET /company endpoint to segment your companies by business sector. This is particularly useful for targeted marketing campaigns or industry-specific reporting.
+  **Tip**: Use the `industry_id` and `number_of_employees_*` filters in the GET /company endpoint to segment your companies. This is particularly useful for targeted marketing campaigns or industry-specific reporting.
 </Callout>
