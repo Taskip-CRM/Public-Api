@@ -1,99 +1,121 @@
 # Document Management API
 
-The Document Management API allows you to manage documents and files in your TaskIP CRM system. You can upload, organize, share, and track documents with version control, access permissions, and collaboration features.
+The Document Management API allows you to create and manage documents (and proposals) in your TaskIP workspace. You can list, create, archive and share documents, edit their content blocks, publish them to a public link, and export them as PDF.
 
 ## Endpoints Overview
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | [`/api/public-v1/document`](#get-all-documents) | Get all documents |
-| `POST` | [`/api/public-v1/document`](#upload-a-new-document) | Upload a new document |
-| `GET` | [`/api/public-v1/document/{id}`](#get-a-specific-document) | Get a specific document |
-| `PUT` | [`/api/public-v1/document/{id}`](#update-document-metadata) | Update document metadata |
-| `DELETE` | [`/api/public-v1/document/{id}`](#delete-a-document) | Delete a document |
-| `GET` | [`/api/public-v1/document/{id}/download`](#download-document-file) | Download document file |
+| `GET` | [`/api/public-v1/documents`](#get-all-documents) | Get all documents |
+| `POST` | [`/api/public-v1/documents`](#create-a-document) | Create a document |
+| `GET` | [`/api/public-v1/documents/{uuid}`](#get-a-specific-document) | Get a document with its blocks |
+| `DELETE` | [`/api/public-v1/documents/{uuid}`](#delete-a-document) | Archive (delete) a document |
+| `POST` | [`/api/public-v1/documents/blocks/store/{uuid}`](#save-document-blocks) | Save the content blocks of a document |
+| `POST` | [`/api/public-v1/documents/blocks/rename/{uuid}`](#rename-a-document) | Rename a document |
+| `POST` | [`/api/public-v1/documents/blocks/move-to-folder/{uuid}`](#move-a-document-to-a-folder) | Move a document to a folder |
+| `POST` | [`/api/public-v1/documents/blocks/share/{uuid}`](#share-a-document-with-a-user) | Share a document with a user (or remove access) |
+| `POST` | [`/api/public-v1/documents/blocks/duplicate_document/{uuid}`](#duplicate-a-document) | Duplicate a document |
+| `POST` | [`/api/public-v1/documents/download/{uuid}`](#download-document-as-pdf) | Download a document as PDF |
+| `POST` | [`/api/public-v1/documents-invite/{uuid}`](#invite-or-revoke-access) | Invite a team member, contact or team (or revoke access) |
+| `POST` | [`/api/public-v1/documents-publish/{uuid}`](#publish-or-unpublish-a-document) | Publish or unpublish a document |
+| `POST` | [`/api/public-v1/documents-thumbnail/{uuid}`](#update-thumbnail) | Update the thumbnail |
+| `POST` | [`/api/public-v1/documents-cover/{uuid}`](#update-cover-photo) | Update the cover photo |
+| `POST` | [`/api/public-v1/documents/mention/user`](#mention-a-user) | Notify a user that they were mentioned |
 
----
+<Callout type="warning" emoji="⚠️">
+  **There is no update endpoint.** `PUT /documents/{uuid}` is not available. To change a document use the specific endpoints above (rename, move to folder, save blocks, share, publish, cover).
+</Callout>
 
-## Get All Documents
+## Authentication and Common Behavior
 
-Retrieve a list of all documents in your system.
+Every request must send the secret key header:
 
-```http
-GET /api/public-v1/document
-```
-
-### Request Headers
 ```http
 X-Secret-Key: your-secret-key-here
 Content-Type: application/json
 ```
 
+- Documents are identified by their **`uuid`** (string), not the numeric `id`.
+- The workspace must have the Public API module enabled and plan access, otherwise the request is rejected before reaching the endpoint.
+- Requests act as the user linked to the secret key. A document that user cannot access returns an error (see [Error Responses](#error-responses)), and document-level rules (for example, only the owner can share) apply.
+
+### Access Type Values
+
+Used by `access_type` in the share and invite endpoints, and returned in `permissions[].access_type`.
+
+| Value | Meaning |
+|-------|---------|
+| `1` | Full access |
+| `2` | Can edit |
+| `3` | View only |
+| `4` | Comment only |
+
+### Visibility Values
+
+| Value | Label |
+|-------|-------|
+| `0` | Private |
+| `1` | Public |
+| `2` | Team Only |
+
+---
+
+## Get All Documents
+
+Retrieve a paginated list of documents visible to the user that owns the secret key. Results are ordered newest first (`id` descending).
+
+```http
+GET /api/public-v1/documents
+```
+
 ### Query Parameters
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `page` | integer | No | Page number for pagination (default: 1) |
-| `limit` | integer | No | Number of documents per page (default: 50) |
-| `search` | string | No | Search term for document name or content |
-| `sort` | string | No | Sort field (`name`, `size`, `created_at`, `updated_at`) |
-| `order` | string | No | Sort order (`asc` or `desc`) |
-| `folder_id` | integer | No | Filter by folder ID |
-| `file_type` | string | No | Filter by file type (`pdf`, `doc`, `image`, `spreadsheet`) |
-| `owner_id` | integer | No | Filter by document owner |
-| `shared_with_me` | boolean | No | Show only documents shared with current user |
-| `date_from` | string | No | Filter documents from date (YYYY-MM-DD) |
-| `date_to` | string | No | Filter documents to date (YYYY-MM-DD) |
+| `item` | integer | No | Items per page (default: `10`). Use `0` to return all documents without pagination |
+| `page` | integer | No | Page number |
+| `search` | string | No | Search by document name |
+| `visibility` | integer | No | Filter by visibility. Only `0` and `1` are applied as filters; other values are ignored |
+| `status` | integer | No | `1` = only published (shared) documents, `0` = only unpublished documents |
+
+<ApiTester
+  endpoint="/api/public-v1/documents"
+  method="GET"
+  description="Test getting all documents"
+/>
 
 ### Example Request
 
 ```bash
-curl -X GET "https://public-api.taskip.net/api/public-v1/document?page=1&limit=20&folder_id=5&file_type=pdf" \
+curl -X GET "https://public-api.taskip.net/api/public-v1/documents?item=20&search=proposal" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json"
-```
-
-### JavaScript Example
-```javascript
-const response = await fetch('https://public-api.taskip.net/api/public-v1/document?page=1&limit=20', {
-  method: 'GET',
-  headers: {
-    'X-Secret-Key': 'your-secret-key-here',
-    'Content-Type': 'application/json'
-  }
-});
-
-const documents = await response.json();
 ```
 
 ### Example Response
 
 ```json
 {
-  "status": 200,
   "data": [
     {
       "id": 1,
-      "uuid": "doc_abc123def456",
+      "uuid": "abc123def456",
       "created_by": {
         "id": 3,
         "name": "Sarah Johnson",
-        "image": {
-          "id": 15,
-          "original_url": "https://storage.googleapis.com/files/profile.jpg"
-        },
+        "image": null,
         "type": "user",
         "email": "sarah@company.com",
         "contact_id": null
       },
       "folder": {
         "id": 5,
-        "uuid": "folder_xyz789",
+        "uuid": "folder-uuid",
         "name": "Proposals"
       },
       "name": "Project Proposal - Acme Corp",
       "visibility": {
-        "id": 1,
-        "label": "Team"
+        "id": 2,
+        "label": "Team Only"
       },
       "permissions": [
         {
@@ -103,69 +125,67 @@ const documents = await response.json();
           "access_type": 2,
           "user": {
             "name": "David Chen",
-            "image": {
-              "id": 20,
-              "original_url": "https://storage.googleapis.com/files/david.jpg"
-            },
+            "image": null,
             "type": "user",
             "email": "david@company.com",
             "contact_id": null
           }
         }
       ],
-      "created_at": "Jan 15, 2024, 9:30 AM",
-      "access": "Owner",
+      "created_at": "Jan 15, 2024, 09:30 AM",
+      "access": "full",
       "publish": null,
-      "teams": []
-    },
-    {
-      "id": 2,
-      "uuid": "doc_ghi789jkl012",
-      "created_by": {
-        "id": 5,
-        "name": "Mike Wilson",
-        "image": {
-          "id": 25,
-          "original_url": "https://storage.googleapis.com/files/mike.jpg"
-        },
-        "type": "user",
-        "email": "mike@company.com",
-        "contact_id": null
-      },
-      "folder": {
-        "id": 8,
-        "uuid": "folder_def456",
-        "name": "Templates"
-      },
-      "name": "Contract Template",
-      "visibility": {
-        "id": 2,
-        "label": "Public"
-      },
-      "permissions": [],
-      "created_at": "Jan 10, 2024, 11:15 AM",
-      "access": "View",
-      "publish": "https://workspace.taskip.net/document/contract-template-abc123",
-      "teams": []
+      "teams": [],
+      "type": 1,
+      "type_label": "Document",
+      "is_signable": true,
+      "is_self_signable": false,
+      "send_in_order": false,
+      "is_editable": true,
+      "template_type": 1,
+      "status": 1,
+      "status_label": "Draft",
+      "expired_at": "Jan 30, 2024",
+      "signers": []
     }
-  ]
+  ],
+  "links": {
+    "first": "https://public-api.taskip.net/api/public-v1/documents?page=1",
+    "last": "https://public-api.taskip.net/api/public-v1/documents?page=1",
+    "prev": null,
+    "next": null
+  },
+  "meta": {
+    "current_page": 1,
+    "from": 1,
+    "last_page": 1,
+    "path": "https://public-api.taskip.net/api/public-v1/documents",
+    "per_page": 10,
+    "to": 1,
+    "total": 1
+  }
 }
 ```
 
+### Response Field Notes
+
+| Field | Description |
+|-------|-------------|
+| `access` | Your access level on the document: `full`, `edit`, `view`, `comment` or `none` |
+| `publish` | Public URL if the document is published, otherwise `null` |
+| `type` / `type_label` | `1` = Document, `2` = Proposal |
+| `template_type` | `1` = Prebuilt template, `2` = Custom template, `3` = PDF upload |
+| `status` / `status_label` | `1` = Draft, `2` = In Progress, `3` = Completed |
+| `signers` | Signers attached to the document (for signable documents) |
+
 ---
 
-## Upload a New Document
+## Create a Document
 
-Upload a new document to your system.
+Create a new document.
 
 ```http
-POST /api/public-v1/document
-```
-
-### Request Headers
-```http
-X-Secret-Key: your-secret-key-here
-Content-Type: multipart/form-data
+POST /api/public-v1/documents
 ```
 
 ### Request Body
@@ -173,25 +193,53 @@ Content-Type: multipart/form-data
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `name` | string | Yes | Document name (max 191 characters) |
-| `visibility` | integer | Yes | Visibility level (0=Private, 1=Team, 2=Public) |
-| `folder_id` | string | No | UUID of folder to place document in |
+| `visibility` | integer | Yes | `0` = Private, `1` = Public, `2` = Team Only |
+| `type` | integer | No | `1` = Document (default), `2` = Proposal |
+| `is_signable` | boolean | No | Whether the document can be signed (default: `true`) |
+| `is_self_signable` | boolean | No | Whether the owner can self-sign (default: `false`) |
+| `template_type` | integer | No | `1` = Prebuilt (default), `2` = Custom, `3` = PDF upload |
+| `status` | integer | No | `1` = Draft (default), `2` = In Progress |
+| `media` | integer | No | ID of an uploaded media file (for example a PDF) to attach |
+
+The service also reads the following optional fields. They are not validated by the request class, so malformed values may produce a server error:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `expired_at` | datetime string | Expiry date (default: 15 days from now) |
+| `send_in_order` | boolean | Signers must sign in order (default: `false`) |
+| `template_id` | string | Template name used to prefill the document blocks |
+| `teams` | array | Team IDs to attach to the document |
+| `signers` | array | Signer objects. Each uses `email` (required), `order` (required), `name`, `contact_id`, `type`, `status` |
+
+<Callout type="info" emoji="💡">
+  `folder_id` is not accepted when creating a document (it is not saved). Use [Move a Document to a Folder](#move-a-document-to-a-folder) afterwards.
+</Callout>
+
+<ApiTester
+  endpoint="/api/public-v1/documents"
+  method="POST"
+  defaultBody={{
+    name: "Project Requirements - TechCorp",
+    visibility: 2
+  }}
+  description="Test creating a document"
+/>
 
 ### Example Request
 
 ```bash
-curl -X POST "https://public-api.taskip.net/api/public-v1/document" \
+curl -X POST "https://public-api.taskip.net/api/public-v1/documents" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Project Requirements - TechCorp",
-    "visibility": 1,
-    "folder_id": "folder_xyz789"
+    "visibility": 2
   }'
 ```
 
 ### JavaScript Example
 ```javascript
-const response = await fetch('https://public-api.taskip.net/api/public-v1/document', {
+const response = await fetch('https://public-api.taskip.net/api/public-v1/documents', {
   method: 'POST',
   headers: {
     'X-Secret-Key': 'your-secret-key-here',
@@ -199,8 +247,7 @@ const response = await fetch('https://public-api.taskip.net/api/public-v1/docume
   },
   body: JSON.stringify({
     name: 'Project Requirements - TechCorp',
-    visibility: 1,
-    folder_id: 'folder_xyz789'
+    visibility: 2
   })
 });
 
@@ -215,202 +262,68 @@ const result = await response.json();
   "msg": "Document Created Successfully",
   "document": {
     "id": 126,
-    "uuid": "doc_mno345pqr678",
+    "uuid": "mno345pqr678",
     "created_by": {
       "id": 3,
       "name": "Current User",
-      "image": {
-        "id": 30,
-        "original_url": "https://storage.googleapis.com/files/current-user.jpg"
-      },
+      "image": null,
       "type": "user",
       "email": "current@company.com",
       "contact_id": null
     },
-    "folder": {
-      "id": 5,
-      "uuid": "folder_xyz789",
-      "name": "Proposals"
-    },
+    "folder": { "id": null, "uuid": null, "name": null },
     "name": "Project Requirements - TechCorp",
-    "visibility": {
-      "id": 1,
-      "label": "Team"
-    },
+    "visibility": { "id": 2, "label": "Team Only" },
     "permissions": [],
     "created_at": "Jan 20, 2024, 10:30 AM",
-    "access": "Owner",
+    "access": "full",
     "publish": null,
-    "teams": []
+    "teams": [],
+    "type": 1,
+    "type_label": "Document",
+    "is_signable": true,
+    "is_self_signable": false,
+    "send_in_order": false,
+    "is_editable": true,
+    "template_type": 1,
+    "status": 1,
+    "status_label": "Draft",
+    "expired_at": "Feb 04, 2024",
+    "signers": []
   }
 }
 ```
+
+### Errors
+
+- Validation failure: `422` with `{"error": {"name": ["The name field is required."]}}`.
+- Plan document limit reached: `422` with `{"error": {"msg": ["You have reached maximum number of documents limits, upgrade your plan to create more documents"]}}`.
 
 ---
 
 ## Get a Specific Document
 
-Retrieve details of a specific document by ID.
+Retrieve a document including its content blocks.
 
 ```http
-GET /api/public-v1/document/{id}
+GET /api/public-v1/documents/{uuid}
 ```
 
 ### Path Parameters
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `id` | integer | Yes | Document ID |
+| `uuid` | string | Yes | Document UUID |
+
+<ApiTester
+  endpoint="/api/public-v1/documents/abc123def456"
+  method="GET"
+  description="Test getting a specific document"
+/>
 
 ### Example Request
 
 ```bash
-curl -X GET "https://public-api.taskip.net/api/public-v1/document/126" \
-  -H "X-Secret-Key: your-secret-key-here" \
-  -H "Content-Type: application/json"
-```
-
-### Example Response
-
-```json
-{
-  "success": true,
-  "data": {
-    "id": 126,
-    "name": "Project Requirements - TechCorp",
-    "original_filename": "project-requirements.pdf",
-    "file_type": "pdf",
-    "file_size": 1572864,
-    "mime_type": "application/pdf",
-    "folder_id": 5,
-    "folder": {
-      "id": 5,
-      "name": "Proposals",
-      "path": "/Documents/Proposals"
-    },
-    "owner_id": 3,
-    "owner": {
-      "id": 3,
-      "name": "Sarah Johnson",
-      "email": "sarah@company.com"
-    },
-    "description": "Detailed requirements document for TechCorp project",
-    "tags": ["requirements", "project", "techcorp"],
-    "version": "1.0",
-    "is_public": false,
-    "download_count": 8,
-    "file_hash": "sha256:abc123def456...",
-    "permissions": {
-      "can_view": true,
-      "can_edit": true,
-      "can_delete": true,
-      "can_share": true
-    },
-    "shared_with": [
-      {
-        "user_id": 8,
-        "user_name": "David Chen",
-        "permission": "edit",
-        "shared_at": "2024-01-20T11:00:00Z"
-      }
-    ],
-    "recent_activity": [
-      {
-        "action": "downloaded",
-        "user": "Mike Wilson",
-        "timestamp": "2024-01-21T09:15:00Z"
-      },
-      {
-        "action": "shared",
-        "user": "Sarah Johnson",
-        "details": "Shared with David Chen",
-        "timestamp": "2024-01-20T11:00:00Z"
-      }
-    ],
-    "created_at": "2024-01-20T10:30:00Z",
-    "updated_at": "2024-01-20T10:30:00Z"
-  }
-}
-```
-
----
-
-## Update Document Metadata
-
-Update an existing document's metadata (name, description, etc.).
-
-```http
-PUT /api/public-v1/document/{id}
-```
-
-### Path Parameters
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | integer | Yes | Document ID to update |
-
-### Request Body
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `name` | string | No | Document name |
-| `description` | string | No | Document description |
-| `folder_id` | integer | No | Move to different folder |
-| `tags` | array | No | Array of tags |
-| `is_public` | boolean | No | Public access setting |
-
-### Example Request
-
-```bash
-curl -X PUT "https://public-api.taskip.net/api/public-v1/document/126" \
-  -H "X-Secret-Key: your-secret-key-here" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Project Requirements - TechCorp (Updated)",
-    "description": "Updated requirements document with latest changes",
-    "tags": ["requirements", "project", "techcorp", "updated"]
-  }'
-```
-
-### Example Response
-
-```json
-{
-  "success": true,
-  "message": "Document updated successfully",
-  "data": {
-    "id": 126,
-    "name": "Project Requirements - TechCorp (Updated)",
-    "description": "Updated requirements document with latest changes",
-    "tags": ["requirements", "project", "techcorp", "updated"],
-    "created_at": "2024-01-20T10:30:00Z",
-    "updated_at": "2024-01-21T14:15:00Z"
-  }
-}
-```
-
----
-
-## Delete a Document
-
-Delete a specific document from your system.
-
-```http
-DELETE /api/public-v1/document/{id}
-```
-
-### Path Parameters
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | integer | Yes | Document ID to delete |
-
-
-<Callout type="warning" emoji="⚠️">
-  **Warning**: Deleting a document will permanently remove the file and all associated metadata, versions, and comments. This action cannot be undone.
-</Callout>
-
-### Example Request
-
-```bash
-curl -X DELETE "https://public-api.taskip.net/api/public-v1/document/126" \
+curl -X GET "https://public-api.taskip.net/api/public-v1/documents/abc123def456" \
   -H "X-Secret-Key: your-secret-key-here"
 ```
 
@@ -418,46 +331,326 @@ curl -X DELETE "https://public-api.taskip.net/api/public-v1/document/126" \
 
 ```json
 {
-  "msg": "Document deleted successfully",
-  "status": 200
+  "id": 126,
+  "name": "Project Requirements - TechCorp",
+  "uuid": "abc123def456",
+  "type": 1,
+  "is_signable": true,
+  "is_self_signable": false,
+  "send_in_order": false,
+  "is_editable": true,
+  "is_email_sent": false,
+  "template_type": 1,
+  "updated_at": "Jan 20, 2024, 10:30 AM",
+  "cover": null,
+  "cover_position": null,
+  "signers": [],
+  "media": null,
+  "signatures": [],
+  "thumbnail": null,
+  "blocks": {
+    "data": [
+      {
+        "id": "block-uuid-1",
+        "type": "paragraph",
+        "props": {},
+        "content": [],
+        "children": []
+      }
+    ]
+  },
+  "permissions": [],
+  "access": "full",
+  "publish": null,
+  "mentions": [
+    { "email": "david@company.com", "name": "David Chen" }
+  ],
+  "teams": []
 }
 ```
 
+### Errors
+
+- `404` `{"status": 404, "msg": "Document not found"}`
+- `422` `{"error": {"msg": ["You don't have permission to access this document"]}}`
+
 ---
 
-## Download Document File
+## Delete a Document
 
-Download the actual document file.
+Archive a document. The document is soft-deleted (the API responds that it was archived).
 
 ```http
-GET /api/public-v1/document/{id}/download
+DELETE /api/public-v1/documents/{uuid}
 ```
 
 ### Path Parameters
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `id` | integer | Yes | Document ID to download |
-
-### Query Parameters
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `version` | string | No | Specific version to download (defaults to latest) |
+| `uuid` | string | Yes | Document UUID |
 
 ### Example Request
 
 ```bash
-curl -X GET "https://public-api.taskip.net/api/public-v1/document/125/download" \
+curl -X DELETE "https://public-api.taskip.net/api/public-v1/documents/abc123def456" \
+  -H "X-Secret-Key: your-secret-key-here"
+```
+
+### Example Response
+
+```json
+{
+  "msg": "Document archived successfully",
+  "status": 200
+}
+```
+
+### Errors
+
+- `404` `{"status": 404, "msg": "Document not found"}`
+- `422` `{"error": {"msg": ["You don't have permission to delete document"]}}`
+
+---
+
+## Save Document Blocks
+
+Save the content of a document. The submitted list replaces the document's blocks: existing blocks whose `id` is not in the request are deleted, blocks with a matching `id` are updated, and new ones are created. The array order becomes the block order.
+
+```http
+POST /api/public-v1/documents/blocks/store/{uuid}
+```
+
+### Path Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `uuid` | string | Yes | Document UUID |
+
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `blocks` | array | Yes | Ordered list of block objects |
+| `blocks[].id` | string | Yes | Block UUID (client generated) |
+| `blocks[].type` | string | Yes | Block type (for example `paragraph`, `heading`, `table`) |
+| `blocks[].props` | object | Yes | Block properties |
+| `blocks[].content` | array | No | Block content |
+| `blocks[].children` | array | Yes | Nested child blocks (use `[]` when none) |
+
+<Callout type="info" emoji="💡">
+  These fields are not checked by a request validator. Omitting `blocks`, or `id`, `type`, `props` or `children` on a block, results in a server error instead of a `422`.
+</Callout>
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/documents/blocks/store/abc123def456" \
   -H "X-Secret-Key: your-secret-key-here" \
-  -O -J
+  -H "Content-Type: application/json" \
+  -d '{
+    "blocks": [
+      {
+        "id": "block-uuid-1",
+        "type": "paragraph",
+        "props": {},
+        "content": [{ "type": "text", "text": "Hello world", "styles": {} }],
+        "children": []
+      }
+    ]
+  }'
+```
+
+### Example Response
+
+```json
+{
+  "msg": "document updated",
+  "updatedAt": "1 second ago"
+}
+```
+
+### Errors
+
+- `404` `{"status": 404, "msg": "Document not found"}`
+- `422` `{"error": {"msg": ["You don't have permission to update a document"]}}`
+
+---
+
+## Rename a Document
+
+```http
+POST /api/public-v1/documents/blocks/rename/{uuid}
+```
+
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | string | Yes | New name (max 191 characters) |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/documents/blocks/rename/abc123def456" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{ "name": "Project Requirements v2" }'
+```
+
+### Example Response
+
+```json
+{
+  "msg": "Document Renamed successfully",
+  "status": 200
+}
+```
+
+### Errors
+
+- `422` `{"error": {"msg": ["name field is required"]}}` when `name` is missing, not a string, or longer than 191 characters
+- `404` `{"status": 404, "msg": "Document not found"}`
+- `422` `{"error": {"msg": ["You don't have permission to rename a document"]}}`
+
+---
+
+## Move a Document to a Folder
+
+```http
+POST /api/public-v1/documents/blocks/move-to-folder/{uuid}
+```
+
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `folder_id` | string | Yes | ID of the destination folder. The value is stored as given and is not checked for existence |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/documents/blocks/move-to-folder/abc123def456" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{ "folder_id": "5" }'
+```
+
+### Example Response
+
+```json
+{
+  "msg": "Document Moved successfully",
+  "status": 200
+}
+```
+
+### Errors
+
+- `422` `{"error": {"msg": ["select a folder"]}}` when `folder_id` is missing
+- `404` `{"status": 404, "msg": "Document not found"}`
+- `422` `{"error": {"msg": ["You don't have permission to move to folder"]}}`
+
+---
+
+## Share a Document with a User
+
+Give a user access to a document, change their access level, or remove their access. Only the document **owner** (the creator) can share it.
+
+```http
+POST /api/public-v1/documents/blocks/share/{uuid}
+```
+
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `user_id` | integer | Yes | ID of the user |
+| `access_type` | integer | Yes (unless removing) | `1` full, `2` edit, `3` view, `4` comment (see [Access Type Values](#access-type-values)). An invalid value returns `422` |
+| `action` | string | No | Send `remove` to revoke the user's access |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/documents/blocks/share/abc123def456" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{ "user_id": 8, "access_type": 2 }'
+```
+
+### Example Responses
+
+```json
+{ "status": 200, "msg": "Document Shared Successfully" }
+```
+
+```json
+{ "status": 200, "msg": "Document Shared Removed" }
+```
+
+### Errors
+
+- `404` `{"status": 404, "msg": "Document not found or you are not owner of this document"}`
+- `422` `{"status": 422, "msg": "Invalid access type"}` when `access_type` is not a valid access type value
+- `422` `{"error": {"msg": ["You don't have permission to share document"]}}`
+
+---
+
+## Duplicate a Document
+
+Create a copy of a document (name gets a ` copy` suffix) including its blocks. The new document gets its own share row; the original document's sharing/publish state is not changed.
+
+```http
+POST /api/public-v1/documents/blocks/duplicate_document/{uuid}
+```
+
+No request body is required.
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/documents/blocks/duplicate_document/abc123def456" \
+  -H "X-Secret-Key: your-secret-key-here"
+```
+
+### Example Response
+
+```json
+{
+  "msg": "Document Duplicate successfully",
+  "status": 200
+}
+```
+
+The response does not include the new document's UUID. Call [Get All Documents](#get-all-documents) to find it.
+
+### Errors
+
+- `404` `{"status": 404, "msg": "Document not found"}`
+- `422` `{"error": {"msg": ["You don't have permission to duplicate document"]}}`
+- `422` plan document limit reached (same message as in [Create a Document](#create-a-document))
+
+---
+
+## Download Document as PDF
+
+Generate and return the document as an A4 PDF. Note this is a `POST` request.
+
+```http
+POST /api/public-v1/documents/download/{uuid}
+```
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/documents/download/abc123def456" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -o document.pdf
 ```
 
 ### JavaScript Example (with Blob)
 ```javascript
-const response = await fetch('https://public-api.taskip.net/api/public-v1/document/125/download', {
-  method: 'GET',
-  headers: {
-    'X-Secret-Key': 'your-secret-key-here'
-  }
+const response = await fetch('https://public-api.taskip.net/api/public-v1/documents/download/abc123def456', {
+  method: 'POST',
+  headers: { 'X-Secret-Key': 'your-secret-key-here' }
 });
 
 if (response.ok) {
@@ -473,137 +666,294 @@ if (response.ok) {
 ```
 
 ### Response
-The response will be a PDF file generated from the document content with appropriate headers:
+
+The response body is the PDF file (`Content-Type: application/pdf`) rendered from the document's blocks. The file name and PDF title use the document name, followed by the date (`<document name>-<dd-mm-yy>.pdf`).
+
+For an unknown `uuid` the API returns `422` with `{"error": {"msg": ["Document not found"]}}`.
+
+---
+
+## Invite or Revoke Access
+
+Invite a team member, a client contact or a whole team to a document, change their access level, or revoke access.
+
 ```http
-Content-Type: application/pdf
-Content-Disposition: attachment; filename="document-name.pdf"
+POST /api/public-v1/documents-invite/{uuid}
 ```
 
-The Laravel backend generates the PDF using:
-```php
-return pdf()
-    ->margins(top: 20, right: 20, bottom: 10, left: 20)
-    ->format('a4')
-    ->landscape(false)
-    ->view('document::PDF.template', compact('content', 'title'))
-    ->name($pdName);
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `invitationType` | integer | Yes | `1` = Team member, `2` = Contact, `3` = Team |
+| `invitationTypeId` | integer | Yes | ID of the team member's user, the contact's user, or the team (depending on `invitationType`) |
+| `actionType` | integer | Yes | `0` = invite / update access, `1` = revoke access. Send a JSON integer |
+| `access_type` | integer | No | `1` full, `2` edit, `3` view, `4` comment. Not validated; required in practice when inviting |
+
+For contacts (`invitationType: 2`) the contact must have client portal access enabled.
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/documents-invite/abc123def456" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "invitationType": 1,
+    "invitationTypeId": 8,
+    "actionType": 0,
+    "access_type": 3
+  }'
 ```
+
+### Example Responses
+
+New invitation (a notification is sent to the user, or to each team member):
+
+```json
+{
+  "msg": "Invitation send successfully",
+  "contact": {
+    "id": 4,
+    "document_id": 126,
+    "user_id": 8,
+    "access_type": 3,
+    "user": {
+      "name": "David Chen",
+      "image": null,
+      "type": "user",
+      "email": "david@company.com",
+      "contact_id": null
+    }
+  }
+}
+```
+
+For `invitationType: 3` the object is returned under `team` instead of `contact`. When the user/team already had access, `msg` is `Access Type Changed successfully`. When revoking, the response is `{"msg": "User access revoke from document"}` (or `{"msg": "Team access revoked from the document"}` for teams).
+
+### Errors
+
+Validation errors return `422` with `{"error": {...}}`. Other `422` errors use `{"error": {"msg": [...]}}`:
+
+- `Document not found`
+- `You don't have permission to invite anyone to this document`
+- `User not found`
+- `This contact does not have portal access and cannot be shared with`
+
+---
+
+## Publish or Unpublish a Document
+
+Publish a document to a public link, or remove the public link.
+
+```http
+POST /api/public-v1/documents-publish/{uuid}
+```
+
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `actionType` | integer | Yes | `0` = publish, `1` = unpublish |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/documents-publish/abc123def456" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{ "actionType": 0 }'
+```
+
+### Example Responses
+
+```json
+{ "msg": "Document publish successfully", "slug": "project-requirements-techcorp-abc123def456" }
+```
+
+If already published: `{"msg": "Document already published", "slug": "..."}`. After unpublishing: `{"msg": "Document unpublished", "slug": null}`.
+
+A `document.published` webhook event is fired for matching active webhooks when a document is published.
+
+### Errors
+
+- `422` `{"error": {"actionType": ["The action type field is required."]}}` (validation)
+- `422` `{"error": {"msg": ["Document not found"]}}`
+- `422` `{"error": {"msg": ["You don't have permission to publish this document"]}}`
+
+---
+
+## Update Thumbnail
+
+```http
+POST /api/public-v1/documents-thumbnail/{uuid}
+```
+
+Set the document's thumbnail to an emoji or an uploaded image.
+
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `type` | integer | Yes | `0` = emoji, `1` = uploaded image |
+| `emoji` | string | Required if `type` is `0` | Emoji character |
+| `media_id` | integer | Required if `type` is `1` | ID of an uploaded media file |
+
+When `type` is `1`, any previous thumbnail image is replaced by the new media file.
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/documents-thumbnail/abc123def456" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{ "type": 0, "emoji": "📄" }'
+```
+
+### Example Response
+
+```json
+{
+  "data": { "type": 0, "emoji": "📄", "media": null },
+  "msg": "Thumbnail Updated"
+}
+```
+
+For `type` `1`, `media` holds the uploaded file (`id`, `title`, `ext`, `size`, `url`, `media_type`, `createdAt`).
+
+### Errors
+
+- `422` `{"error": {"type": ["The type field is required."]}}` (validation; `emoji` / `media_id` are required for the matching `type`)
+- `422` `{"error": {"msg": ["Document not found"]}}`
+- `422` `{"error": {"msg": ["You don't have permission to change thumbnail of this document"]}}` (requires an admin or full access)
+
+---
+
+## Update Cover Photo
+
+Set or replace the document's cover photo.
+
+```http
+POST /api/public-v1/documents-cover/{uuid}
+```
+
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `type` | integer | Yes | `0` = import from an image URL, `1` = use an already uploaded media file |
+| `image_url` | string | Required if `type` is `0` | Image URL to import |
+| `media_id` | integer | Required if `type` is `1` | ID of an uploaded media file |
+
+Any existing cover photo is replaced. With `type` `0`, if the image cannot be downloaded from `image_url`, the cover is left unchanged and the response still reports success.
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/documents-cover/abc123def456" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{ "type": 1, "media_id": 87 }'
+```
+
+### Example Response
+
+```json
+{
+  "data": {
+    "id": 87,
+    "title": "cover.jpg",
+    "ext": "jpg",
+    "size": 120345,
+    "url": "https://.../cover.jpg",
+    "media_type": "image",
+    "createdAt": "26-01-2024 02:30:00"
+  },
+  "msg": "Cover Updated"
+}
+```
+
+`data` is `null` if no cover photo is set after the call (for example when the `media_id` does not exist).
+
+### Errors
+
+- `422` `{"error": {"type": ["The type field is required."]}}` (validation)
+- `422` `{"error": {"msg": ["Document not found"]}}`
+- `422` `{"error": {"msg": ["You don't have permission to change cover of this document"]}}` (requires an admin or full access)
+
+---
+
+## Mention a User
+
+Send a mention notification to a user about a document.
+
+```http
+POST /api/public-v1/documents/mention/user
+```
+
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | string | Yes | Name of the mentioned user |
+| `document_uuid` | string | Yes | UUID of the document |
+| `email` | string | Yes | Email of the mentioned user (must be an existing user in the workspace) |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/documents/mention/user" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "David Chen",
+    "document_uuid": "abc123def456",
+    "email": "david@company.com"
+  }'
+```
+
+### Example Response
+
+```json
+"ok"
+```
+
+### Errors
+
+- `422` `{"error": {"email": ["The email field is required."]}}` (validation)
+- `422` `{"error": {"msg": ["user not found"]}}` when no user has that email
 
 ---
 
 ## Error Responses
 
-### Common Error Codes
-
-| Status Code | Error Type | Description |
-|-------------|------------|-------------|
-| `400` | Bad Request | Invalid request data or missing required fields |
-| `401` | Unauthorized | Invalid or missing X-Secret-Key |
-| `403` | Forbidden | Insufficient permissions to access document |
-| `404` | Not Found | Document not found |
-| `409` | Conflict | Document name already exists in folder |
-| `413` | Payload Too Large | File size exceeds limit |
-| `422` | Validation Error | Request data failed validation |
-| `429` | Too Many Requests | Rate limit exceeded |
-
-### Example Error Response
-
-```json
-{
-  "success": false,
-  "error": "Validation Error",
-  "message": "The given data was invalid",
-  "errors": {
-    "file": ["The file field is required."],
-    "folder_id": ["The selected folder id is invalid."],
-    "name": ["The name may not be greater than 255 characters."]
-  },
-  "status_code": 422
-}
-```
+| Status Code | Description |
+|-------------|-------------|
+| `401` | `{"message": "Secret keys are missing."}` - no `X-Secret-Key` header |
+| `404` | `{"status": 404, "msg": "Workspace not found"}` - unknown or expired secret key; or `{"status": 404, "msg": "Document not found"}` |
+| `422` | Validation errors (`{"error": {"field": ["..."]}}`) and permission/business-rule errors (`{"error": {"msg": ["..."]}}`) |
+| `503` | Workspace is in read-only maintenance and the request is a write |
 
 ---
 
-## Response Schemas
+## Document Object
 
-### Document Object
-
-```json
-{
-  "id": "integer",
-  "name": "string",
-  "original_filename": "string",
-  "file_type": "string",
-  "file_size": "integer",
-  "mime_type": "string",
-  "folder_id": "integer|null",
-  "folder_name": "string|null",
-  "owner_id": "integer",
-  "owner_name": "string",
-  "description": "string|null",
-  "tags": "array",
-  "version": "string",
-  "is_public": "boolean",
-  "download_count": "integer",
-  "file_hash": "string",
-  "shared_with": "array",
-  "created_at": "string (ISO 8601)",
-  "updated_at": "string (ISO 8601)"
-}
-```
-
-### Folder Object
-
-```json
-{
-  "id": "integer",
-  "name": "string",
-  "parent_id": "integer",
-  "path": "string",
-  "document_count": "integer",
-  "subfolders": "array",
-  "created_at": "string (ISO 8601)",
-  "updated_at": "string (ISO 8601)"
-}
-```
-
-### Comment Object
-
-```json
-{
-  "id": "integer",
-  "comment": "string",
-  "author": "string",
-  "author_id": "integer",
-  "is_private": "boolean",
-  "mentions": "array",
-  "replies": "array",
-  "created_at": "string (ISO 8601)"
-}
-```
-
----
-
-## Best Practices
-
-### Document Organization
-1. **Folder structure**: Create a logical folder hierarchy for better organization
-2. **Naming conventions**: Use consistent, descriptive file names
-3. **Tagging strategy**: Implement a standardized tagging system for easy discovery
-4. **Version control**: Use version notes to document changes between versions
-
-### Security & Access Control
-1. **Permission management**: Set appropriate permissions for document sharing
-2. **Expiration dates**: Use expiration dates for temporary document sharing
-3. **Private comments**: Use private comments for internal notes and feedback
-4. **Access monitoring**: Monitor document access and download activity
-
-### Storage Management
-1. **File size limits**: Keep file sizes reasonable for better performance
-2. **Regular cleanup**: Archive or delete outdated documents
-3. **Storage monitoring**: Monitor storage usage and plan for capacity
-4. **Duplicate prevention**: Check for duplicate files before uploading
-
-<Callout type="info" emoji="💡">
-  **Tip**: Use the search endpoint with content indexing to find documents based on their actual content, not just filenames. This is particularly useful for finding information within PDFs and Word documents.
-</Callout>
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | integer | Document ID |
+| `uuid` | string | Document UUID used in URLs |
+| `created_by` | object | Owner (`id`, `name`, `image`, `type`, `email`, `contact_id`) |
+| `folder` | object | `id`, `uuid`, `name` (all `null` when not in a folder) |
+| `name` | string | Document name |
+| `visibility` | object | `id` (0/1/2) and `label` |
+| `permissions` | array | Users with access (`user_id`, `access_type`, `user`), including members of attached teams |
+| `created_at` | string | Formatted date (for example `Jan 15, 2024, 09:30 AM`) |
+| `access` | string | Current user's access: `full`, `edit`, `view`, `comment`, `none` |
+| `publish` | string\|null | Public URL when published |
+| `teams` | array | Attached teams with `id`, `name`, `access_type`, `members` |
+| `type`, `type_label` | integer, string | Document (1) or Proposal (2) |
+| `is_signable`, `is_self_signable`, `send_in_order`, `is_editable` | boolean | Signing and editing flags |
+| `template_type` | integer | 1, 2 or 3 |
+| `status`, `status_label` | integer, string | Draft (1), In Progress (2), Completed (3) |
+| `expired_at` | string | Expiry date (for example `Jan 30, 2024`) |
+| `signers` | array | Signers |

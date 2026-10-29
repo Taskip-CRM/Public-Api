@@ -9,11 +9,11 @@ The Lead Management API allows you to manage leads in your TaskIP CRM system. Yo
 | `GET` | [`/api/public-v1/lead`](#get-all-leads) | Get all leads |
 | `POST` | [`/api/public-v1/lead`](#create-a-lead) | Create a new lead |
 | `GET` | [`/api/public-v1/lead/{id}`](#get-a-specific-lead) | Get a specific lead |
-| `PUT` | [`/api/public-v1/lead/{id}`](#update-a-lead) | Update a lead |
+| `PUT` / `PATCH` | [`/api/public-v1/lead/{id}`](#update-a-lead) | Update a lead |
 | `DELETE` | [`/api/public-v1/lead/{id}`](#delete-a-lead) | Delete a lead |
 | `POST` | [`/api/public-v1/lead/bulk-delete`](#bulk-delete-leads) | Delete multiple leads |
-| `POST` | [`/api/public-v1/lead/send-email/{id}`](#send-email-to-a-lead) | Send email to a lead |
-| `POST` | [`/api/public-v1/lead/{id}/convert`](#convert-lead-to-contact) | Convert lead to contact |
+| `POST` | [`/api/public-v1/lead/send-email/{lead}`](#send-email-to-a-lead) | Send email to a lead |
+| `POST` | [`/api/public-v1/lead/{lead}/convert`](#convert-lead-to-contact) | Convert lead to contact |
 | `GET` | [`/api/public-v1/lead/notes/{lead_id}`](#get-lead-notes) | Get all notes for a lead |
 | `POST` | [`/api/public-v1/lead/notes/{lead_id}`](#create-a-lead-note) | Create a note for a lead |
 | `PUT` | [`/api/public-v1/lead/notes/{lead_id}`](#update-a-lead-note) | Update a lead note |
@@ -24,7 +24,7 @@ The Lead Management API allows you to manage leads in your TaskIP CRM system. Yo
 | `GET` | [`/api/public-v1/lead-attribute`](#get-all-lead-attributes) | Get all lead attributes |
 | `POST` | [`/api/public-v1/lead-attribute`](#create-a-lead-attribute) | Create a lead attribute |
 | `GET` | [`/api/public-v1/lead-attribute/{id}`](#get-a-specific-lead-attribute) | Get a specific lead attribute |
-| `PUT` | [`/api/public-v1/lead-attribute/{id}`](#update-a-lead-attribute) | Update a lead attribute |
+| `PUT` / `PATCH` | [`/api/public-v1/lead-attribute/{id}`](#update-a-lead-attribute) | Update a lead attribute |
 | `DELETE` | [`/api/public-v1/lead-attribute/{id}`](#delete-a-lead-attribute) | Delete a lead attribute |
 
 ---
@@ -52,14 +52,15 @@ Content-Type: application/json
 ### Query Parameters
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `search` | string | No | Search by name, email, or company |
-| `item` | integer | No | Results per page (default: 10, use 0 for all) |
-| `is_converted` | integer | No | `0` = active leads, `1` = converted leads |
+| `search` | string | No | Search by first name, last name, full name, email, or company name |
+| `page` | integer | No | Page number for pagination (default: 1) |
+| `item` | integer | No | Results per page (default: 10, min 1, max 200) |
+| `is_converted` | integer | No | `0` = active leads (default), `1` = converted leads |
 | `status_id` | integer | No | Filter by lead attribute status ID |
 | `source_id` | integer | No | Filter by lead attribute source ID |
 | `assigned_to` | integer | No | Filter by assigned user ID |
-| `from_date` | date | No | Filter from interaction date (`Y-m-d`) |
-| `to_date` | date | No | Filter to interaction date (`Y-m-d`) |
+| `from_date` | date | No | Only leads with `lead_interaction_date` on or after this date (`Y-m-d`) |
+| `to_date` | date | No | Only leads with `lead_interaction_date` on or before this date (`Y-m-d`) |
 | `sort_by` | string | No | Sort field: `name`, `lead_interaction_date`, `status` |
 | `sort_order` | string | No | Sort direction: `asc` or `desc` (default: `desc`) |
 
@@ -84,6 +85,8 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/lead?search=john&item=1
       "full_name": "John Doe",
       "email": "john@example.com",
       "phone_number": "01700000000",
+      "mobile_phone": null,
+      "job_title": "CTO",
       "website": "https://example.com",
       "company_id": 2,
       "company": {
@@ -92,9 +95,12 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/lead?search=john&item=1
         "email": "company@acmecorp.com",
         "phone_number": "01700000000"
       },
-      "value": 5000.00,
+      "value": "5000.00",
       "currency": "USD",
-      "lead_interaction_date": "2026-04-01",
+      "lead_interaction_date": "2026-04-01T00:00:00.000000Z",
+      "next_follow_up_date": null,
+      "preferred_contact_method_id": null,
+      "lead_type_id": null,
       "assigned_to": [],
       "country_id": 1,
       "country": "United States",
@@ -106,7 +112,7 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/lead?search=john&item=1
       "zip_code": "94105",
       "description": "Interested in premium plan",
       "created_by": 1,
-      "converted": 0,
+      "converted": false,
       "converted_contact_id": null,
       "converted_at": null,
       "statuses": [],
@@ -119,19 +125,23 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/lead?search=john&item=1
   ],
   "links": {
     "first": "https://public-api.taskip.net/api/public-v1/lead?page=1",
-    "last": null,
+    "last": "https://public-api.taskip.net/api/public-v1/lead?page=1",
     "prev": null,
     "next": null
   },
   "meta": {
     "current_page": 1,
     "from": 1,
+    "last_page": 1,
     "path": "https://public-api.taskip.net/api/public-v1/lead",
     "per_page": 10,
-    "to": 1
+    "to": 1,
+    "total": 1
   }
 }
 ```
+
+Query parameters are validated: `item` must be an integer from 1 to 200, `status_id`, `source_id` and `assigned_to` must be integers, `is_converted` must be `0` or `1`, and `from_date` / `to_date` must be valid dates. A bad value returns `422` with the standard validation response (`{"success": false, "message": "Validation failed", "errors": {...}}`). Results are ordered by `id` descending unless `sort_by` is given. The list does not include `tags`, `activities`, or `lead_type`.
 
 ---
 
@@ -180,26 +190,34 @@ Content-Type: application/json
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `first_name` | string | Yes | Lead's first name (max 100 chars) |
-| `last_name` | string | No | Lead's last name (max 100 chars) |
-| `email` | string | Yes | Lead's email address (must be unique) |
-| `phone_number` | string | No | Lead's phone number |
-| `website` | string | No | Lead's website URL |
+| `first_name` | string | Yes | Lead's first name (max 191 chars). Markup and characters other than letters, spaces, apostrophes, hyphens and dots are stripped |
+| `last_name` | string | No | Lead's last name (max 191 chars) |
+| `email` | string | No | Lead's email address. Must not already belong to a user, another lead, or a contact |
+| `phone_number` | string | No | Lead's phone number (max 18 chars) |
+| `mobile_phone` | string | No | Lead's mobile number (max 18 chars) |
+| `job_title` | string | No | Job title (max 191 chars) |
+| `preferred_contact_method_id` | integer | No | ID of an existing preferred contact method |
+| `website` | string | No | Lead's website, must be a valid URL such as `https://example.com` (max 255 chars) |
 | `company_id` | integer | No | Existing company ID |
-| `value` | numeric | No | Lead deal value |
-| `currency` | string | No | Currency code (e.g. `USD`) |
-| `lead_interaction_date` | date | No | Date of interaction (`Y-m-d` format) |
-| `assigned_to` | array | No | Array of user IDs to assign |
-| `status_ids` | array | No | Array of lead attribute IDs (status type) |
-| `source_ids` | array | No | Array of lead attribute IDs (source type) |
-| `groups` | array | No | Array of lead group IDs |
+| `value` | numeric | No | Lead deal value (min 0) |
+| `currency` | string | No | Currency code (max 10 chars, e.g. `USD`) |
+| `lead_interaction_date` | date | No | Date of interaction (`Y-m-d`) |
+| `next_follow_up_date` | date | No | Next follow-up date (`Y-m-d`) |
+| `lead_type_id` | integer | No | ID of an existing lead type |
+| `assigned_to` | array | No | Array of user IDs to assign (each must exist) |
+| `status_ids` | array | No | Array of lead attribute IDs of type status (`type` = 1) |
+| `source_ids` | array | No | Array of lead attribute IDs of type source (`type` = 2) |
+| `groups` | array | No | Array of existing lead group IDs |
+| `tags` | array | No | Array of existing tag IDs |
 | `country_id` | integer | No | Country ID |
 | `state_id` | integer | No | State ID |
 | `city_id` | integer | No | City ID |
 | `address` | string | No | Lead's address |
-| `zip_code` | string | No | ZIP / postal code |
+| `zip_code` | string | No | ZIP / postal code (max 8 chars) |
 | `description` | string | No | Additional notes or description |
-| `custom_fields` | array | No | Array of custom field objects |
+| `custom_fields` | array | No | Array of custom field objects. Required custom fields defined in your workspace are enforced |
+| `pipeline_uuid` | string | No | UUID of an existing sales pipeline. Requires `stage_id` |
+| `stage_id` | integer | Required with `pipeline_uuid` | ID of a stage in that pipeline. When both are given, a deal for the lead is created in the stage |
 
 ### Example Request
 
@@ -258,41 +276,53 @@ const result = await response.json();
 {
   "msg": "Lead Created",
   "data": {
-    "id": 1,
-    "first_name": "John",
-    "last_name": "Doe",
-    "full_name": "John Doe",
-    "email": "john.doe@example.com",
-    "phone_number": "555-0123",
-    "website": "https://example.com",
-    "company_id": 2,
-    "company": null,
-    "value": 5000.00,
-    "currency": "USD",
-    "lead_interaction_date": "2026-04-01",
-    "assigned_to": [],
-    "country_id": 1,
-    "country": "United States",
-    "state_id": 2,
-    "state": "California",
-    "city_id": 3,
-    "city": "San Francisco",
-    "address": "123 Main Street",
-    "zip_code": "94105",
-    "description": "Interested in premium plan",
-    "created_by": 1,
-    "converted": 0,
-    "converted_contact_id": null,
-    "converted_at": null,
-    "statuses": [],
-    "sources": [],
-    "groups": [],
-    "custom_fields": [],
-    "created_at": "2026-04-01T10:00:00.000000Z",
-    "updated_at": "2026-04-01T10:00:00.000000Z"
-  }
+  "id": 1,
+  "first_name": "John",
+  "last_name": "Doe",
+  "full_name": "John Doe",
+  "email": "john.doe@example.com",
+  "phone_number": "555-0123",
+  "mobile_phone": null,
+  "job_title": "CTO",
+  "website": "https://example.com",
+  "company_id": 2,
+  "company": null,
+  "value": "5000.00",
+  "currency": "USD",
+  "lead_interaction_date": "2026-04-01T00:00:00.000000Z",
+  "next_follow_up_date": null,
+  "preferred_contact_method_id": null,
+  "lead_type_id": null,
+  "assigned_to": [],
+  "country_id": 1,
+  "country": "United States",
+  "state_id": 2,
+  "state": "California",
+  "city_id": 3,
+  "city": "San Francisco",
+  "address": "123 Main Street",
+  "zip_code": "94105",
+  "description": "Interested in premium plan",
+  "created_by": 1,
+  "converted": false,
+  "converted_contact_id": null,
+  "converted_at": null,
+  "statuses": [
+    { "id": 1, "name": "New", "type": 1, "color": "#3498db", "order": 1, "created_at": "2026-04-01T10:00:00.000000Z", "updated_at": "2026-04-01T10:00:00.000000Z" }
+  ],
+  "sources": [
+    { "id": 3, "name": "Website", "type": 2, "color": "#2ecc71", "order": 1, "created_at": "2026-04-01T10:00:00.000000Z", "updated_at": "2026-04-01T10:00:00.000000Z" }
+  ],
+  "tags": [],
+  "groups": [],
+  "custom_fields": [],
+  "created_at": "2026-04-01T10:00:00.000000Z",
+  "updated_at": "2026-04-01T10:00:00.000000Z"
+}
 }
 ```
+
+The response status is `200`.
 
 ---
 
@@ -329,51 +359,59 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/lead/1" \
 {
   "msg": "Lead Details",
   "data": {
-    "id": 1,
-    "first_name": "John",
-    "last_name": "Doe",
-    "full_name": "John Doe",
-    "email": "john.doe@example.com",
-    "phone_number": "555-0123",
-    "website": "https://example.com",
-    "company_id": 2,
-    "company": {
-      "id": 2,
-      "name": "Acme Corp",
-      "email": "company@acmecorp.com",
-      "phone_number": "01700000000"
-    },
-    "value": 5000.00,
-    "currency": "USD",
-    "lead_interaction_date": "2026-04-01",
-    "assigned_to": [],
-    "country_id": 1,
-    "country": "United States",
-    "state_id": 2,
-    "state": "California",
-    "city_id": 3,
-    "city": "San Francisco",
-    "address": "123 Main Street",
-    "zip_code": "94105",
-    "description": "Interested in premium plan",
-    "created_by": 1,
-    "converted": 0,
-    "converted_contact_id": null,
-    "converted_at": null,
-    "statuses": [
-      { "id": 1, "name": "New", "type": 1, "color": "#3498db", "order": 1 }
-    ],
-    "sources": [
-      { "id": 3, "name": "Website", "type": 2, "color": "#2ecc71", "order": 1 }
-    ],
-    "groups": [],
-    "activities": [],
-    "custom_fields": [],
-    "created_at": "2026-04-01T10:00:00.000000Z",
-    "updated_at": "2026-04-01T10:00:00.000000Z"
-  }
+  "id": 1,
+  "first_name": "John",
+  "last_name": "Doe",
+  "full_name": "John Doe",
+  "email": "john@example.com",
+  "phone_number": "01700000000",
+  "mobile_phone": null,
+  "job_title": "CTO",
+  "website": "https://example.com",
+  "company_id": 2,
+  "company": {
+    "id": 2,
+    "name": "Acme Corp",
+    "email": "company@acmecorp.com",
+    "phone_number": "01700000000"
+  },
+  "value": "5000.00",
+  "currency": "USD",
+  "lead_interaction_date": "2026-04-01T00:00:00.000000Z",
+  "next_follow_up_date": null,
+  "preferred_contact_method_id": null,
+  "lead_type_id": null,
+  "assigned_to": [],
+  "country_id": 1,
+  "country": "United States",
+  "state_id": 2,
+  "state": "California",
+  "city_id": 3,
+  "city": "San Francisco",
+  "address": "123 Main Street",
+  "zip_code": "94105",
+  "description": "Interested in premium plan",
+  "created_by": 1,
+  "converted": false,
+  "converted_contact_id": null,
+  "converted_at": null,
+  "statuses": [
+    { "id": 1, "name": "New", "type": 1, "color": "#3498db", "order": 1, "created_at": "2026-04-01T10:00:00.000000Z", "updated_at": "2026-04-01T10:00:00.000000Z" }
+  ],
+  "sources": [
+    { "id": 3, "name": "Website", "type": 2, "color": "#2ecc71", "order": 1, "created_at": "2026-04-01T10:00:00.000000Z", "updated_at": "2026-04-01T10:00:00.000000Z" }
+  ],
+  "tags": [],
+  "activities": [],
+  "groups": [],
+  "custom_fields": [],
+  "created_at": "2026-04-01T10:00:00.000000Z",
+  "updated_at": "2026-04-01T10:00:00.000000Z"
+}
 }
 ```
+
+A lead that does not exist returns `404`.
 
 ---
 
@@ -383,7 +421,10 @@ Update an existing lead's information.
 
 ```http
 PUT /api/public-v1/lead/{id}
+PATCH /api/public-v1/lead/{id}
 ```
+
+`PUT` and `PATCH` are handled identically.
 
 <ApiTester
   endpoint="/lead/1"
@@ -394,7 +435,7 @@ PUT /api/public-v1/lead/{id}
     "value": 7500,
     "description": "Follow-up scheduled for next quarter"
   }}
-  description="Update an existing lead. Replace '1' in the endpoint with the actual lead ID. Only include fields you want to update."
+  description="Update an existing lead. Replace '1' in the endpoint with the actual lead ID. first_name is always required."
 />
 
 ### Path Parameters
@@ -404,7 +445,7 @@ PUT /api/public-v1/lead/{id}
 
 ### Request Body
 
-Same fields as [Create a Lead](#create-a-lead). `first_name` is required; all other fields are optional — only include fields you want to change.
+Same fields as [Create a Lead](#create-a-lead). `first_name` is required on every update. The lead's fields, assignees, statuses, sources, groups and tags are overwritten with the submitted values, so send the complete set of values you want to keep (an omitted optional field is saved as empty). A lead can keep its own current email. The lead's email is not changed if another user account already uses that email.
 
 ### Example Request
 
@@ -457,14 +498,22 @@ result = response.json()
     "full_name": "John Doe",
     "email": "john.doe@example.com",
     "phone_number": "555-9999",
-    "value": 7500.00,
+    "value": "7500.00",
     "currency": "USD",
     "description": "Follow-up scheduled for next quarter",
+    "converted": false,
+    "statuses": [],
+    "sources": [],
+    "groups": [],
+    "tags": [],
+    "activities": [],
     "created_at": "2026-04-01T10:00:00.000000Z",
     "updated_at": "2026-04-07T10:00:00.000000Z"
   }
 }
 ```
+
+(Abbreviated; `data` is the full lead object, as in [Get a Specific Lead](#get-a-specific-lead).)
 
 ---
 
@@ -525,7 +574,7 @@ POST /api/public-v1/lead/bulk-delete
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `ids` | array | Yes | Array of lead IDs to delete |
+| `ids` | array | Yes | Array of lead IDs to delete (1 to 1000 integers) |
 
 ### Example Request
 
@@ -546,6 +595,8 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/lead/bulk-delete" \
 }
 ```
 
+If none of the supplied IDs match a lead the API returns `422` with `{"error": {"msg": ["Leads not found."]}}`.
+
 ---
 
 ## Send Email to a Lead
@@ -553,7 +604,7 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/lead/bulk-delete" \
 Send a custom email directly to a lead.
 
 ```http
-POST /api/public-v1/lead/send-email/{id}
+POST /api/public-v1/lead/send-email/{lead}
 ```
 
 <ApiTester
@@ -569,7 +620,7 @@ POST /api/public-v1/lead/send-email/{id}
 ### Path Parameters
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `id` | integer | Yes | Lead ID to email |
+| `lead` | integer | Yes | Lead ID to email |
 
 ### Request Body
 
@@ -598,8 +649,10 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/lead/send-email/1" \
 }
 ```
 
+The email is queued for delivery from your workspace's connected mail address.
+
 <Callout type="warning" emoji="⚠️">
-  **Requirements**: The lead must have a valid email address and your workspace mail must be connected before using this endpoint. A `422` error will be returned if either condition is not met.
+  **Requirements**: The lead must have an email address and your workspace mail must be connected before using this endpoint. A `422` error is returned if either condition is not met, in the form `{"error": "This lead has no email address."}` or `{"error": "Workspace connected mail not found."}`.
 </Callout>
 
 ---
@@ -609,19 +662,19 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/lead/send-email/1" \
 Convert a lead into a contact. This creates a new contact using the lead's information.
 
 ```http
-POST /api/public-v1/lead/{id}/convert
+POST /api/public-v1/lead/{lead}/convert
 ```
 
 <ApiTester
   endpoint="/lead/1/convert"
   method="POST"
-  description="Convert a lead into a contact. Replace '1' with the actual lead ID. The lead must not already be converted and the email must not already exist as a contact."
+  description="Convert a lead into a contact. Replace '1' with the actual lead ID. The lead must not already be converted and its email must not already belong to a user."
 />
 
 ### Path Parameters
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `id` | integer | Yes | Lead ID to convert |
+| `lead` | integer | Yes | Lead ID to convert |
 
 ### Example Request
 
@@ -638,17 +691,42 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/lead/1/convert" \
   "msg": "Lead converted to contact successfully.",
   "data": {
     "id": 5,
+    "user_id": 88,
+    "user_uuid": "9c1d2c7e-6d8e-4a43-b0b4-0a5a5f3c1e11",
+    "company": null,
+    "company_id": null,
     "first_name": "John",
     "last_name": "Doe",
+    "full_name": "John Doe",
     "email": "john.doe@example.com",
+    "position": "CTO",
     "phone_number": "555-0123",
+    "mobile_phone": null,
+    "preferred_contact_method_id": null,
     "country_id": 1,
     "country": "United States",
+    "state_id": 2,
+    "state": "California",
+    "city_id": 3,
+    "city": "San Francisco",
     "address": "123 Main Street",
-    "zip_code": "94105"
+    "zip_code": "94105",
+    "timezone": null,
+    "details": null,
+    "reference": null,
+    "reference_name": null,
+    "access_portal": 0,
+    "billings": null,
+    "languages": [],
+    "image": null,
+    "custom_fields": [],
+    "tags": [],
+    "activities": []
   }
 }
 ```
+
+The `data` object is a contact, as described in the [Contact Management API](/contact-management). The lead is marked `converted: true` and keeps a reference in `converted_contact_id`. Errors (lead already converted, a user with the same email already exists) return `422` with `{"error": {"msg": ["..."]}}`.
 
 ---
 
@@ -699,8 +777,13 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/lead/notes/1" \
       "media": null,
       "created_by": {
         "id": 1,
-        "name": "Admin User",
-        "email": "admin@example.com"
+        "uuid": "3b0a6f0e-5b4d-4c47-9d0e-2f6a7c1d9a10",
+        "first_name": "Admin",
+        "last_name": "User",
+        "full_name": "Admin User",
+        "email": "admin@example.com",
+        "timezone": "UTC",
+        "image": null
       },
       "created_at": "2026-04-01 10:00:00"
     }
@@ -739,7 +822,7 @@ POST /api/public-v1/lead/notes/{lead_id}
 |-------|------|----------|-------------|
 | `title` | string | Yes | Note title |
 | `note` | string | Yes | Note content |
-| `image` | integer | No | Media upload ID for attachment |
+| `image` | integer | No | Media upload ID to attach to the note |
 
 ### Example Request
 
@@ -766,8 +849,13 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/lead/notes/1" \
     "media": null,
     "created_by": {
       "id": 1,
-      "name": "Admin User",
-      "email": "admin@example.com"
+      "uuid": "3b0a6f0e-5b4d-4c47-9d0e-2f6a7c1d9a10",
+      "first_name": "Admin",
+      "last_name": "User",
+      "full_name": "Admin User",
+      "email": "admin@example.com",
+      "timezone": "UTC",
+      "image": null
     },
     "created_at": "2026-04-07 10:00:00"
   }
@@ -800,11 +888,13 @@ PUT /api/public-v1/lead/notes/{lead_id}
 |-----------|------|----------|-------------|
 | `lead_id` | integer | Yes | The lead ID |
 
+If `note_id` does not match a note on this lead the API returns `422` with `{"msg": "Note not found"}`.
+
 ### Request Body
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `note_id` | integer | Yes | ID of the note to update |
+| `note_id` | integer | Yes | ID of the note to update (must exist) |
 | `title` | string | Yes | Updated note title |
 | `note` | string | Yes | Updated note content |
 | `image` | integer | No | Media upload ID for attachment |
@@ -835,8 +925,13 @@ curl -X PUT "https://public-api.taskip.net/api/public-v1/lead/notes/1" \
     "media": null,
     "created_by": {
       "id": 1,
-      "name": "Admin User",
-      "email": "admin@example.com"
+      "uuid": "3b0a6f0e-5b4d-4c47-9d0e-2f6a7c1d9a10",
+      "first_name": "Admin",
+      "last_name": "User",
+      "full_name": "Admin User",
+      "email": "admin@example.com",
+      "timezone": "UTC",
+      "image": null
     },
     "created_at": "2026-04-01 10:00:00"
   }
@@ -892,6 +987,8 @@ curl -X DELETE "https://public-api.taskip.net/api/public-v1/lead/notes/1" \
 }
 ```
 
+If the note does not belong to the lead, the API returns `422` with `{"error": {"msg": ["Note not found"]}}`.
+
 ---
 
 ## Lead Files
@@ -923,6 +1020,7 @@ GET /api/public-v1/lead/files/{lead_id}
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `search` | string | No | Search by file title |
+| `page` | integer | No | Page number for pagination (default: 1) |
 | `item` | integer | No | Results per page (default: 10) |
 
 ### Example Request
@@ -940,30 +1038,40 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/lead/files/1?item=10" \
   "data": [
     {
       "id": 1,
+      "mediaable_id": 1,
       "title": "proposal.pdf",
-      "path": "tenants/tenant-1/media/proposal.pdf",
-      "mime_type": "application/pdf",
+      "ext": "pdf",
       "size": 204800,
+      "url": "https://cdn.taskip.net/tenants/tenant-1/media/proposal.pdf",
+      "media_type": "Lead",
       "created_by": {
         "id": 1,
-        "name": "Admin User",
-        "email": "admin@example.com"
+        "uuid": "3b0a6f0e-5b4d-4c47-9d0e-2f6a7c1d9a10",
+        "first_name": "Admin",
+        "last_name": "User",
+        "full_name": "Admin User",
+        "email": "admin@example.com",
+        "timezone": "UTC",
+        "image": null
       },
-      "created_at": "2026-04-01T10:00:00.000000Z"
+      "client_visible": true,
+      "createdAt": "01-04-2026 10:00:00"
     }
   ],
   "links": {
     "first": "https://public-api.taskip.net/api/public-v1/lead/files/1?page=1",
-    "last": null,
+    "last": "https://public-api.taskip.net/api/public-v1/lead/files/1?page=1",
     "prev": null,
     "next": null
   },
   "meta": {
     "current_page": 1,
     "from": 1,
+    "last_page": 1,
     "path": "https://public-api.taskip.net/api/public-v1/lead/files/1",
     "per_page": 10,
-    "to": 1
+    "to": 1,
+    "total": 1
   }
 }
 ```
@@ -972,7 +1080,7 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/lead/files/1?item=10" \
 
 ## Upload Lead Files
 
-Upload one or more media files to a specific lead.
+Attach a file (or a file URL) to a specific lead.
 
 ```http
 POST /api/public-v1/lead/files/{lead_id}
@@ -981,7 +1089,7 @@ POST /api/public-v1/lead/files/{lead_id}
 <ApiTester
   endpoint="/lead/files/1"
   method="POST"
-  description="Upload files to a specific lead. Use multipart/form-data to send files, or pass existing media upload IDs via the 'ids' field. Replace '1' in the endpoint with the actual lead ID."
+  description="Attach a file to a specific lead. Use multipart/form-data to upload a file, or pass a url. Replace '1' in the endpoint with the actual lead ID."
 />
 
 ### Path Parameters
@@ -991,10 +1099,13 @@ POST /api/public-v1/lead/files/{lead_id}
 
 ### Request Body (`multipart/form-data`)
 
+Send either `file` or `url`.
+
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `file` | file | Conditional | File to upload (multipart/form-data) |
-| `ids` | array | Conditional | Array of existing media upload IDs to attach |
+| `file` | file | Required if `url` is not sent | File to upload (multipart/form-data). Executable and script extensions (`php`, `exe`, `js`, `sh`, `bat`, `cmd`, `com`, `jar`, `msi`, `bin`, `cgi`, `pl`, `py`) are rejected |
+| `url` | string | Required if `file` is not sent | URL of a file to attach |
+| `media_type` | string | No | Media type label stored with the file |
 
 ### Example Request
 
@@ -1040,7 +1151,7 @@ DELETE /api/public-v1/lead/files/bulk-delete/{lead_id}
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `ids` | array | Yes | Array of media upload IDs to delete |
+| `ids` | array | Yes | Array of media upload IDs to delete (1 to 1000 integers). Only files attached to this lead are deleted |
 
 ### Example Request
 
@@ -1060,6 +1171,8 @@ curl -X DELETE "https://public-api.taskip.net/api/public-v1/lead/files/bulk-dele
   "msg": "Lead files bulk action success"
 }
 ```
+
+If none of the IDs match a lead file the API returns `422` with `{"error": {"msg": ["Media not found"]}}`.
 
 ---
 
@@ -1087,7 +1200,10 @@ GET /api/public-v1/lead-attribute
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `type` | integer | No | `1` = statuses only, `2` = sources only (omit for all) |
-| `item` | integer | No | Results per page (default: 10) |
+| `page` | integer | No | Page number for pagination (default: 1) |
+| `item` | integer | No | Results per page (default: 10, minimum 1; a value below 1 is treated as 1) |
+
+`type` and `item` must be integers; a malformed value returns `422` with the validation errors instead of a server error. Results are ordered by `order`.
 
 ### Example Request
 
@@ -1101,7 +1217,6 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/lead-attribute?type=1" 
 
 ```json
 {
-  "msg": "Lead Attributes Fetched",
   "data": [
     {
       "id": 1,
@@ -1124,17 +1239,20 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/lead-attribute?type=1" 
   ],
   "links": {
     "first": "https://public-api.taskip.net/api/public-v1/lead-attribute?page=1",
-    "last": null,
+    "last": "https://public-api.taskip.net/api/public-v1/lead-attribute?page=1",
     "prev": null,
     "next": null
   },
   "meta": {
     "current_page": 1,
     "from": 1,
+    "last_page": 1,
     "path": "https://public-api.taskip.net/api/public-v1/lead-attribute",
     "per_page": 10,
-    "to": 2
-  }
+    "to": 2,
+    "total": 2
+  },
+  "msg": "Lead Attributes Fetched"
 }
 ```
 
@@ -1166,7 +1284,7 @@ POST /api/public-v1/lead-attribute
 |-------|------|----------|-------------|
 | `name` | string | Yes | Attribute name (max 191 chars) |
 | `type` | integer | Yes | `1` = status, `2` = source |
-| `color` | string | No | Hex color code (max 50 chars, e.g. `#e74c3c`) |
+| `color` | string | No | Color value (max 50 chars, e.g. `#e74c3c`) |
 | `order` | integer | No | Display order |
 
 ### Example Request
@@ -1254,7 +1372,10 @@ Update an existing lead status or source attribute.
 
 ```http
 PUT /api/public-v1/lead-attribute/{id}
+PATCH /api/public-v1/lead-attribute/{id}
 ```
+
+`PUT` and `PATCH` are handled identically; `name` and `type` are required on every update.
 
 <ApiTester
   endpoint="/lead-attribute/1"
@@ -1357,26 +1478,32 @@ curl -X DELETE "https://public-api.taskip.net/api/public-v1/lead-attribute/1" \
 
 | Status Code | Error Type | Description |
 |-------------|------------|-------------|
-| `400` | Bad Request | Invalid request data or missing required fields |
 | `401` | Unauthorized | Invalid or missing X-Secret-Key |
-| `404` | Not Found | Lead or resource not found |
-| `409` | Conflict | Email already exists (for create/update) |
-| `422` | Validation Error | Request data failed validation (e.g. lead already converted, no email configured) |
+| `404` | Not Found | Lead or lead attribute not found |
+| `422` | Validation Error | Request data failed validation, or the operation was rejected (e.g. lead already converted, lead has no email, mail not connected) |
 | `429` | Too Many Requests | Rate limit exceeded |
 
-### Example Error Response
+### Example Error Responses
+
+Validation failures return `422` with the failing fields under `error`:
 
 ```json
 {
-  "success": false,
-  "error": "Validation Error",
-  "message": "The given data was invalid",
-  "errors": {
-    "email": ["The email field is required."],
-    "first_name": ["The first name field is required."]
-  },
-  "status_code": 422
+  "error": {
+    "first_name": ["The first name field is required."],
+    "email": ["This email already exists as a lead. Please use a different email address."]
+  }
 }
+```
+
+Operation errors return `422` in one of these shapes:
+
+```json
+{ "error": { "msg": ["Lead already converted to contact."] } }
+```
+
+```json
+{ "error": "This lead has no email address." }
 ```
 
 ---
@@ -1391,15 +1518,20 @@ curl -X DELETE "https://public-api.taskip.net/api/public-v1/lead-attribute/1" \
   "first_name": "string",
   "last_name": "string|null",
   "full_name": "string",
-  "email": "string",
+  "email": "string|null",
   "phone_number": "string|null",
+  "mobile_phone": "string|null",
+  "job_title": "string|null",
   "website": "string|null",
   "company_id": "integer|null",
-  "company": "object|null",
-  "value": "numeric|null",
+  "company": "object|null ({id, name, email, phone_number})",
+  "value": "string (decimal)|null",
   "currency": "string|null",
-  "lead_interaction_date": "string (Y-m-d)|null",
-  "assigned_to": "array",
+  "lead_interaction_date": "string (ISO 8601)|null",
+  "next_follow_up_date": "string (ISO 8601)|null",
+  "preferred_contact_method_id": "integer|null",
+  "lead_type_id": "integer|null",
+  "assigned_to": "array of users",
   "country_id": "integer|null",
   "country": "string|null",
   "state_id": "integer|null",
@@ -1410,13 +1542,15 @@ curl -X DELETE "https://public-api.taskip.net/api/public-v1/lead-attribute/1" \
   "zip_code": "string|null",
   "description": "string|null",
   "created_by": "integer",
-  "converted": "integer (0 or 1)",
+  "converted": "boolean",
   "converted_contact_id": "integer|null",
   "converted_at": "string (ISO 8601)|null",
-  "statuses": "array",
-  "sources": "array",
-  "groups": "array",
-  "custom_fields": "array",
+  "statuses": "array of lead attributes",
+  "sources": "array of lead attributes",
+  "groups": "array of {id, name, created_at, updated_at}",
+  "tags": "array of {id, name, color} (not in list responses)",
+  "activities": "array (single-lead responses only)",
+  "custom_fields": "array|object",
   "created_at": "string (ISO 8601)",
   "updated_at": "string (ISO 8601)"
 }
@@ -1441,10 +1575,12 @@ curl -X DELETE "https://public-api.taskip.net/api/public-v1/lead-attribute/1" \
 ```json
 {
   "current_page": "integer",
-  "from": "integer",
+  "from": "integer|null",
+  "last_page": "integer",
   "path": "string",
   "per_page": "integer",
-  "to": "integer"
+  "to": "integer|null",
+  "total": "integer"
 }
 ```
 

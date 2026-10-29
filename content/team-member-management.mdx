@@ -1,15 +1,19 @@
 # Team Member Management API
 
-The Team Member Management API allows you to manage team members and users in your TaskIP system. You can create, read, update, and delete team members, as well as perform bulk operations.
+The Team Member Management API allows you to manage team members and users in your TaskIP system. You can invite, read, update, and delete team members, as well as perform bulk deletes.
+
+<Callout type="info" emoji="💡">
+  **Resource IDs**: The `{id}` segment of the team member routes only accepts digits. A non-numeric segment is a `404`.
+</Callout>
 
 ## Endpoints Overview
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `GET` | [`/api/public-v1/team-member`](#get-all-team-members) | Get all team members |
-| `POST` | [`/api/public-v1/team-member`](#create-a-team-member) | Create a new team member |
+| `POST` | [`/api/public-v1/team-member`](#create-a-team-member) | Invite a new team member |
 | `GET` | [`/api/public-v1/team-member/{id}`](#get-a-specific-team-member) | Get a specific team member |
-| `PUT` | [`/api/public-v1/team-member/{id}`](#update-a-team-member) | Update a team member |
+| `PUT` / `PATCH` | [`/api/public-v1/team-member/{id}`](#update-a-team-member) | Update a team member |
 | `DELETE` | [`/api/public-v1/team-member/{id}`](#delete-a-team-member) | Delete a team member |
 | `POST` | [`/api/public-v1/team-member/bulk-delete`](#bulk-delete-team-members) | Delete multiple team members |
 
@@ -39,25 +43,23 @@ Content-Type: application/json
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `page` | integer | No | Page number for pagination (default: 1) |
-| `limit` | integer | No | Number of team members per page (default: 50) |
-| `search` | string | No | Search term for name or email |
-| `sort` | string | No | Sort field (`name`, `email`, `role`, `created_at`) |
-| `order` | string | No | Sort order (`asc` or `desc`) |
-| `role` | string | No | Filter by role |
-| `status` | string | No | Filter by status (`active`, `inactive`, `pending`) |
-| `department` | string | No | Filter by department |
+| `item` | integer | No | Team members per page (default: 10). Use `0` to return all team members without pagination |
+| `search` | string | No | Search by name or email |
+| `active_only` | boolean | No | When true, only active members are returned |
+
+Users of type contact (clients) are never included. Results are ordered by `id` descending.
 
 ### Example Request
 
 ```bash
-curl -X GET "https://public-api.taskip.net/api/public-v1/team-member?page=1&limit=20&role=developer" \
+curl -X GET "https://public-api.taskip.net/api/public-v1/team-member?page=1&item=20&search=john" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json"
 ```
 
 ### JavaScript Example
 ```javascript
-const response = await fetch('https://public-api.taskip.net/api/public-v1/team-member?status=active', {
+const response = await fetch('https://public-api.taskip.net/api/public-v1/team-member?active_only=1', {
   method: 'GET',
   headers: {
     'X-Secret-Key': 'your-secret-key-here',
@@ -75,58 +77,57 @@ const teamMembers = await response.json();
   "message": "Team member list",
   "data": [
     {
-      "id": 1,
-      "first_name": "John",
-      "last_name": "Smith",
-      "full_name": "John Smith",
-      "position": "Senior Developer",
-      "email": "john.smith@taskip.com",
-      "uuid": "550e8400-e29b-41d4-a716-446655440001",
-      "role": "admin",
-      "created_at": "01, Jan, 2024",
+      "id": 26,
+      "first_name": "Alice",
+      "last_name": "Johnson",
+      "full_name": "Alice Johnson",
+      "position": "Frontend Developer",
+      "email": "alice.johnson@taskip.com",
+      "uuid": "550e8400-e29b-41d4-a716-446655440026",
+      "role": {
+        "user_id": 26,
+        "role_id": 3,
+        "role_details": {
+          "id": 3,
+          "name": "Member",
+          "status": 1,
+          "tenant_id": null
+        }
+      },
+      "is_owner": false,
+      "created_at": "25, Jan, 2024",
       "teams": [
         {
           "id": 1,
           "name": "Development Team",
-          "description": "Frontend and Backend Development"
-        }
-      ],
-      "image": {
-        "id": 101,
-        "url": "https://cdn.taskip.net/avatars/john-smith.jpg",
-        "thumbnail": "https://cdn.taskip.net/avatars/john-smith-thumb.jpg"
-      },
-      "invitation": {
-        "id": 1,
-        "status": "accepted",
-        "sent_at": "2024-01-01T09:00:00Z",
-        "accepted_at": "2024-01-01T10:30:00Z"
-      }
-    },
-    {
-      "id": 2,
-      "first_name": "Sarah",
-      "last_name": "Davis",
-      "full_name": "Sarah Davis",
-      "position": "Project Manager",
-      "email": "sarah.davis@taskip.com",
-      "uuid": "550e8400-e29b-41d4-a716-446655440002",
-      "role": "project_manager",
-      "created_at": "02, Jan, 2024",
-      "teams": [
-        {
-          "id": 2,
-          "name": "Project Management",
-          "description": "Project coordination and management"
+          "department": { "id": 2, "name": "Engineering", "status": 1 },
+          "members": [
+            { "id": 26, "name": "Alice Johnson", "email": "alice.johnson@taskip.com", "image": null }
+          ],
+          "description": "Frontend and Backend Development",
+          "created_at": "10 Jan, 2024"
         }
       ],
       "image": null,
       "invitation": {
-        "id": 2,
-        "status": "accepted",
-        "sent_at": "2024-01-02T09:00:00Z",
-        "accepted_at": "2024-01-02T11:15:00Z"
-      }
+        "invited_at": "25,Jan,2024 11:45:00",
+        "last_sent_at": "25,Jan,2024 11:45:00",
+        "accepted_at": null,
+        "expires_at": "27,Jan,2024 11:45:00",
+        "status": "pending",
+        "invitation_status": "pending",
+        "can_reinvite": false,
+        "can_invite_now": false,
+        "cooldown": {
+          "last_sent_at": "2024-01-25T11:45:00+00:00",
+          "can_resend_at": "2024-01-25T11:50:00+00:00",
+          "remaining_seconds": 240
+        }
+      },
+      "invitation_status": "pending",
+      "tasks": [],
+      "is_on_vacation": false,
+      "is_active": false
     }
   ],
   "links": {
@@ -147,11 +148,13 @@ const teamMembers = await response.json();
 }
 ```
 
+When `search` is supplied, `meta.search` echoes the search term. When `item=0`, the response contains only `message` and `data`.
+
 ---
 
 ## Create a Team Member
 
-Create a new team member in your system.
+Invite a new team member to your workspace. The member is created with a pending invitation and, unless `send_invite` is `false`, an invitation email is sent immediately.
 
 ```http
 POST /api/public-v1/team-member
@@ -165,11 +168,11 @@ POST /api/public-v1/team-member
     "first_name": "John",
     "last_name": "Smith",
     "position": "Senior Developer",
-    "role_id": 2,
-    "team_id": 1,
-    "image": null
+    "role_id": 3,
+    "team_ids": [1],
+    "send_invite": true
   }}
-  description="Test creating a new team member in your TaskIP system"
+  description="Test inviting a new team member to your TaskIP workspace"
 />
 
 ### Request Headers
@@ -182,13 +185,14 @@ Content-Type: application/json
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `email` | string | Yes | Team member's email address (must be unique) |
-| `first_name` | string | Yes | Team member's first name (max 191 characters) |
-| `last_name` | string | Yes | Team member's last name (max 191 characters) |
+| `email` | string | Yes | Team member's email address (must pass DNS validation). Must not already belong to a client, lead, or another account in this workspace |
+| `first_name` | string | Yes | First name (max 191 characters). Markup and characters other than letters, spaces, apostrophes, hyphens and dots are stripped |
+| `last_name` | string | Yes | Last name (max 191 characters). Sanitized the same way as `first_name` |
 | `position` | string | No | Job position/title (max 191 characters) |
-| `role_id` | integer | Yes | Role ID (numeric) |
-| `team_id` | integer | No | Team ID (numeric) |
-| `image` | integer | No | Image/Avatar ID (numeric) |
+| `role_id` | integer | Yes | Role ID, see [Roles](#roles) |
+| `team_ids` | array | No | Array of team IDs to add the member to |
+| `image` | integer | No | Image/avatar media upload ID |
+| `send_invite` | boolean | No | Send the invitation email now (default: `true`). When `false` the member is created without an email being sent |
 
 ### Example Request
 
@@ -201,9 +205,8 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/team-member" \
     "first_name": "Alice",
     "last_name": "Johnson",
     "position": "Frontend Developer",
-    "role_id": 2,
-    "team_id": 1,
-    "image": null
+    "role_id": 3,
+    "team_ids": [1]
   }'
 ```
 
@@ -221,9 +224,8 @@ team_member_data = {
     "first_name": "Alice",
     "last_name": "Johnson",
     "position": "Frontend Developer",
-    "role_id": 2,
-    "team_id": 1,
-    "image": None
+    "role_id": 3,
+    "team_ids": [1]
 }
 
 response = requests.post(
@@ -248,25 +250,55 @@ result = response.json()
     "position": "Frontend Developer",
     "email": "alice.johnson@taskip.com",
     "uuid": "550e8400-e29b-41d4-a716-446655440026",
-    "role": "developer",
+    "role": {
+      "user_id": 26,
+      "role_id": 3,
+      "role_details": {
+        "id": 3,
+        "name": "Member",
+        "status": 1,
+        "tenant_id": null
+      }
+    },
+    "is_owner": false,
     "created_at": "25, Jan, 2024",
     "teams": [
       {
         "id": 1,
         "name": "Development Team",
-        "description": "Frontend and Backend Development"
+        "department": { "id": 2, "name": "Engineering", "status": 1 },
+        "members": [
+          { "id": 26, "name": "Alice Johnson", "email": "alice.johnson@taskip.com", "image": null }
+        ],
+        "description": "Frontend and Backend Development",
+        "created_at": "10 Jan, 2024"
       }
     ],
     "image": null,
     "invitation": {
-      "id": 26,
+      "invited_at": "25,Jan,2024 11:45:00",
+      "last_sent_at": "25,Jan,2024 11:45:00",
+      "accepted_at": null,
+      "expires_at": "27,Jan,2024 11:45:00",
       "status": "pending",
-      "sent_at": "2024-01-25T11:45:00Z",
-      "accepted_at": null
-    }
+      "invitation_status": "pending",
+      "can_reinvite": false,
+      "can_invite_now": false,
+      "cooldown": {
+        "last_sent_at": "2024-01-25T11:45:00+00:00",
+        "can_resend_at": "2024-01-25T11:50:00+00:00",
+        "remaining_seconds": 240
+      }
+    },
+    "invitation_status": "pending",
+    "tasks": [],
+    "is_on_vacation": false,
+    "is_active": false
   }
 }
 ```
+
+If your plan's team member limit has been reached, or the email already belongs to an active member of this workspace, the API returns `422` with `{"error": {"msg": ["..."]}}`.
 
 ---
 
@@ -287,7 +319,7 @@ GET /api/public-v1/team-member/{id}
 ### Path Parameters
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `id` | integer | Yes | Team member ID |
+| `id` | integer | Yes | Team member ID (digits only) |
 
 ### Example Request
 
@@ -310,29 +342,55 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/team-member/26" \
     "position": "Frontend Developer",
     "email": "alice.johnson@taskip.com",
     "uuid": "550e8400-e29b-41d4-a716-446655440026",
-    "role": "developer",
+    "role": {
+      "user_id": 26,
+      "role_id": 3,
+      "role_details": {
+        "id": 3,
+        "name": "Member",
+        "status": 1,
+        "tenant_id": null
+      }
+    },
+    "is_owner": false,
     "created_at": "25, Jan, 2024",
     "teams": [
       {
         "id": 1,
         "name": "Development Team",
-        "description": "Frontend and Backend Development"
+        "department": { "id": 2, "name": "Engineering", "status": 1 },
+        "members": [
+          { "id": 26, "name": "Alice Johnson", "email": "alice.johnson@taskip.com", "image": null }
+        ],
+        "description": "Frontend and Backend Development",
+        "created_at": "10 Jan, 2024"
       }
     ],
-    "image": {
-      "id": 126,
-      "url": "https://cdn.taskip.net/avatars/alice-johnson.jpg",
-      "thumbnail": "https://cdn.taskip.net/avatars/alice-johnson-thumb.jpg"
-    },
+    "image": null,
     "invitation": {
-      "id": 26,
-      "status": "accepted",
-      "sent_at": "2024-01-25T11:45:00Z",
-      "accepted_at": "2024-01-25T14:20:00Z"
-    }
+      "invited_at": "25,Jan,2024 11:45:00",
+      "last_sent_at": "25,Jan,2024 11:45:00",
+      "accepted_at": null,
+      "expires_at": "27,Jan,2024 11:45:00",
+      "status": "pending",
+      "invitation_status": "pending",
+      "can_reinvite": false,
+      "can_invite_now": false,
+      "cooldown": {
+        "last_sent_at": "2024-01-25T11:45:00+00:00",
+        "can_resend_at": "2024-01-25T11:50:00+00:00",
+        "remaining_seconds": 240
+      }
+    },
+    "invitation_status": "pending",
+    "tasks": [],
+    "is_on_vacation": false,
+    "is_active": false
   }
 }
 ```
+
+If no team member has that ID, the API returns `404`.
 
 ---
 
@@ -342,7 +400,10 @@ Update an existing team member's information.
 
 ```http
 PUT /api/public-v1/team-member/{id}
+PATCH /api/public-v1/team-member/{id}
 ```
+
+`PUT` and `PATCH` are handled identically. The `{id}` is the numeric team member (user) ID. The caller needs the `teams` **edit** permission, and the permission rules in [Permissions and Role Rules](#permissions-and-role-rules) apply.
 
 <ApiTester
   endpoint="/api/public-v1/team-member/1"
@@ -353,7 +414,7 @@ PUT /api/public-v1/team-member/{id}
     "last_name": "Johnson",
     "position": "Lead Frontend Developer",
     "role_id": 3,
-    "team_id": 1,
+    "team_ids": [1],
     "image": 150
   }}
   description="Test updating a team member's information"
@@ -362,19 +423,21 @@ PUT /api/public-v1/team-member/{id}
 ### Path Parameters
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `id` | integer | Yes | Team member ID to update |
+| `id` | integer | Yes | Team member ID to update (digits only) |
 
 ### Request Body
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `email` | string | Yes | Team member's email address (must be unique, except for current user) |
-| `first_name` | string | Yes | Team member's first name (max 191 characters) |
-| `last_name` | string | Yes | Team member's last name (max 191 characters) |
-| `position` | string | No | Job position/title (max 191 characters) |
-| `role_id` | integer | Yes | Role ID (numeric) |
-| `team_id` | integer | No | Team ID (numeric) |
-| `image` | integer | No | Image/Avatar ID (numeric) |
+| `first_name` | string | Yes | Max 191 characters. HTML and characters other than letters, spaces, apostrophes, hyphens and periods are stripped |
+| `last_name` | string | Yes | Max 191 characters, sanitized the same way |
+| `role_id` | integer | Yes | See [Roles](#roles). You cannot assign a role above your own |
+| `email` | string | No | Valid email. Must not belong to another user, lead or contact; the member being edited is excluded from that check, so re-sending their current email is fine. When omitted or `null`, the stored email is kept |
+| `position` | string | No | Max 191 characters. Partial: when omitted, the stored position is kept; send `null` or an empty value to clear it |
+| `team_ids` | array | No | When non-empty, replaces the member's current team memberships |
+| `image` | integer | No | ID of an existing media upload. When it matches, replaces the member's current image |
+
+`send_invite` has no effect on update.
 
 ### Example Request
 
@@ -388,7 +451,7 @@ curl -X PUT "https://public-api.taskip.net/api/public-v1/team-member/26" \
     "last_name": "Johnson",
     "position": "Lead Frontend Developer",
     "role_id": 3,
-    "team_id": 1,
+    "team_ids": [1],
     "image": 150
   }'
 ```
@@ -397,9 +460,11 @@ curl -X PUT "https://public-api.taskip.net/api/public-v1/team-member/26" \
 
 ```json
 {
-  "msg": "Team member updated successfully"
+  "msg": "Team Member updated successfully"
 }
 ```
+
+A rejected update (permission rules, validation) returns `422` with `{"error": {"msg": ["..."]}}` or field errors. An unknown ID returns `404`.
 
 ---
 
@@ -420,11 +485,10 @@ DELETE /api/public-v1/team-member/{id}
 ### Path Parameters
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `id` | integer | Yes | Team member ID to delete |
-
+| `id` | integer | Yes | Team member ID to delete (digits only) |
 
 <Callout type="warning" emoji="⚠️">
-  **Warning**: Deleting a team member will transfer their assigned tasks and projects to the system administrator. This action cannot be undone.
+  **Warning**: Deleting a team member revokes their workspace access and removes their image and team memberships. This action cannot be undone. The caller needs the `teams` **delete** permission, and the [permission rules](#permissions-and-role-rules) apply.
 </Callout>
 
 ### Example Request
@@ -438,16 +502,17 @@ curl -X DELETE "https://public-api.taskip.net/api/public-v1/team-member/26" \
 
 ```json
 {
-  "status": true,
-  "message": "Team Member deleted successfully"
+  "msg": "Team member access revoked successfully"
 }
 ```
+
+If no user has that ID, the API returns `404` with `{"msg": "Team Member not found"}`. The workspace owner cannot be removed (`422`).
 
 ---
 
 ## Bulk Delete Team Members
 
-Delete multiple team members at once.
+Delete multiple team members at once. The caller needs the `teams` **delete** permission. The whole batch is checked first: if any member is one the caller may not act on, or is the workspace owner, nothing is deleted and `422` is returned.
 
 ```http
 POST /api/public-v1/team-member/bulk-delete
@@ -466,8 +531,8 @@ POST /api/public-v1/team-member/bulk-delete
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `ids` | array | Yes | Array of team member IDs to delete |
-| `ids.*` | integer | Yes | Each ID must be a valid integer that exists in users table |
+| `ids` | array | Yes | Array of team member IDs to delete (max 1000 items) |
+| `ids.*` | integer | Yes | Each ID must be an integer that exists in the users table |
 
 ### Example Request
 
@@ -502,33 +567,35 @@ const result = await response.json();
 
 ```json
 {
-  "message": "Team Member deleted successfully"
+  "msg": "Team members access revoked successfully"
 }
 ```
 
+If none of the IDs match a team member, the API returns `404` with `{"msg": "Team Member not found"}`.
+
 ---
 
-## User Roles and Permissions
+## Permissions and Role Rules
 
-### Available Roles
+Update, delete and bulk delete share these rules:
 
-| Role | Description | Default Permissions |
-|------|-------------|-------------------|
-| `admin` | Full system access | All permissions |
-| `project_manager` | Manage projects and teams | `project.*`, `task.*`, `team.view` |
-| `developer` | Development work | `project.view`, `task.*`, `time.track` |
-| `designer` | Design work | `project.view`, `task.*`, `file.upload` |
-| `client` | Client access | `project.view`, `invoice.view` |
+- The caller needs the `teams` edit (update) or delete (delete, bulk delete) permission.
+- Administrators can only be modified or removed by an Administrator; Managers only by an Administrator or Manager.
+- The workspace owner can only be modified by themselves, cannot be removed, and cannot be demoted from Administrator.
+- A role cannot assign a role above its own (see [Roles](#roles)).
 
-### Permission Categories
+---
 
-| Category | Permissions | Description |
-|----------|------------|-------------|
-| **Project** | `project.view`, `project.create`, `project.edit`, `project.delete` | Project management |
-| **Task** | `task.view`, `task.create`, `task.edit`, `task.delete`, `task.assign` | Task management |
-| **User** | `user.view`, `user.create`, `user.edit`, `user.delete` | User management |
-| **Invoice** | `invoice.view`, `invoice.create`, `invoice.edit`, `invoice.send` | Invoice management |
-| **Report** | `report.view`, `report.generate`, `report.export` | Reporting |
+## Roles
+
+`role_id` must be an integer. The built-in role IDs are listed below.
+
+| `role_id` | Role | Notes |
+|-----------|------|-------|
+| `1` | Administrator | Can only be assigned by the workspace owner |
+| `2` | Manager | Can only be assigned by an Administrator or Manager |
+| `3` | Member | |
+| `4` | Client | |
 
 ---
 
@@ -538,27 +605,21 @@ const result = await response.json();
 
 | Status Code | Error Type | Description |
 |-------------|------------|-------------|
-| `400` | Bad Request | Invalid request data or missing required fields |
 | `401` | Unauthorized | Invalid or missing X-Secret-Key |
-| `403` | Forbidden | Insufficient permissions |
-| `404` | Not Found | Team member not found |
-| `409` | Conflict | Email or username already exists |
-| `422` | Validation Error | Request data failed validation |
+| `404` | Not Found | A non-numeric ID in the path, or an unknown team member ID (show, delete, bulk delete) |
+| `422` | Validation Error | Request data failed validation, or the operation was rejected (plan limit, insufficient permission or role, workspace owner protection) |
 | `429` | Too Many Requests | Rate limit exceeded |
 
 ### Example Error Response
 
+Validation failures return `422` with the failing fields under `error`:
+
 ```json
 {
-  "success": false,
-  "error": "Validation Error",
-  "message": "The given data was invalid",
-  "errors": {
-    "email": ["The email field is required.", "The email must be a valid email address."],
-    "role": ["The selected role is invalid."],
-    "permissions": ["Invalid permission: invalid.permission"]
-  },
-  "status_code": 422
+  "error": {
+    "email": ["The email field is required."],
+    "role_id": ["You are not allowed to assign the Administrator role."]
+  }
 }
 ```
 
@@ -577,11 +638,16 @@ const result = await response.json();
   "position": "string|null",
   "email": "string",
   "uuid": "string",
-  "role": "string",
+  "role": "object ({user_id, role_id, role_details})",
+  "is_owner": "boolean",
   "created_at": "string (formatted: 'd, M, Y')",
   "teams": "array",
   "image": "object|null",
-  "invitation": "object"
+  "invitation": "object",
+  "invitation_status": "string (not_invited | pending | expired | accepted)",
+  "tasks": "array",
+  "is_on_vacation": "boolean",
+  "is_active": "boolean"
 }
 ```
 
@@ -591,7 +657,10 @@ const result = await response.json();
 {
   "id": "integer",
   "name": "string",
-  "description": "string|null"
+  "department": "object ({id, name, status})",
+  "members": "array of {id, name, email, image}",
+  "description": "string|null",
+  "created_at": "string (formatted: 'd M, Y')"
 }
 ```
 
@@ -600,8 +669,12 @@ const result = await response.json();
 ```json
 {
   "id": "integer",
-  "url": "string",
-  "thumbnail": "string"
+  "title": "string",
+  "ext": "string",
+  "size": "integer",
+  "url": "string|null",
+  "media_type": "string",
+  "createdAt": "string (d-m-Y h:i:s)"
 }
 ```
 
@@ -609,10 +682,15 @@ const result = await response.json();
 
 ```json
 {
-  "id": "integer",
-  "status": "string",
-  "sent_at": "string (ISO 8601)",
-  "accepted_at": "string|null (ISO 8601)"
+  "invited_at": "string (d,M,Y h:i:s)",
+  "last_sent_at": "string|null",
+  "accepted_at": "string|null",
+  "expires_at": "string|null",
+  "status": "string (pending | expired | accepted)",
+  "invitation_status": "string (not_invited | pending | expired | accepted)",
+  "can_reinvite": "boolean",
+  "can_invite_now": "boolean",
+  "cooldown": "object|null ({last_sent_at, can_resend_at, remaining_seconds})"
 }
 ```
 
@@ -622,16 +700,14 @@ const result = await response.json();
 
 ### Team Management
 1. **Role Assignment**: Assign appropriate roles based on job functions
-2. **Permission Control**: Use granular permissions for fine-tuned access control
-3. **Regular Reviews**: Periodically review team member access and permissions
-4. **Secure Passwords**: Enforce strong password policies
+2. **Regular Reviews**: Periodically review team member access
+3. **Deferred invites**: Use `send_invite: false` to create members now and send the invitation later
 
 ### User Onboarding
 1. **Welcome Emails**: Use invitation emails for new team members
 2. **Profile Completion**: Encourage complete profile setup
-3. **Training Resources**: Provide system training and documentation
-4. **Access Reviews**: Regular access reviews and updates
+3. **Access Reviews**: Regular access reviews and updates
 
 <Callout type="info" emoji="💡">
-  **Tip**: Use the department filter in the GET /team-member endpoint to organize team members by department. This is particularly useful for larger organizations with multiple departments and teams.
+  **Tip**: Use `active_only=1` on the GET /team-member endpoint to build member pickers that exclude people who have not yet accepted their invitation.
 </Callout>

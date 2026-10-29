@@ -22,20 +22,20 @@ Sales Pipeline API consists of multiple interconnected modules:
 |--------|----------|-------------|
 | `GET` | [`/api/public-v1/sales-pipeline`](#get-all-sales-pipelines) | Get all sales pipelines |
 | `POST` | [`/api/public-v1/sales-pipeline`](#create-a-sales-pipeline) | Create a new sales pipeline |
-| `GET` | [`/api/public-v1/sales-pipeline/{id}`](#get-a-specific-sales-pipeline) | Get a specific sales pipeline |
-| `PUT` | [`/api/public-v1/sales-pipeline/{id}`](#update-a-sales-pipeline) | Update a sales pipeline |
-| `DELETE` | [`/api/public-v1/sales-pipeline/{id}`](#delete-a-sales-pipeline) | Delete a sales pipeline |
+| `GET` | [`/api/public-v1/sales-pipeline/{uuid}`](#get-a-specific-sales-pipeline) | Get a specific sales pipeline |
+| `PUT` / `PATCH` | [`/api/public-v1/sales-pipeline/{uuid}`](#update-a-sales-pipeline) | Update a sales pipeline |
+| `DELETE` | [`/api/public-v1/sales-pipeline/{uuid}`](#delete-a-sales-pipeline) | Delete a sales pipeline |
 | `POST` | [`/api/public-v1/sales-pipeline/bulk-actions`](#pipeline-bulk-actions) | Perform bulk operations |
 
 ### Deals Management
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | [`/api/public-v1/sales-pipeline/{uuid}/deals`](#get-all-deals) | Get all deals in a pipeline |
+| `GET` | [`/api/public-v1/sales-pipeline/{uuid}/deals`](#get-all-deals) | Get the deals of a stage |
 | `POST` | [`/api/public-v1/sales-pipeline/{uuid}/deals`](#create-a-deal) | Create a new deal |
 | `GET` | [`/api/public-v1/sales-pipeline/{uuid}/deals/{id}`](#get-a-specific-deal) | Get a specific deal |
-| `PUT` | [`/api/public-v1/sales-pipeline/{uuid}/deals/{id}`](#update-a-deal) | Update a deal |
+| `PUT` / `PATCH` | [`/api/public-v1/sales-pipeline/{uuid}/deals/{id}`](#update-a-deal) | Update a deal |
 | `DELETE` | [`/api/public-v1/sales-pipeline/{uuid}/deals/{id}`](#delete-a-deal) | Delete a deal |
-| `POST` | [`/api/public-v1/sales-pipeline/{uuid}/deals/bulk-actions/{id}`](#deals-bulk-actions) | Bulk deal operations |
+| `POST` | [`/api/public-v1/sales-pipeline/{uuid}/deals/bulk-actions/{id}`](#deals-bulk-actions) | Delete a deal (bulk-actions alias) |
 | `POST` | [`/api/public-v1/sales-pipeline/{uuid}/deals/order-change`](#change-deals-order) | Change deal order |
 
 ### Stage Management
@@ -43,8 +43,7 @@ Sales Pipeline API consists of multiple interconnected modules:
 |--------|----------|-------------|
 | `GET` | [`/api/public-v1/sales-pipeline/{uuid}/stage`](#get-all-stages) | Get all stages |
 | `POST` | [`/api/public-v1/sales-pipeline/{uuid}/stage`](#create-a-stage) | Create a new stage |
-| `GET` | [`/api/public-v1/sales-pipeline/{uuid}/stage/{id}`](#get-a-specific-stage) | Get a specific stage |
-| `PUT` | [`/api/public-v1/sales-pipeline/{uuid}/stage/{id}`](#update-a-stage) | Update a stage |
+| `PUT` / `PATCH` | [`/api/public-v1/sales-pipeline/{uuid}/stage/{id}`](#update-a-stage) | Update a stage |
 | `DELETE` | [`/api/public-v1/sales-pipeline/{uuid}/stage/{id}`](#delete-a-stage) | Delete a stage |
 | `POST` | [`/api/public-v1/sales-pipeline/{uuid}/stage/order-change`](#change-stage-order) | Change stage order |
 | `POST` | [`/api/public-v1/sales-pipeline/{uuid}/stage/{id}/duplicate`](#duplicate-stage) | Duplicate a stage |
@@ -57,18 +56,18 @@ Sales Pipeline API consists of multiple interconnected modules:
 | `GET` | [`/api/public-v1/sales-pipeline/{uuid}/deal/{id}/task`](#get-all-tasks) | Get all tasks for a deal |
 | `POST` | [`/api/public-v1/sales-pipeline/{uuid}/deal/{id}/task`](#create-a-task) | Create a new task |
 | `GET` | [`/api/public-v1/sales-pipeline/{uuid}/deal/{id}/task/{task_id}`](#get-a-specific-task) | Get a specific task |
-| `PUT` | [`/api/public-v1/sales-pipeline/{uuid}/deal/{id}/task/{task_id}`](#update-a-task) | Update a task |
+| `PUT` / `PATCH` | [`/api/public-v1/sales-pipeline/{uuid}/deal/{id}/task/{task_id}`](#update-a-task) | Update a task |
 | `DELETE` | [`/api/public-v1/sales-pipeline/{uuid}/deal/{id}/task/{task_id}`](#delete-a-task) | Delete a task |
 | `POST` | [`/api/public-v1/sales-pipeline/{uuid}/deal/{id}/task/bulk-actions`](#task-bulk-actions) | Bulk task operations |
-| `POST` | [`/api/public-v1/sales-pipeline/{uuid}/deal/{id}/task/order-change`](#change-task-order) | Change task order |
+| `POST` | [`/api/public-v1/sales-pipeline/{uuid}/deal/{id}/task/{task_id}/order-change`](#change-task-order) | Change task order |
 | `POST` | [`/api/public-v1/sales-pipeline/{uuid}/deal/{id}/task/{task_id}/complete`](#complete-task) | Mark task as complete |
 
 ### File Management
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `GET` | [`/api/public-v1/sales-pipeline/{uuid}/deal/{id}/file`](#get-all-files) | Get all files for a deal |
-| `POST` | [`/api/public-v1/sales-pipeline/{uuid}/deal/{id}/file`](#upload-file) | Upload a file |
-| `DELETE` | [`/api/public-v1/sales-pipeline/{uuid}/deal/{id}/file/{file_id}`](#delete-file) | Delete a file |
+| `POST` | [`/api/public-v1/sales-pipeline/{uuid}/deal/{id}/file`](#upload-a-file) | Upload a file |
+| `DELETE` | [`/api/public-v1/sales-pipeline/{uuid}/deal/{id}/file/{file}`](#delete-a-file) | Delete a file |
 
 ### Meeting Management
 | Method | Endpoint | Description |
@@ -76,7 +75,7 @@ Sales Pipeline API consists of multiple interconnected modules:
 | `GET` | [`/api/public-v1/sales-pipeline/{uuid}/deal/{id}/meeting`](#get-all-meetings) | Get all meetings |
 | `POST` | [`/api/public-v1/sales-pipeline/{uuid}/deal/{id}/meeting`](#create-a-meeting) | Create a new meeting |
 | `GET` | [`/api/public-v1/sales-pipeline/{uuid}/deal/{id}/meeting/{meeting_id}`](#get-a-specific-meeting) | Get a specific meeting |
-| `PUT` | [`/api/public-v1/sales-pipeline/{uuid}/deal/{id}/meeting/{meeting_id}`](#update-a-meeting) | Update a meeting |
+| `PUT` / `PATCH` | [`/api/public-v1/sales-pipeline/{uuid}/deal/{id}/meeting/{meeting_id}`](#update-a-meeting) | Update a meeting |
 | `DELETE` | [`/api/public-v1/sales-pipeline/{uuid}/deal/{id}/meeting/{meeting_id}`](#delete-a-meeting) | Delete a meeting |
 | `POST` | [`/api/public-v1/sales-pipeline/{uuid}/deal/{id}/meeting/bulk-actions`](#meeting-bulk-actions) | Bulk meeting operations |
 | `POST` | [`/api/public-v1/sales-pipeline/{uuid}/deal/{id}/meeting/{meeting_id}/complete`](#complete-meeting) | Mark meeting as complete |
@@ -86,8 +85,7 @@ Sales Pipeline API consists of multiple interconnected modules:
 |--------|----------|-------------|
 | `GET` | [`/api/public-v1/sales-pipeline/{uuid}/deal/{id}/note`](#get-all-notes) | Get all notes |
 | `POST` | [`/api/public-v1/sales-pipeline/{uuid}/deal/{id}/note`](#create-a-note) | Create a new note |
-| `GET` | [`/api/public-v1/sales-pipeline/{uuid}/deal/{id}/note/{note_id}`](#get-a-specific-note) | Get a specific note |
-| `PUT` | [`/api/public-v1/sales-pipeline/{uuid}/deal/{id}/note/{note_id}`](#update-a-note) | Update a note |
+| `PUT` / `PATCH` | [`/api/public-v1/sales-pipeline/{uuid}/deal/{id}/note/{note_id}`](#update-a-note) | Update a note |
 | `DELETE` | [`/api/public-v1/sales-pipeline/{uuid}/deal/{id}/note/{note_id}`](#delete-a-note) | Delete a note |
 | `POST` | [`/api/public-v1/sales-pipeline/{uuid}/deal/{id}/note/bulk-actions`](#note-bulk-actions) | Bulk note operations |
 
@@ -96,8 +94,7 @@ Sales Pipeline API consists of multiple interconnected modules:
 |--------|----------|-------------|
 | `GET` | [`/api/public-v1/sales-pipeline/{uuid}/deal/{id}/activity`](#get-all-activities) | Get all activities |
 | `POST` | [`/api/public-v1/sales-pipeline/{uuid}/deal/{id}/activity`](#create-an-activity) | Create a new activity |
-| `GET` | [`/api/public-v1/sales-pipeline/{uuid}/deal/{id}/activity/{activity_id}`](#get-a-specific-activity) | Get a specific activity |
-| `PUT` | [`/api/public-v1/sales-pipeline/{uuid}/deal/{id}/activity/{activity_id}`](#update-an-activity) | Update an activity |
+| `PUT` / `PATCH` | [`/api/public-v1/sales-pipeline/{uuid}/deal/{id}/activity/{activity_id}`](#update-an-activity) | Update an activity |
 | `DELETE` | [`/api/public-v1/sales-pipeline/{uuid}/deal/{id}/activity/{activity_id}`](#delete-an-activity) | Delete an activity |
 | `POST` | [`/api/public-v1/sales-pipeline/{uuid}/deal/{id}/activity/bulk-actions`](#activity-bulk-actions) | Bulk activity operations |
 | `POST` | [`/api/public-v1/sales-pipeline/{uuid}/deal/{id}/activity/send-mail`](#send-activity-mail) | Send activity email |
@@ -107,8 +104,7 @@ Sales Pipeline API consists of multiple interconnected modules:
 |--------|----------|-------------|
 | `GET` | [`/api/public-v1/sales-pipeline/attributes`](#get-all-attributes) | Get all pipeline attributes |
 | `POST` | [`/api/public-v1/sales-pipeline/attributes`](#create-an-attribute) | Create a new attribute |
-| `GET` | [`/api/public-v1/sales-pipeline/attributes/{id}`](#get-a-specific-attribute) | Get a specific attribute |
-| `PUT` | [`/api/public-v1/sales-pipeline/attributes/{id}`](#update-an-attribute) | Update an attribute |
+| `PUT` / `PATCH` | [`/api/public-v1/sales-pipeline/attributes/{id}`](#update-an-attribute) | Update an attribute |
 | `DELETE` | [`/api/public-v1/sales-pipeline/attributes/{id}`](#delete-an-attribute) | Delete an attribute |
 | `POST` | [`/api/public-v1/sales-pipeline/attributes/bulk-actions`](#attribute-bulk-actions) | Bulk attribute operations |
 
@@ -131,17 +127,16 @@ Content-Type: application/json
 ### Query Parameters
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `page` | integer | No | Page number for pagination (default: 1) |
-| `limit` | integer | No | Number of pipelines per page (default: 50) |
-| `search` | string | No | Search term for pipeline name |
-| `status` | string | No | Filter by status (`active`, `inactive`, `archived`) |
-| `sort` | string | No | Sort field (`name`, `created_at`, `deals_count`) |
-| `order` | string | No | Sort order (`asc` or `desc`) |
+| `page` | integer | No | Page number for pagination |
+| `item` | integer | No | Pipelines per page (default: 10). `0` returns all pipelines |
+| `search` | string | No | Search term for the pipeline title |
+
+Results are ordered newest first. Team members who are not administrators or managers only see pipelines that contain deals they own or are assigned to.
 
 ### Example Request
 
 ```bash
-curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline?status=active" \
+curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline?item=20" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json"
 ```
@@ -150,26 +145,39 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline?status=a
 
 ```json
 {
+  "msg": "Sales Pipeline retrieved successfully.",
   "data": [
     {
       "title": "Main Sales Pipeline",
-      "status": "active",
+      "status": 1,
       "uuid": "pipeline-abc123def456",
       "created_at": "2 weeks ago",
-      "stages_count": 5
-    },
-    {
-      "title": "Secondary Pipeline",
-      "status": "active", 
-      "uuid": "pipeline-def456ghi789",
-      "created_at": "1 month ago",
-      "stages_count": 3
+      "stages_count": 6
     }
   ],
-  "msg": "Sales Pipeline retrieved successfully.",
-  "status": 200
+  "links": {
+    "first": "https://public-api.taskip.net/api/public-v1/sales-pipeline?page=1",
+    "last": "https://public-api.taskip.net/api/public-v1/sales-pipeline?page=1",
+    "prev": null,
+    "next": null
+  },
+  "meta": {
+    "current_page": 1,
+    "from": 1,
+    "last_page": 1,
+    "path": "https://public-api.taskip.net/api/public-v1/sales-pipeline",
+    "per_page": 20,
+    "to": 1,
+    "total": 1
+  }
 }
 ```
+
+### Error Responses
+
+| Status | Description |
+|--------|-------------|
+| `422` | Validation failed (standard Laravel shape: `{ "message": "...", "errors": { ... } }`) |
 
 ---
 
@@ -186,7 +194,9 @@ POST /api/public-v1/sales-pipeline
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `title` | string | Yes | Pipeline title (max 191 characters) |
-| `status` | string | No | Pipeline status |
+| `status` | integer | No | `0` Draft, `1` Publish (not validated) |
+
+Six default stages are created with the pipeline: Prospecting, Qualification, Proposal/Quotation, Negotiation/Review, Closed/Won and Closed/Lost.
 
 ### Example Request
 
@@ -196,7 +206,7 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline" \
   -H "Content-Type: application/json" \
   -d '{
     "title": "Enterprise Sales Pipeline",
-    "status": "active"
+    "status": 1
   }'
 ```
 
@@ -204,16 +214,25 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline" \
 
 ```json
 {
-  "msg": "Sales pipeline created successfully",
+  "msg": "Sales Pipeline stored successfully.",
   "data": {
     "title": "Enterprise Sales Pipeline",
-    "status": "active",
+    "status": 1,
     "uuid": "pipeline-xyz789abc123",
     "created_at": "just now",
-    "stages_count": 0
+    "stages_count": null
   }
 }
 ```
+
+The response status is `201`.
+
+### Error Responses
+
+| Status | Description |
+|--------|-------------|
+| `403` | The user does not have permission to create sales pipelines |
+| `422` | Validation failed: `{ "error": { "title": ["..."] } }` |
 
 ---
 
@@ -222,71 +241,208 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline" \
 Retrieve detailed information about a specific sales pipeline.
 
 ```http
-GET /api/public-v1/sales-pipeline/{id}
+GET /api/public-v1/sales-pipeline/{uuid}
 ```
 
 ### Path Parameters
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `id` | integer | Yes | Sales pipeline ID |
+| `uuid` | string | Yes | Sales pipeline UUID |
 
 ### Example Request
 
 ```bash
-curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline/1" \
+curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json"
 ```
 
 ### Example Response
 
+The response is the pipeline object itself (no `data` wrapper).
+
 ```json
 {
   "title": "Main Sales Pipeline",
-  "status": "active",
+  "status": 1,
   "uuid": "pipeline-abc123def456",
   "created_at": "2 weeks ago",
   "stages": [
     {
       "id": 1,
-      "name": "Lead",
-      "position": 1,
-      "color": "#3b82f6"
+      "title": "Prospecting",
+      "order": 1,
+      "color": "slate",
+      "created_at": "2 weeks ago"
     },
     {
       "id": 2,
-      "name": "Qualified",
-      "position": 2,
-      "color": "#10b981"
-    },
-    {
-      "id": 3,
-      "name": "Proposal",
-      "position": 3,
-      "color": "#f59e0b"
+      "title": "Qualification",
+      "order": 2,
+      "color": "yellow",
+      "created_at": "2 weeks ago"
     }
   ]
 }
 ```
 
+### Error Responses
+
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "pipeline not found" }`. The pipeline does not exist or is not visible to the user |
+
 ---
 
 <Callout type="info" emoji="💡">
-  **Complex Module**: Sales Pipeline is the most comprehensive API module with 50+ endpoints. Each sub-module (Deals, Stages, Tasks, etc.) provides full CRUD operations and specialized actions.
+  **Complex Module**: Sales Pipeline is the most comprehensive API module with 60+ endpoints. Each sub-module (Deals, Stages, Tasks, etc.) provides full CRUD operations and specialized actions.
 </Callout>
 
 ## Next: Sub-Module Documentation
 
-The Sales Pipeline API includes several specialized sub-modules, each documented separately:
+The Sales Pipeline API includes several specialized sub-modules, documented below:
 
 - **[Deals Management](#deals-management)** - Individual deal lifecycle
-- **[Stages Management](#stages-management)** - Pipeline stage configuration  
-- **[Tasks Management](#tasks-management)** - Deal-specific tasks
-- **[Files Management](#files-management)** - Document handling
-- **[Meetings Management](#meetings-management)** - Meeting scheduling
-- **[Notes Management](#notes-management)** - Deal notes
-- **[Activities Management](#activities-management)** - Activity logging
-- **[Attributes Management](#attributes-management)** - Custom attributes
+- **[Stage Management](#stage-management)** - Pipeline stage configuration
+- **[Task Management](#task-management)** - Deal-specific tasks
+- **[File Management](#file-management)** - Document handling
+- **[Meeting Management](#meeting-management)** - Meeting scheduling
+- **[Note Management](#note-management)** - Deal notes
+- **[Activity Management](#activity-management)** - Activity logging
+- **[Attribute Management](#attribute-management)** - Custom attributes
+
+---
+
+## Update a Sales Pipeline
+
+Update the title of an existing sales pipeline. `PUT` and `PATCH` are handled identically: the request is validated like [Create a Sales Pipeline](#create-a-sales-pipeline), so `title` is required, and only `title` is written (`status` is ignored on update).
+
+```http
+PUT /api/public-v1/sales-pipeline/{uuid}
+PATCH /api/public-v1/sales-pipeline/{uuid}
+```
+
+### Path Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `uuid` | string | Yes | Sales pipeline UUID |
+
+### Request Body
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `title` | string | Yes | Pipeline title (max 191 characters) |
+
+### Example Request
+
+```bash
+curl -X PUT "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Updated Sales Pipeline"
+  }'
+```
+
+### Example Response
+
+```json
+{
+  "msg": "Pipeline Updated Successfully",
+  "data": {
+    "title": "Updated Sales Pipeline",
+    "status": 1,
+    "uuid": "pipeline-abc123def456",
+    "created_at": "2 weeks ago",
+    "stages_count": null
+  }
+}
+```
+
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "pipeline not found" }` |
+| `422` | Validation failed: `{ "error": { "title": ["..."] } }` |
+
+---
+
+## Delete a Sales Pipeline
+
+Delete a specific sales pipeline.
+
+```http
+DELETE /api/public-v1/sales-pipeline/{uuid}
+```
+
+### Path Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `uuid` | string | Yes | Sales pipeline UUID |
+
+### Example Request
+
+```bash
+curl -X DELETE "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456" \
+  -H "X-Secret-Key: your-secret-key-here"
+```
+
+### Example Response
+
+```json
+{
+  "msg": "pipeline deleted successfully."
+}
+```
+
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "pipeline not found" }` |
+| `422` | `{ "msg": "You don't have permission to delete this sales pipeline." }` |
+
+---
+
+## Pipeline Bulk Actions
+
+Delete multiple sales pipelines in one request.
+
+```http
+POST /api/public-v1/sales-pipeline/bulk-actions
+```
+
+### Request Body
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `ids` | array | Yes | Pipeline numeric IDs (max 1000). Each must exist in `sales_pipelines` |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/bulk-actions" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ids": [
+      1,
+      2,
+      3
+    ]
+  }'
+```
+
+### Example Response
+
+```json
+{
+  "msg": "Sales pipeline bulk actions successful"
+}
+```
+
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "pipeline not found" }` |
+| `422` | Validation failed (standard Laravel shape: `{ "message": "...", "errors": { "ids": ["..."] } }`) |
 
 ---
 
@@ -298,17 +454,17 @@ Manage individual deals within sales pipelines.
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/api/public-v1/sales-pipeline/{uuid}/deals` | Get all deals in pipeline |
+| `GET` | `/api/public-v1/sales-pipeline/{uuid}/deals` | Get deals of a stage |
 | `POST` | `/api/public-v1/sales-pipeline/{uuid}/deals` | Create a new deal |
 | `GET` | `/api/public-v1/sales-pipeline/{uuid}/deals/{id}` | Get a specific deal |
-| `PUT` | `/api/public-v1/sales-pipeline/{uuid}/deals/{id}` | Update a deal |
+| `PUT` / `PATCH` | `/api/public-v1/sales-pipeline/{uuid}/deals/{id}` | Update a deal |
 | `DELETE` | `/api/public-v1/sales-pipeline/{uuid}/deals/{id}` | Delete a deal |
-| `POST` | `/api/public-v1/sales-pipeline/{uuid}/deals/bulk-actions/{id}` | Perform bulk actions |
-| `POST` | `/api/public-v1/sales-pipeline/{uuid}/deals/order-change` | Change deal order |
+| `POST` | `/api/public-v1/sales-pipeline/{uuid}/deals/bulk-actions/{id}` | Delete a deal (bulk-actions alias) |
+| `POST` | `/api/public-v1/sales-pipeline/{uuid}/deals/order-change` | Change deal order / stage |
 
 ## Get All Deals
 
-Retrieve all deals in a specific pipeline.
+Retrieve the deals of one stage of a pipeline, ordered by deal order.
 
 ```http
 GET /api/public-v1/sales-pipeline/{uuid}/deals
@@ -322,203 +478,16 @@ GET /api/public-v1/sales-pipeline/{uuid}/deals
 ### Query Parameters
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `stage_id` | integer | No | Filter by stage ID |
-| `status` | string | No | Filter by status (`active`, `won`, `lost`) |
-| `contact_id` | integer | No | Filter by contact ID |
-| `value_min` | decimal | No | Minimum deal value |
-| `value_max` | decimal | No | Maximum deal value |
-| `sort` | string | No | Sort field (`title`, `value`, `created_at`) |
-| `order` | string | No | Sort order (`asc` or `desc`) |
+| `deal_stage_id` | integer | Yes | Stage ID (must belong to the pipeline) |
+| `item` | integer | No | Deals per page (default: 10). `0` returns all |
+| `page` | integer | No | Page number |
+| `search` | string | No | Search in deal name |
 
 ### Example Request
 
 ```bash
-curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/deals?stage_id=2" \
-  -H "X-Secret-Key: your-secret-key-here" \
-  -H "Content-Type: application/json"
-```
-
-### Example Response
-
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": 156,
-      "title": "Acme Corp Website Redesign", 
-      "description": "Complete website redesign and development",
-      "value": 15000.00,
-      "probability": 75,
-      "status": "active",
-      "stage": {
-        "id": 2,
-        "name": "Qualified",
-        "position": 2
-      },
-      "contact": {
-        "id": 45,
-        "name": "John Doe",
-        "email": "john.doe@acme.com"
-      },
-      "expected_close_date": "2024-02-15",
-      "created_at": "2024-01-20T14:30:00Z",
-      "updated_at": "2024-01-25T10:15:00Z"
-    }
-  ],
-  "meta": {
-    "current_page": 1,
-    "per_page": 50,
-    "total": 8,
-    "total_pages": 1
-  }
-}
-```
-
----
-
-## Update a Sales Pipeline
-
-Update an existing sales pipeline's information.
-
-```http
-PUT /api/public-v1/sales-pipeline/{id}
-```
-
-### Path Parameters
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | integer | Yes | Sales pipeline ID to update |
-
-### Request Body
-Same fields as create pipeline. All fields are optional - only include fields you want to update.
-
-### Example Request
-
-```bash
-curl -X PUT "https://public-api.taskip.net/api/public-v1/sales-pipeline/1" \
-  -H "X-Secret-Key: your-secret-key-here" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Updated Sales Pipeline",
-    "status": "active"
-  }'
-```
-
-### Example Response
-
-```json
-{
-  "msg": "Pipeline Updated Successfully",
-  "data": {
-    "title": "Updated Sales Pipeline",
-    "status": "active",
-    "uuid": "pipeline-abc123def456",
-    "created_at": "2 weeks ago",
-    "stages_count": 5
-  }
-}
-```
-
----
-
-## Delete a Sales Pipeline
-
-Delete a specific sales pipeline from your system.
-
-```http
-DELETE /api/public-v1/sales-pipeline/{id}
-```
-
-### Path Parameters
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | integer | Yes | Sales pipeline ID to delete |
-
-### Example Request
-
-```bash
-curl -X DELETE "https://public-api.taskip.net/api/public-v1/sales-pipeline/1" \
+curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/deals?deal_stage_id=2" \
   -H "X-Secret-Key: your-secret-key-here"
-```
-
-### Example Response
-
-```json
-{
-  "msg": "pipeline deleted successfully.",
-  "status": 200
-}
-```
-
----
-
-## Pipeline Bulk Actions
-
-Perform bulk operations on multiple sales pipelines.
-
-```http
-POST /api/public-v1/sales-pipeline/bulk-actions
-```
-
-### Request Body
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `ids` | array | Yes | Array of pipeline IDs (must exist in sales_pipelines table) |
-| `ids.*` | integer | Yes | Each ID must be a valid sales pipeline ID |
-
-### Example Request
-
-```bash
-curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/bulk-actions" \
-  -H "X-Secret-Key: your-secret-key-here" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "ids": [1, 2, 3]
-  }'
-```
-
-### Example Response
-
-```json
-{
-  "msg": "Sales pipeline bulk actions successful",
-  "status": 200
-}
-```
-
----
-
-# Deals Management
-
-## Get All Deals
-
-Retrieve all deals in a specific sales pipeline.
-
-```http
-GET /api/public-v1/sales-pipeline/{uuid}/deals
-```
-
-### Path Parameters
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `uuid` | string | Yes | Sales pipeline UUID |
-
-### Query Parameters
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `page` | integer | No | Page number for pagination |
-| `limit` | integer | No | Number of deals per page |
-| `stage_id` | integer | No | Filter by stage ID |
-| `status` | string | No | Filter by deal status |
-| `search` | string | No | Search term |
-
-### Example Request
-
-```bash
-curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123def456/deals" \
-  -H "X-Secret-Key: your-secret-key-here" \
-  -H "Content-Type: application/json"
 ```
 
 ### Example Response
@@ -528,40 +497,84 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123de
   "msg": "Sales Pipeline Deals retrieved successfully",
   "data": [
     {
-      "id": 1,
+      "id": 156,
+      "uuid": "3f6c9a1e-2b7d-4e0a-9c11-5d8e7f1a2b33",
       "deal_name": "Website Development Deal",
       "company": {
-        "id": 15,
-        "name": "Acme Corporation", 
-        "email": "contact@acme.com"
+        "id": 25,
+        "name": "Tech Solutions Ltd",
+        "email": "info@techsolutions.com"
       },
       "contact": {
-        "id": 25,
-        "first_name": "John",
-        "last_name": "Smith",
-        "email": "john@acme.com"
+        "id": 15,
+        "user_id": 40,
+        "name": "John Smith",
+        "email": "john@techsolutions.com",
+        "uuid": "a1b2c3d4-0000-4000-8000-000000000040",
+        "type": 2,
+        "image": null,
+        "phone_number": "+15550100",
+        "reference": null,
+        "reference_name": null
       },
+      "lead": null,
       "deal_stage_id": 2,
-      "deal_amount": "15000.00",
+      "deal_amount": 15000,
+      "deal_status": 0,
       "closing_date": "15/02/24",
       "description": "Complete website development project",
       "documents": [],
       "files": [],
-      "status": "active",
+      "status": 1,
       "currency": "USD",
       "order": 1,
-      "created_at": "15/01/24",
-      "pipeline_uuid": "abc123def456",
+      "priority": 0,
+      "lead_type": 0,
+      "created_at": "15/02/24",
+      "pipeline_uuid": "pipeline-abc123def456",
       "deal_owner": {
-        "id": 5,
+        "id": 8,
         "name": "Sarah Johnson",
-        "email": "sarah@company.com"
+        "email": "sarah@company.com",
+        "uuid": "a1b2c3d4-0000-4000-8000-000000000008",
+        "type": 1,
+        "image": null
       },
-      "tags": []
+      "stages": {
+        "id": 2,
+        "title": "Qualification",
+        "order": 2,
+        "color": "yellow",
+        "created_at": "2 weeks ago"
+      },
+      "tags": [],
+      "custom_fields": []
     }
-  ]
+  ],
+  "links": {
+    "first": "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/deals?page=1",
+    "last": "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/deals?page=1",
+    "prev": null,
+    "next": null
+  },
+  "meta": {
+    "current_page": 1,
+    "from": 1,
+    "last_page": 1,
+    "path": "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/deals",
+    "per_page": 10,
+    "to": 1,
+    "total": 1
+  }
 }
 ```
+
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `422` | `{ "error": { "msg": ["pipeline not found"] } }` or `["stage not found"]`; missing `deal_stage_id` returns the standard Laravel validation shape |
+
+---
 
 ## Create a Deal
 
@@ -579,19 +592,30 @@ POST /api/public-v1/sales-pipeline/{uuid}/deals
 ### Request Body
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `deal_name` | string | Yes | Deal name |
-| `company_id` | integer | Yes | Company ID |
+| `deal_name` | string | Yes | Deal name (max 191 characters) |
 | `deal_owner_id` | integer | Yes | Deal owner user ID |
-| `contact_id` | integer | Yes | Contact ID |
-| `deal_stage_id` | integer | Yes | Deal stage ID |
-| `deal_amount` | decimal | Yes | Deal amount |
-| `closing_date` | string | Yes | Closing date (YYYY-MM-DD) |
+| `deal_stage_id` | integer | Yes | Stage ID the deal belongs to |
+| `contact_id` | integer | Conditional | Contact ID. Either `contact_id` or `lead_id` is required |
+| `lead_id` | integer | Conditional | Lead ID. Either `contact_id` or `lead_id` is required |
+| `company_id` | integer | No | Company ID |
+| `deal_amount` | integer | No | Deal amount (default: `0`) |
+| `deal_status` | integer | No | `0` Open (default), `1` Negotiation, `2` Won, `3` Lost |
+| `closing_date` | string | No | Closing date |
 | `description` | string | No | Deal description |
+| `currency` | string | No | Currency code |
+| `status` | integer | No | Deal status flag (default: `1`) |
+| `priority` | integer | No | Priority (default: `0`) |
+| `lead_type` | integer | No | `0` Cold (default), `1` Warm, `2` Hot |
+| `tags` | array | No | Array of sales pipeline attribute IDs |
+| `documents` | array | No | Array of document IDs |
+| `from_email` | string | No | From email |
+| `custom_fields` | array | No | Custom field values |
+| `invite_client` | boolean | No | Send a portal invitation to the contact (create only effect) |
 
 ### Example Request
 
 ```bash
-curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123def456/deals" \
+curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/deals" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json" \
   -d '{
@@ -600,9 +624,13 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123d
     "deal_owner_id": 8,
     "contact_id": 15,
     "deal_stage_id": 2,
-    "deal_amount": 15000.00,
+    "deal_amount": 15000,
+    "deal_status": 0,
     "closing_date": "2024-02-15",
-    "description": "Complete website development project"
+    "description": "Complete website development project",
+    "tags": [
+      4
+    ]
   }'
 ```
 
@@ -612,7 +640,8 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123d
 {
   "msg": "Deal Added Successfully",
   "data": {
-    "id": 1,
+    "id": 156,
+    "uuid": "3f6c9a1e-2b7d-4e0a-9c11-5d8e7f1a2b33",
     "deal_name": "Website Development Deal",
     "company": {
       "id": 25,
@@ -621,28 +650,63 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123d
     },
     "contact": {
       "id": 15,
+      "user_id": 40,
       "name": "John Smith",
-      "email": "john@techsolutions.com"
+      "email": "john@techsolutions.com",
+      "uuid": "a1b2c3d4-0000-4000-8000-000000000040",
+      "type": 2,
+      "image": null,
+      "phone_number": "+15550100",
+      "reference": null,
+      "reference_name": null
     },
+    "lead": null,
     "deal_stage_id": 2,
-    "deal_amount": "15000.00",
+    "deal_amount": 15000,
+    "deal_status": 0,
     "closing_date": "15/02/24",
-    "created_at": "15/01/24",
-    "pipeline_uuid": "abc123def456",
+    "description": "Complete website development project",
+    "documents": [],
+    "files": [],
+    "status": 1,
+    "currency": "USD",
+    "order": 1,
+    "priority": 0,
+    "lead_type": 0,
+    "created_at": "15/02/24",
+    "pipeline_uuid": "pipeline-abc123def456",
     "deal_owner": {
       "id": 8,
       "name": "Sarah Johnson",
-      "email": "sarah@company.com"
+      "email": "sarah@company.com",
+      "uuid": "a1b2c3d4-0000-4000-8000-000000000008",
+      "type": 1,
+      "image": null
     },
-    "description": "Complete website development project"
-  },
-  "status": 201
+    "stages": {
+      "id": 2,
+      "title": "Qualification",
+      "order": 2,
+      "color": "yellow",
+      "created_at": "2 weeks ago"
+    },
+    "tags": [],
+    "custom_fields": []
+  }
 }
 ```
 
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "pipeline not found" }` |
+| `422` | Validation failed: `{ "error": { "<field>": ["message"] } }` |
+
+---
+
 ## Get a Specific Deal
 
-Retrieve details of a specific deal.
+Retrieve details of a specific deal, including its tasks, meetings, activities and notes. The deal must belong to the pipeline in the URL, otherwise a `404` is returned.
 
 ```http
 GET /api/public-v1/sales-pipeline/{uuid}/deals/{id}
@@ -657,18 +721,17 @@ GET /api/public-v1/sales-pipeline/{uuid}/deals/{id}
 ### Example Request
 
 ```bash
-curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123def456/deals/1" \
-  -H "X-Secret-Key: your-secret-key-here" \
-  -H "Content-Type: application/json"
+curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/deals/156" \
+  -H "X-Secret-Key: your-secret-key-here"
 ```
 
 ### Example Response
 
 ```json
 {
-  "msg": "Sales Pipeline Deal retrieved successfully",
+  "pipeline_title": "Main Sales Pipeline",
   "data": {
-    "id": 1,
+    "id": 156,
     "deal_name": "Website Development Deal",
     "company": {
       "id": 25,
@@ -677,31 +740,59 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123de
     },
     "contact": {
       "id": 15,
+      "user_id": 40,
       "name": "John Smith",
-      "email": "john@techsolutions.com"
+      "email": "john@techsolutions.com",
+      "uuid": "a1b2c3d4-0000-4000-8000-000000000040",
+      "type": 2,
+      "image": null,
+      "phone_number": "+15550100",
+      "reference": null,
+      "reference_name": null
     },
     "deal_stage_id": 2,
-    "deal_amount": "15000.00",
+    "deal_amount": 15000,
+    "deal_status": 0,
     "closing_date": "15/02/24",
-    "created_at": "15/01/24",
-    "pipeline_uuid": "abc123def456",
+    "description": "Complete website development project",
+    "status": 1,
+    "currency": "USD",
+    "order": 1,
+    "created_at": "15/02/24",
+    "email_sequence": null,
     "deal_owner": {
       "id": 8,
       "name": "Sarah Johnson",
-      "email": "sarah@company.com"
+      "email": "sarah@company.com",
+      "uuid": "a1b2c3d4-0000-4000-8000-000000000008",
+      "type": 1,
+      "image": null
     },
-    "description": "Complete website development project"
-  },
-  "status": 200
+    "meetings": [],
+    "activities": [],
+    "notes": [],
+    "tasks": [],
+    "tags": [],
+    "documents": [],
+    "files": []
+  }
 }
 ```
 
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "Pipeline not found" }` or `{ "msg": "Deal not found" }` |
+
+---
+
 ## Update a Deal
 
-Update an existing deal.
+Update an existing deal. `PUT` and `PATCH` are handled identically and the deal must belong to the pipeline in the URL. The body is validated like [Create a Deal](#create-a-deal), so `deal_name`, `deal_owner_id`, `deal_stage_id` and `contact_id` / `lead_id` (at least one of the two) must always be sent. The remaining optional fields are partial: `company_id`, `contact_id`, `lead_id`, `deal_amount`, `deal_status`, `closing_date`, `description`, `currency`, `status`, `from_email`, `priority`, `lead_type`, `tags` and `documents` keep their stored values when omitted. Send `tags` or `documents` as an empty array to remove them all.
 
 ```http
 PUT /api/public-v1/sales-pipeline/{uuid}/deals/{id}
+PATCH /api/public-v1/sales-pipeline/{uuid}/deals/{id}
 ```
 
 ### Path Parameters
@@ -713,27 +804,41 @@ PUT /api/public-v1/sales-pipeline/{uuid}/deals/{id}
 ### Request Body
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `deal_name` | string | No | Deal name |
-| `company_id` | integer | No | Company ID |
-| `deal_owner_id` | integer | No | Deal owner user ID |
-| `contact_id` | integer | No | Contact ID |
-| `deal_stage_id` | integer | No | Deal stage ID |
-| `deal_amount` | decimal | No | Deal amount |
-| `closing_date` | string | No | Closing date (YYYY-MM-DD) |
-| `description` | string | No | Deal description |
-
-All fields are optional for updates.
+| `deal_name` | string | Yes | Deal name (max 191 characters) |
+| `deal_owner_id` | integer | Yes | Deal owner user ID |
+| `deal_stage_id` | integer | Yes | Stage ID the deal belongs to |
+| `contact_id` | integer | Conditional | Contact ID. Either `contact_id` or `lead_id` must be sent; the one that is omitted keeps its stored value |
+| `lead_id` | integer | Conditional | Lead ID. Either `contact_id` or `lead_id` must be sent; the one that is omitted keeps its stored value |
+| `company_id` | integer | No | Company ID. Keeps the stored value when omitted |
+| `deal_amount` | integer | No | Deal amount. Keeps the stored value when omitted |
+| `deal_status` | integer | No | `0` Open, `1` Negotiation, `2` Won, `3` Lost. Keeps the stored value when omitted |
+| `closing_date` | string | No | Closing date. Keeps the stored value when omitted |
+| `description` | string | No | Deal description. Keeps the stored value when omitted |
+| `currency` | string | No | Currency code. Keeps the stored value when omitted |
+| `status` | integer | No | Deal status flag. Keeps the stored value when omitted |
+| `priority` | integer | No | Priority. Keeps the stored value when omitted |
+| `lead_type` | integer | No | `0` Cold, `1` Warm, `2` Hot. Keeps the stored value when omitted |
+| `tags` | array | No | Array of sales pipeline attribute IDs. Keeps the stored tags when omitted |
+| `documents` | array | No | Array of document IDs. Keeps the stored documents when omitted |
+| `from_email` | string | No | From email. Keeps the stored value when omitted |
+| `custom_fields` | array | No | Custom field values |
+| `invite_client` | boolean | No | Send a portal invitation to the contact (create only effect) |
 
 ### Example Request
 
 ```bash
-curl -X PUT "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123def456/deals/1" \
+curl -X PUT "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/deals/156" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json" \
   -d '{
     "deal_name": "Updated Website Development Deal",
-    "deal_amount": 18000.00,
-    "deal_stage_id": 3
+    "deal_owner_id": 8,
+    "contact_id": 15,
+    "deal_stage_id": 3,
+    "deal_amount": 18000,
+    "tags": [
+      4
+    ]
   }'
 ```
 
@@ -743,7 +848,8 @@ curl -X PUT "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123de
 {
   "msg": "Deal Updated Successfully",
   "data": {
-    "id": 1,
+    "id": 156,
+    "uuid": "3f6c9a1e-2b7d-4e0a-9c11-5d8e7f1a2b33",
     "deal_name": "Updated Website Development Deal",
     "company": {
       "id": 25,
@@ -752,28 +858,63 @@ curl -X PUT "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123de
     },
     "contact": {
       "id": 15,
+      "user_id": 40,
       "name": "John Smith",
-      "email": "john@techsolutions.com"
+      "email": "john@techsolutions.com",
+      "uuid": "a1b2c3d4-0000-4000-8000-000000000040",
+      "type": 2,
+      "image": null,
+      "phone_number": "+15550100",
+      "reference": null,
+      "reference_name": null
     },
+    "lead": null,
     "deal_stage_id": 3,
-    "deal_amount": "18000.00",
+    "deal_amount": 18000,
+    "deal_status": 0,
     "closing_date": "15/02/24",
-    "created_at": "15/01/24",
-    "pipeline_uuid": "abc123def456",
+    "description": "Complete website development project",
+    "documents": [],
+    "files": [],
+    "status": 1,
+    "currency": "USD",
+    "order": 1,
+    "priority": 0,
+    "lead_type": 0,
+    "created_at": "15/02/24",
+    "pipeline_uuid": "pipeline-abc123def456",
     "deal_owner": {
       "id": 8,
       "name": "Sarah Johnson",
-      "email": "sarah@company.com"
+      "email": "sarah@company.com",
+      "uuid": "a1b2c3d4-0000-4000-8000-000000000008",
+      "type": 1,
+      "image": null
     },
-    "description": "Complete website development project"
-  },
-  "status": 200
+    "stages": {
+      "id": 2,
+      "title": "Qualification",
+      "order": 2,
+      "color": "yellow",
+      "created_at": "2 weeks ago"
+    },
+    "tags": [],
+    "custom_fields": []
+  }
 }
 ```
 
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "Pipeline not found" }` or `{ "msg": "Deal not found" }` |
+| `422` | Validation failed: `{ "error": { "<field>": ["message"] } }` |
+
+---
+
 ## Delete a Deal
 
-Delete a specific deal.
+Delete a specific deal. The stage the deal currently belongs to must be supplied.
 
 ```http
 DELETE /api/public-v1/sales-pipeline/{uuid}/deals/{id}
@@ -785,10 +926,15 @@ DELETE /api/public-v1/sales-pipeline/{uuid}/deals/{id}
 | `uuid` | string | Yes | Sales pipeline UUID |
 | `id` | integer | Yes | Deal ID |
 
+### Request Body
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `deal_stage_id` | integer | Yes | Current stage ID of the deal (query string or body) |
+
 ### Example Request
 
 ```bash
-curl -X DELETE "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123def456/deals/1" \
+curl -X DELETE "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/deals/156?deal_stage_id=2" \
   -H "X-Secret-Key: your-secret-key-here"
 ```
 
@@ -796,14 +942,21 @@ curl -X DELETE "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc12
 
 ```json
 {
-  "msg": "Deal Deleted Successfully",
-  "status": 200
+  "msg": "Deal Deleted"
 }
 ```
 
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "Pipeline not found" }` or `{ "msg": "Deal not found" }` |
+| `422` | `{ "error": { "msg": ["stage id is required"] } }` or a permission message |
+
+---
+
 ## Deals Bulk Actions
 
-Perform bulk operations on deals.
+Behaves exactly like [Delete a Deal](#delete-a-deal) for the single deal in the path, using `POST`.
 
 ```http
 POST /api/public-v1/sales-pipeline/{uuid}/deals/bulk-actions/{id}
@@ -813,25 +966,21 @@ POST /api/public-v1/sales-pipeline/{uuid}/deals/bulk-actions/{id}
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `uuid` | string | Yes | Sales pipeline UUID |
-| `id` | integer | Yes | Deal ID or bulk action ID |
+| `id` | integer | Yes | Deal ID |
 
 ### Request Body
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `deal_ids` | array | Yes | Array of deal IDs |
-| `action` | string | Yes | Action to perform (`delete`, `move_stage`, `update_status`) |
-| `stage_id` | integer | No | Target stage ID (for move_stage action) |
+| `deal_stage_id` | integer | Yes | Current stage ID of the deal |
 
 ### Example Request
 
 ```bash
-curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123def456/deals/bulk-actions/1" \
+curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/deals/bulk-actions/156" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json" \
   -d '{
-    "deal_ids": [1, 2, 3],
-    "action": "move_stage",
-    "stage_id": 3
+    "deal_stage_id": 2
   }'
 ```
 
@@ -839,14 +988,15 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123d
 
 ```json
 {
-  "msg": "Bulk Action Completed Successfully",
-  "status": 200
+  "msg": "Deal Deleted"
 }
 ```
 
+---
+
 ## Change Deals Order
 
-Change the order of deals within a stage.
+Set the order of deals and move them into a stage. Every listed deal is assigned to `stage_id`.
 
 ```http
 POST /api/public-v1/sales-pipeline/{uuid}/deals/order-change
@@ -860,19 +1010,26 @@ POST /api/public-v1/sales-pipeline/{uuid}/deals/order-change
 ### Request Body
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `deals` | array | Yes | Array of deal objects with id and position |
+| `stage_id` | integer | Yes | Stage the deals are placed in |
+| `order` | array | Yes | Array of `{ "item_id": <deal ID>, "order": <position> }` objects |
 
 ### Example Request
 
 ```bash
-curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123def456/deals/order-change" \
+curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/deals/order-change" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json" \
   -d '{
-    "deals": [
-      {"id": 1, "position": 2},
-      {"id": 2, "position": 1},
-      {"id": 3, "position": 3}
+    "stage_id": 3,
+    "order": [
+      {
+        "item_id": 156,
+        "order": 1
+      },
+      {
+        "item_id": 157,
+        "order": 2
+      }
     ]
   }'
 ```
@@ -881,10 +1038,16 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123d
 
 ```json
 {
-  "msg": "Deal Order Updated Successfully",
+  "msg": "Deal Order Changed",
   "status": 200
 }
 ```
+
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "Pipeline not found" }` |
+| `422` | Validation failed (standard Laravel shape: `{ "message": "...", "errors": { ... } }`) |
 
 ---
 
@@ -892,7 +1055,7 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123d
 
 ## Get All Stages
 
-Retrieve all stages in a sales pipeline.
+Retrieve all stages of a pipeline with their deals, ordered by stage order.
 
 ```http
 GET /api/public-v1/sales-pipeline/{uuid}/stage
@@ -903,12 +1066,17 @@ GET /api/public-v1/sales-pipeline/{uuid}/stage
 |-----------|------|----------|-------------|
 | `uuid` | string | Yes | Sales pipeline UUID |
 
+### Query Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `item` | integer | No | Stages per page (default: 10) |
+| `page` | integer | No | Page number |
+
 ### Example Request
 
 ```bash
-curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123def456/stage" \
-  -H "X-Secret-Key: your-secret-key-here" \
-  -H "Content-Type: application/json"
+curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/stage" \
+  -H "X-Secret-Key: your-secret-key-here"
 ```
 
 ### Example Response
@@ -917,14 +1085,15 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123de
 {
   "data": [
     {
-      "id": 1,
-      "title": "Lead",
-      "order": 1,
-      "color": "#3B82F6",
+      "id": 2,
+      "title": "Qualification",
+      "order": 2,
+      "color": "yellow",
       "created_at": "2 weeks ago",
       "deals": [
         {
-          "id": 1,
+          "id": 156,
+          "uuid": "3f6c9a1e-2b7d-4e0a-9c11-5d8e7f1a2b33",
           "deal_name": "Website Development Deal",
           "company": {
             "id": 25,
@@ -933,31 +1102,83 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123de
           },
           "contact": {
             "id": 15,
+            "user_id": 40,
             "name": "John Smith",
-            "email": "john@techsolutions.com"
+            "email": "john@techsolutions.com",
+            "uuid": "a1b2c3d4-0000-4000-8000-000000000040",
+            "type": 2,
+            "image": null,
+            "phone_number": "+15550100",
+            "reference": null,
+            "reference_name": null
           },
-          "deal_stage_id": 1,
-          "deal_amount": "15000.00",
+          "lead": null,
+          "deal_stage_id": 2,
+          "deal_amount": 15000,
+          "deal_status": 0,
           "closing_date": "15/02/24",
-          "created_at": "15/01/24",
-          "pipeline_uuid": "abc123def456",
+          "description": "Complete website development project",
+          "documents": [],
+          "files": [],
+          "status": 1,
+          "currency": "USD",
+          "order": 1,
+          "priority": 0,
+          "lead_type": 0,
+          "created_at": "15/02/24",
+          "pipeline_uuid": "pipeline-abc123def456",
           "deal_owner": {
             "id": 8,
             "name": "Sarah Johnson",
-            "email": "sarah@company.com"
-          }
+            "email": "sarah@company.com",
+            "uuid": "a1b2c3d4-0000-4000-8000-000000000008",
+            "type": 1,
+            "image": null
+          },
+          "stages": {
+            "id": 2,
+            "title": "Qualification",
+            "order": 2,
+            "color": "yellow",
+            "created_at": "2 weeks ago"
+          },
+          "tags": [],
+          "custom_fields": []
         }
       ],
-      "deals_count": 15
+      "deals_count": 1
     }
   ],
-  "status": 200
+  "links": {
+    "first": "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/stage?page=1",
+    "last": "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/stage?page=1",
+    "prev": null,
+    "next": null
+  },
+  "meta": {
+    "current_page": 1,
+    "from": 1,
+    "last_page": 1,
+    "path": "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/stage",
+    "per_page": 10,
+    "to": 1,
+    "total": 1
+  }
 }
 ```
 
+There is no endpoint to retrieve a single stage; use this list.
+
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "Sales Pipeline not found" }` |
+
+---
+
 ## Create a Stage
 
-Create a new stage in a sales pipeline.
+Create a new stage in a pipeline.
 
 ```http
 POST /api/public-v1/sales-pipeline/{uuid}/stage
@@ -971,20 +1192,20 @@ POST /api/public-v1/sales-pipeline/{uuid}/stage
 ### Request Body
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `title` | string | Yes | Stage title |
-| `color` | string | No | Stage color (hex code) |
+| `title` | string | Yes | Stage title (max 191 characters) |
 | `order` | integer | No | Stage order |
+| `color` | string | No | Stage color name or value |
 
 ### Example Request
 
 ```bash
-curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123def456/stage" \
+curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/stage" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json" \
   -d '{
-    "title": "Qualified Lead",
-    "color": "#10B981",
-    "order": 2
+    "title": "Contract Sent",
+    "color": "blue",
+    "order": 5
   }'
 ```
 
@@ -994,60 +1215,32 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123d
 {
   "msg": "Pipeline Stage Added Successfully",
   "data": {
-    "id": 2,
-    "title": "Qualified Lead",
-    "order": 2,
-    "color": "#10B981",
+    "id": 9,
+    "title": "Contract Sent",
+    "order": 5,
+    "color": "blue",
     "created_at": "just now",
     "deals": [],
-    "deals_count": 0
+    "deals_count": null
   }
 }
 ```
 
-## Get a Specific Stage
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "Sales Pipeline not found" }` |
+| `422` | Validation failed: `{ "error": { "title": ["..."] } }` |
 
-Retrieve details of a specific stage.
-
-```http
-GET /api/public-v1/sales-pipeline/{uuid}/stage/{id}
-```
-
-### Path Parameters
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `uuid` | string | Yes | Sales pipeline UUID |
-| `id` | integer | Yes | Stage ID |
-
-### Example Request
-
-```bash
-curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123def456/stage/1" \
-  -H "X-Secret-Key: your-secret-key-here" \
-  -H "Content-Type: application/json"
-```
-
-### Example Response
-
-```json
-{
-  "id": 1,
-  "name": "Lead",
-  "position": 1,
-  "color": "#3B82F6",
-  "deals_count": 15,
-  "total_value": 75000.00,
-  "created_at": "2024-01-15T10:30:00Z",
-  "updated_at": "2024-01-25T14:20:00Z"
-}
-```
+---
 
 ## Update a Stage
 
-Update an existing stage.
+Update a stage. `PUT` and `PATCH` are handled identically: `title` is required. `color` and `order` are only changed when sent with a non-empty value.
 
 ```http
 PUT /api/public-v1/sales-pipeline/{uuid}/stage/{id}
+PATCH /api/public-v1/sales-pipeline/{uuid}/stage/{id}
 ```
 
 ### Path Parameters
@@ -1059,21 +1252,19 @@ PUT /api/public-v1/sales-pipeline/{uuid}/stage/{id}
 ### Request Body
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `title` | string | No | Stage title |
-| `color` | string | No | Stage color (hex code) |
+| `title` | string | Yes | Stage title (max 191 characters) |
 | `order` | integer | No | Stage order |
-
-All fields are optional for updates.
+| `color` | string | No | Stage color |
 
 ### Example Request
 
 ```bash
-curl -X PUT "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123def456/stage/1" \
+curl -X PUT "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/stage/2" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json" \
   -d '{
-    "title": "Updated Lead Stage",
-    "color": "#EF4444"
+    "title": "Qualified Leads",
+    "color": "green"
   }'
 ```
 
@@ -1083,20 +1274,28 @@ curl -X PUT "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123de
 {
   "msg": "Pipeline Stage Updated Successfully",
   "data": {
-    "id": 1,
-    "title": "Updated Lead Stage",
-    "order": 1,
-    "color": "#EF4444",
+    "id": 2,
+    "title": "Qualified Leads",
+    "order": 2,
+    "color": "green",
     "created_at": "2 weeks ago",
     "deals": [],
-    "deals_count": 0
+    "deals_count": null
   }
 }
 ```
 
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "Sales Pipeline not found" }` or `{ "msg": "pipeline stage not found" }` |
+| `422` | Validation failed: `{ "error": { "title": ["..."] } }` |
+
+---
+
 ## Delete a Stage
 
-Delete a specific stage.
+Delete a stage.
 
 ```http
 DELETE /api/public-v1/sales-pipeline/{uuid}/stage/{id}
@@ -1111,7 +1310,7 @@ DELETE /api/public-v1/sales-pipeline/{uuid}/stage/{id}
 ### Example Request
 
 ```bash
-curl -X DELETE "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123def456/stage/1" \
+curl -X DELETE "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/stage/2" \
   -H "X-Secret-Key: your-secret-key-here"
 ```
 
@@ -1119,14 +1318,21 @@ curl -X DELETE "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc12
 
 ```json
 {
-  "msg": "Pipeline Stage Deleted",
-  "status": 200
+  "msg": "Pipeline Stage Deleted"
 }
 ```
 
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "Sales Pipeline not found" }` or `{ "msg": "pipeline stage not found" }` |
+| `500` | `{ "msg": "Failed to delete sales pipeline stage" }` when the deletion throws an error |
+
+---
+
 ## Change Stage Order
 
-Change the order of stages in a pipeline.
+Update the order of several stages.
 
 ```http
 POST /api/public-v1/sales-pipeline/{uuid}/stage/order-change
@@ -1140,19 +1346,24 @@ POST /api/public-v1/sales-pipeline/{uuid}/stage/order-change
 ### Request Body
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `order` | array | Yes | Array of stage objects with stage_id and order |
+| `order` | array | Yes | Array of `{ "stage_id": <stage ID>, "order": <position> }` objects |
 
 ### Example Request
 
 ```bash
-curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123def456/stage/order-change" \
+curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/stage/order-change" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json" \
   -d '{
     "order": [
-      {"stage_id": 1, "order": 2},
-      {"stage_id": 2, "order": 1},
-      {"stage_id": 3, "order": 3}
+      {
+        "stage_id": 1,
+        "order": 2
+      },
+      {
+        "stage_id": 2,
+        "order": 1
+      }
     ]
   }'
 ```
@@ -1165,9 +1376,17 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123d
 }
 ```
 
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `200` | `{ "msg": "Failed to update order stage" }` when a stage in the list does not belong to the pipeline |
+| `422` | `{ "error": { "msg": ["Order field is required"] } }` |
+
+---
+
 ## Duplicate Stage
 
-Create a duplicate of an existing stage.
+Duplicate a stage, optionally with its deals.
 
 ```http
 POST /api/public-v1/sales-pipeline/{uuid}/stage/{id}/duplicate
@@ -1179,12 +1398,20 @@ POST /api/public-v1/sales-pipeline/{uuid}/stage/{id}/duplicate
 | `uuid` | string | Yes | Sales pipeline UUID |
 | `id` | integer | Yes | Stage ID to duplicate |
 
+### Request Body
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `with_content` | boolean | No | Also duplicate the stage content (deals) |
+
 ### Example Request
 
 ```bash
-curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123def456/stage/1/duplicate" \
+curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/stage/2/duplicate" \
   -H "X-Secret-Key: your-secret-key-here" \
-  -H "Content-Type: application/json"
+  -H "Content-Type: application/json" \
+  -d '{
+    "with_content": true
+  }'
 ```
 
 ### Example Response
@@ -1193,20 +1420,28 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123d
 {
   "msg": "SalesPipeline Stage Duplicated Successfully",
   "data": {
-    "id": 4,
-    "title": "Lead (Copy)",
-    "order": 4,
-    "color": "#3B82F6",
+    "id": 10,
+    "title": "Qualification",
+    "order": 7,
+    "color": "yellow",
     "created_at": "just now",
     "deals": [],
-    "deals_count": 0
+    "deals_count": null
   }
 }
 ```
 
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "Sales Pipeline not found" }` |
+| `422` | `{ "error": { "msg": ["Stage not found"] } }` |
+
+---
+
 ## Move All Deals
 
-Move all deals from one stage to another.
+Move all deals of a stage into another stage. The target stage must belong to the same pipeline.
 
 ```http
 POST /api/public-v1/sales-pipeline/{uuid}/stage/{id}/move-all-deal
@@ -1216,21 +1451,21 @@ POST /api/public-v1/sales-pipeline/{uuid}/stage/{id}/move-all-deal
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `uuid` | string | Yes | Sales pipeline UUID |
-| `id` | integer | Yes | Source stage ID (stage to move deals from) |
+| `id` | integer | Yes | Source stage ID |
 
 ### Request Body
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `target_stage_id` | integer | Yes | Target stage ID (stage to move deals to) |
+| `deal_stage_id` | integer | Yes | Target stage ID. Must be a stage of the same pipeline |
 
 ### Example Request
 
 ```bash
-curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123def456/stage/1/move-all-deal" \
+curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/stage/2/move-all-deal" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json" \
   -d '{
-    "target_stage_id": 2
+    "deal_stage_id": 3
   }'
 ```
 
@@ -1242,9 +1477,17 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123d
 }
 ```
 
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "Stages id is required" }` (missing `deal_stage_id`) or `{ "msg": "Sales Pipeline not found" }` |
+| `422` | `{ "msg": "Target stage not found" }` when `deal_stage_id` is not a stage of this pipeline |
+
+---
+
 ## Stage Bulk Actions
 
-Perform bulk operations on stages.
+Delete several stages in one request.
 
 ```http
 POST /api/public-v1/sales-pipeline/{uuid}/stage/bulk-actions
@@ -1258,38 +1501,42 @@ POST /api/public-v1/sales-pipeline/{uuid}/stage/bulk-actions
 ### Request Body
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `stage_ids` | array | Yes | Array of stage IDs to delete |
-| `action` | string | Yes | Action to perform (e.g., "delete") |
+| `ids` | array | Yes | Stage IDs to delete |
 
 ### Example Request
 
 ```bash
-curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123def456/stage/bulk-actions" \
+curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/stage/bulk-actions" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json" \
   -d '{
-    "stage_ids": [1, 2, 3],
-    "action": "delete"
+    "ids": [
+      7,
+      8
+    ]
   }'
 ```
 
 ### Example Response
 
-```json
-{
-  "msg": "Failed to delete sales pipeline stage"
-}
+```text
+(empty body)
 ```
+
+On success the response is `200` with an empty body.
+
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `422` | `{ "error": { "msg": ["Please select at least one stage"] } }`, or the error of the first stage that could not be deleted |
 
 ---
 
 # Task Management
 
-Manage tasks within sales pipeline deals. Tasks help track action items, follow-ups, and activities related to specific deals.
-
 ## Get All Tasks
 
-Retrieve all tasks for a specific deal.
+Retrieve all tasks of a deal, newest first. The result is not paginated.
 
 ```http
 GET /api/public-v1/sales-pipeline/{uuid}/deal/{id}/task
@@ -1304,9 +1551,8 @@ GET /api/public-v1/sales-pipeline/{uuid}/deal/{id}/task
 ### Example Request
 
 ```bash
-curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123def456/deal/1/task" \
-  -H "X-Secret-Key: your-secret-key-here" \
-  -H "Content-Type: application/json"
+curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/deal/156/task" \
+  -H "X-Secret-Key: your-secret-key-here"
 ```
 
 ### Example Response
@@ -1315,44 +1561,46 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123de
 {
   "data": [
     {
-      "id": 1,
+      "id": 12,
       "title": "Follow up with client",
-      "deal_id": 1,
+      "deal_id": 156,
       "type": 1,
       "due_date": "2024-02-15",
-      "due_time": "14:30",
+      "due_time": "14:30:00",
       "priority": 2,
       "description": "Call client to discuss project requirements",
       "is_completed": false,
-      "assignee": {
+      "assignedBy": {
         "id": 8,
         "name": "Sarah Johnson",
-        "email": "sarah@company.com"
+        "email": "sarah@company.com",
+        "uuid": "a1b2c3d4-0000-4000-8000-000000000008",
+        "type": 1,
+        "image": null
       },
-      "assignedBy": {
-        "id": 5,
-        "name": "Manager Name",
-        "email": "manager@company.com"
-      },
+      "assignees": [],
       "reminder": {
-        "id": 1,
-        "reminder_date": "2024-02-15",
-        "reminder_time": "14:00"
+        "id": 3,
+        "type": 1,
+        "date": null,
+        "time": null
       },
-      "repeat": {
-        "id": 1,
-        "repeat_type": "weekly",
-        "repeat_until": "2024-03-15"
-      }
+      "repeat": null
     }
-  ],
-  "status": 200
+  ]
 }
 ```
 
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "Sales Pipeline not found" }` |
+
+---
+
 ## Create a Task
 
-Create a new task for a deal.
+Create a task for a deal.
 
 ```http
 POST /api/public-v1/sales-pipeline/{uuid}/deal/{id}/task
@@ -1367,36 +1615,35 @@ POST /api/public-v1/sales-pipeline/{uuid}/deal/{id}/task
 ### Request Body
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `title` | string | Yes | Task title (max 191 chars) |
-| `type` | integer | Yes | Task type (0-4) |
-| `due_date` | string | No | Due date (YYYY-MM-DD) |
-| `due_time` | string | Conditional | Required if due_date is provided |
-| `assignee_id` | integer | Yes | User ID of assignee |
-| `priority` | integer | Yes | Priority level (0-3) |
+| `title` | string | Yes | Task title (max 191 characters) |
+| `type` | integer | Yes | `0` Todo, `1` Call, `2` Email, `3` SMS |
+| `assignee_id` | integer | Yes | Assignee user ID |
+| `priority` | integer | Yes | `0` Low, `1` Medium, `2` High, `3` Urgent |
+| `due_date` | string | No | Due date (for example `2024-02-15`) |
+| `due_time` | string | Conditional | Required when `due_date` is sent (for example `14:30`) |
 | `description` | string | No | Task description |
-| `repeat` | integer | No | Repeat type |
-| `repeat_until` | string | Conditional | Required if repeat != 100 |
-| `reminder` | integer | No | Reminder type |
-| `reminder_date` | string | No | Reminder date |
-| `reminder_time` | string | No | Reminder time |
+| `repeat` | integer | No | `0` every week, `1` every two weeks, `2` every month, `3` every three months, `4` every four months, `5` every six months, `6` every year |
+| `repeat_until` | string | Conditional | Required when `repeat` is sent |
+| `repeat_day` | integer | No | Day of month, 1-28 |
+| `reminder` | integer | No | `0` at due time, `1` 30 minutes before, `2` 1 hour before, `3` 1 day before, `4` 1 week before, `5` custom date |
+| `reminder_date` | string | No | Reminder date (custom reminder) |
+| `reminder_time` | string | No | Reminder time (custom reminder) |
 
 ### Example Request
 
 ```bash
-curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123def456/deal/1/task" \
+curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/deal/156/task" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json" \
   -d '{
     "title": "Follow up with client",
     "type": 1,
-    "due_date": "2024-02-15",
-    "due_time": "14:30",
     "assignee_id": 8,
     "priority": 2,
+    "due_date": "2024-02-15",
+    "due_time": "14:30",
     "description": "Call client to discuss project requirements",
-    "reminder": 1,
-    "reminder_date": "2024-02-15",
-    "reminder_time": "14:00"
+    "reminder": 1
   }'
 ```
 
@@ -1406,38 +1653,46 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123d
 {
   "msg": "Deal Task Added Successfully",
   "data": {
-    "id": 1,
+    "id": 12,
     "title": "Follow up with client",
-    "deal_id": 1,
+    "deal_id": 156,
     "type": 1,
     "due_date": "2024-02-15",
-    "due_time": "14:30",
+    "due_time": "14:30:00",
     "priority": 2,
     "description": "Call client to discuss project requirements",
     "is_completed": false,
-    "assignee": {
+    "assignedBy": {
       "id": 8,
       "name": "Sarah Johnson",
-      "email": "sarah@company.com"
+      "email": "sarah@company.com",
+      "uuid": "a1b2c3d4-0000-4000-8000-000000000008",
+      "type": 1,
+      "image": null
     },
-    "assignedBy": {
-      "id": 5,
-      "name": "Manager Name",
-      "email": "manager@company.com"
-    },
+    "assignees": [],
     "reminder": {
-      "id": 1,
-      "reminder_date": "2024-02-15",
-      "reminder_time": "14:00"
+      "id": 3,
+      "type": 1,
+      "date": null,
+      "time": null
     },
     "repeat": null
   }
 }
 ```
 
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "Sales Pipeline not found" }` or `{ "msg": "Sales Pipeline Deal not found" }` |
+| `422` | Validation failed: `{ "error": { "<field>": ["message"] } }` |
+
+---
+
 ## Get a Specific Task
 
-Retrieve details of a specific task.
+Retrieve a specific task.
 
 ```http
 GET /api/public-v1/sales-pipeline/{uuid}/deal/{id}/task/{task_id}
@@ -1453,56 +1708,58 @@ GET /api/public-v1/sales-pipeline/{uuid}/deal/{id}/task/{task_id}
 ### Example Request
 
 ```bash
-curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123def456/deal/1/task/1" \
-  -H "X-Secret-Key: your-secret-key-here" \
-  -H "Content-Type: application/json"
+curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/deal/156/task/12" \
+  -H "X-Secret-Key: your-secret-key-here"
 ```
 
 ### Example Response
 
 ```json
 {
-  "data": {
-    "id": 1,
-    "title": "Follow up with client",
-    "deal_id": 1,
+  "id": 12,
+  "title": "Follow up with client",
+  "deal_id": 156,
+  "type": 1,
+  "due_date": "2024-02-15",
+  "due_time": "14:30:00",
+  "priority": 2,
+  "description": "Call client to discuss project requirements",
+  "is_completed": false,
+  "assignedBy": {
+    "id": 8,
+    "name": "Sarah Johnson",
+    "email": "sarah@company.com",
+    "uuid": "a1b2c3d4-0000-4000-8000-000000000008",
     "type": 1,
-    "due_date": "2024-02-15",
-    "due_time": "14:30",
-    "priority": 2,
-    "description": "Call client to discuss project requirements",
-    "is_completed": false,
-    "assignee": {
-      "id": 8,
-      "name": "Sarah Johnson",
-      "email": "sarah@company.com"
-    },
-    "assignedBy": {
-      "id": 5,
-      "name": "Manager Name",
-      "email": "manager@company.com"
-    },
-    "reminder": {
-      "id": 1,
-      "reminder_date": "2024-02-15",
-      "reminder_time": "14:00"
-    },
-    "repeat": {
-      "id": 1,
-      "repeat_type": "weekly",
-      "repeat_until": "2024-03-15"
-    }
+    "image": null
   },
-  "status": 200
+  "assignees": [],
+  "reminder": {
+    "id": 3,
+    "type": 1,
+    "date": null,
+    "time": null
+  },
+  "repeat": null
 }
 ```
 
+> **Note:** The response is the task object itself (no `data` wrapper).
+
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "Sales Pipeline not found" }` or `{ "msg": "task not found" }` |
+
+---
+
 ## Update a Task
 
-Update an existing task.
+Update a task. `PUT` and `PATCH` are handled identically: the body is validated like [Create a Task](#create-a-task), so `title`, `type`, `assignee_id` and `priority` must always be sent. `type` is not changed by an update. Sending `repeat` creates or updates the repeat settings; omitting it removes them. `reminder` is only changed when sent.
 
 ```http
 PUT /api/public-v1/sales-pipeline/{uuid}/deal/{id}/task/{task_id}
+PATCH /api/public-v1/sales-pipeline/{uuid}/deal/{id}/task/{task_id}
 ```
 
 ### Path Parameters
@@ -1513,17 +1770,35 @@ PUT /api/public-v1/sales-pipeline/{uuid}/deal/{id}/task/{task_id}
 | `task_id` | integer | Yes | Task ID |
 
 ### Request Body
-Same fields as create task. All fields are optional for updates.
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `title` | string | Yes | Task title (max 191 characters) |
+| `type` | integer | Yes | `0` Todo, `1` Call, `2` Email, `3` SMS |
+| `assignee_id` | integer | Yes | Assignee user ID |
+| `priority` | integer | Yes | `0` Low, `1` Medium, `2` High, `3` Urgent |
+| `due_date` | string | No | Due date (for example `2024-02-15`) |
+| `due_time` | string | Conditional | Required when `due_date` is sent (for example `14:30`) |
+| `description` | string | No | Task description |
+| `repeat` | integer | No | `0` every week, `1` every two weeks, `2` every month, `3` every three months, `4` every four months, `5` every six months, `6` every year |
+| `repeat_until` | string | Conditional | Required when `repeat` is sent |
+| `repeat_day` | integer | No | Day of month, 1-28 |
+| `reminder` | integer | No | `0` at due time, `1` 30 minutes before, `2` 1 hour before, `3` 1 day before, `4` 1 week before, `5` custom date |
+| `reminder_date` | string | No | Reminder date (custom reminder) |
+| `reminder_time` | string | No | Reminder time (custom reminder) |
 
 ### Example Request
 
 ```bash
-curl -X PUT "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123def456/deal/1/task/1" \
+curl -X PUT "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/deal/156/task/12" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json" \
   -d '{
-    "title": "Updated follow up with client",
-    "priority": 3
+    "title": "Follow up with client (updated)",
+    "type": 1,
+    "assignee_id": 8,
+    "priority": 3,
+    "due_date": "2024-02-16",
+    "due_time": "10:00"
   }'
 ```
 
@@ -1533,42 +1808,46 @@ curl -X PUT "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123de
 {
   "msg": "Task Updated Successfully",
   "data": {
-    "id": 1,
-    "title": "Updated follow up with client",
-    "deal_id": 1,
+    "id": 12,
+    "title": "Follow up with client (updated)",
+    "deal_id": 156,
     "type": 1,
-    "due_date": "2024-02-15",
-    "due_time": "14:30",
+    "due_date": "2024-02-16",
+    "due_time": "10:00:00",
     "priority": 3,
     "description": "Call client to discuss project requirements",
     "is_completed": false,
-    "assignee": {
+    "assignedBy": {
       "id": 8,
       "name": "Sarah Johnson",
-      "email": "sarah@company.com"
+      "email": "sarah@company.com",
+      "uuid": "a1b2c3d4-0000-4000-8000-000000000008",
+      "type": 1,
+      "image": null
     },
-    "assignedBy": {
-      "id": 5,
-      "name": "Manager Name",
-      "email": "manager@company.com"
-    },
+    "assignees": [],
     "reminder": {
-      "id": 1,
-      "reminder_date": "2024-02-15",
-      "reminder_time": "14:00"
+      "id": 3,
+      "type": 1,
+      "date": null,
+      "time": null
     },
-    "repeat": {
-      "id": 1,
-      "repeat_type": "weekly",
-      "repeat_until": "2024-03-15"
-    }
+    "repeat": null
   }
 }
 ```
 
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "Sales Pipeline not found" }` or `{ "msg": "task not found" }` |
+| `422` | Validation failed: `{ "error": { "<field>": ["message"] } }` |
+
+---
+
 ## Delete a Task
 
-Delete a specific task.
+Delete a task.
 
 ```http
 DELETE /api/public-v1/sales-pipeline/{uuid}/deal/{id}/task/{task_id}
@@ -1584,7 +1863,7 @@ DELETE /api/public-v1/sales-pipeline/{uuid}/deal/{id}/task/{task_id}
 ### Example Request
 
 ```bash
-curl -X DELETE "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123def456/deal/1/task/1" \
+curl -X DELETE "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/deal/156/task/12" \
   -H "X-Secret-Key: your-secret-key-here"
 ```
 
@@ -1596,9 +1875,16 @@ curl -X DELETE "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc12
 }
 ```
 
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "Sales Pipeline not found" }` or `{ "msg": "task not found" }` |
+
+---
+
 ## Task Bulk Actions
 
-Perform bulk operations on tasks.
+Delete several tasks of the deal in one request. Only tasks that belong to the deal in the URL are deleted; IDs of other deals' tasks are ignored.
 
 ```http
 POST /api/public-v1/sales-pipeline/{uuid}/deal/{id}/task/bulk-actions
@@ -1613,18 +1899,19 @@ POST /api/public-v1/sales-pipeline/{uuid}/deal/{id}/task/bulk-actions
 ### Request Body
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `task_ids` | array | Yes | Array of task IDs |
-| `action` | string | Yes | Action to perform (e.g., "delete") |
+| `ids` | array | Yes | Task IDs to delete |
 
 ### Example Request
 
 ```bash
-curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123def456/deal/1/task/bulk-actions" \
+curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/deal/156/task/bulk-actions" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json" \
   -d '{
-    "task_ids": [1, 2, 3],
-    "action": "delete"
+    "ids": [
+      12,
+      13
+    ]
   }'
 ```
 
@@ -1636,12 +1923,19 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123d
 }
 ```
 
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `400` | `{ "msg": "No task selected" }` when none of the IDs is a task of this deal |
+
+---
+
 ## Change Task Order
 
-Change the order of tasks for a deal.
+Change the order value of a task.
 
 ```http
-POST /api/public-v1/sales-pipeline/{uuid}/deal/{id}/task/order-change
+POST /api/public-v1/sales-pipeline/{uuid}/deal/{id}/task/{task_id}/order-change
 ```
 
 ### Path Parameters
@@ -1649,22 +1943,21 @@ POST /api/public-v1/sales-pipeline/{uuid}/deal/{id}/task/order-change
 |-----------|------|----------|-------------|
 | `uuid` | string | Yes | Sales pipeline UUID |
 | `id` | integer | Yes | Deal ID |
+| `task_id` | integer | Yes | Task ID |
 
 ### Request Body
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `task_id` | integer | Yes | Task ID to reorder |
-| `new_order` | integer | Yes | New order position |
+| `order` | integer | Yes | New order value |
 
 ### Example Request
 
 ```bash
-curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123def456/deal/1/task/order-change" \
+curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/deal/156/task/12/order-change" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json" \
   -d '{
-    "task_id": 1,
-    "new_order": 3
+    "order": 3
   }'
 ```
 
@@ -1674,42 +1967,46 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123d
 {
   "msg": "Task Updated Successfully",
   "data": {
-    "id": 1,
+    "id": 12,
     "title": "Follow up with client",
-    "deal_id": 1,
+    "deal_id": 156,
     "type": 1,
     "due_date": "2024-02-15",
-    "due_time": "14:30",
+    "due_time": "14:30:00",
     "priority": 2,
     "description": "Call client to discuss project requirements",
     "is_completed": false,
-    "assignee": {
+    "assignedBy": {
       "id": 8,
       "name": "Sarah Johnson",
-      "email": "sarah@company.com"
+      "email": "sarah@company.com",
+      "uuid": "a1b2c3d4-0000-4000-8000-000000000008",
+      "type": 1,
+      "image": null
     },
-    "assignedBy": {
-      "id": 5,
-      "name": "Manager Name",
-      "email": "manager@company.com"
-    },
+    "assignees": [],
     "reminder": {
-      "id": 1,
-      "reminder_date": "2024-02-15",
-      "reminder_time": "14:00"
+      "id": 3,
+      "type": 1,
+      "date": null,
+      "time": null
     },
-    "repeat": {
-      "id": 1,
-      "repeat_type": "weekly",
-      "repeat_until": "2024-03-15"
-    }
+    "repeat": null
   }
 }
 ```
 
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "Sales Pipeline not found" }` or `{ "msg": "task not found" }` |
+| `422` | `{ "error": { "msg": ["Order field is required"] } }` |
+
+---
+
 ## Complete Task
 
-Mark a task as completed.
+Mark a task as completed or not completed.
 
 ```http
 POST /api/public-v1/sales-pipeline/{uuid}/deal/{id}/task/{task_id}/complete
@@ -1722,12 +2019,20 @@ POST /api/public-v1/sales-pipeline/{uuid}/deal/{id}/task/{task_id}/complete
 | `id` | integer | Yes | Deal ID |
 | `task_id` | integer | Yes | Task ID |
 
+### Request Body
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `is_completed` | integer | Yes | `1` to complete, `0` to reopen |
+
 ### Example Request
 
 ```bash
-curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123def456/deal/1/task/1/complete" \
+curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/deal/156/task/12/complete" \
   -H "X-Secret-Key: your-secret-key-here" \
-  -H "Content-Type: application/json"
+  -H "Content-Type: application/json" \
+  -d '{
+    "is_completed": 1
+  }'
 ```
 
 ### Example Response
@@ -1736,46 +2041,48 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123d
 {
   "msg": "Task Updated Successfully",
   "data": {
-    "id": 1,
+    "id": 12,
     "title": "Follow up with client",
-    "deal_id": 1,
+    "deal_id": 156,
     "type": 1,
     "due_date": "2024-02-15",
-    "due_time": "14:30",
+    "due_time": "14:30:00",
     "priority": 2,
     "description": "Call client to discuss project requirements",
-    "is_completed": true,
-    "assignee": {
+    "is_completed": 1,
+    "assignedBy": {
       "id": 8,
       "name": "Sarah Johnson",
-      "email": "sarah@company.com"
+      "email": "sarah@company.com",
+      "uuid": "a1b2c3d4-0000-4000-8000-000000000008",
+      "type": 1,
+      "image": null
     },
-    "assignedBy": {
-      "id": 5,
-      "name": "Manager Name",
-      "email": "manager@company.com"
-    },
+    "assignees": [],
     "reminder": {
-      "id": 1,
-      "reminder_date": "2024-02-15",
-      "reminder_time": "14:00"
+      "id": 3,
+      "type": 1,
+      "date": null,
+      "time": null
     },
-    "repeat": {
-      "id": 1,
-      "repeat_type": "weekly",
-      "repeat_until": "2024-03-15"
-    }
+    "repeat": null
   }
 }
 ```
 
-# File Management
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "Sales Pipeline not found" }` or `{ "msg": "task not found" }` |
+| `422` | `{ "error": { "msg": ["is completed field is required"] } }` |
 
-Manage files and documents attached to sales pipeline deals. This allows you to upload, view, and delete files associated with specific deals.
+---
+
+# File Management
 
 ## Get All Files
 
-Retrieve all files for a specific deal.
+Retrieve all files attached to a deal.
 
 ```http
 GET /api/public-v1/sales-pipeline/{uuid}/deal/{id}/file
@@ -1790,9 +2097,8 @@ GET /api/public-v1/sales-pipeline/{uuid}/deal/{id}/file
 ### Example Request
 
 ```bash
-curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123def456/deal/1/file" \
-  -H "X-Secret-Key: your-secret-key-here" \
-  -H "Content-Type: application/json"
+curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/deal/156/file" \
+  -H "X-Secret-Key: your-secret-key-here"
 ```
 
 ### Example Response
@@ -1802,27 +2108,15 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123de
   "msg": "Deal file added",
   "data": [
     {
-      "deal_id": 1,
+      "deal_id": 156,
       "media": {
-        "id": 15,
-        "name": "contract.pdf",
-        "file_name": "contract.pdf",
-        "mime_type": "application/pdf",
-        "size": 2048576,
-        "url": "https://storage.example.com/files/contract.pdf",
-        "created_at": "2024-01-15T10:30:00Z"
-      }
-    },
-    {
-      "deal_id": 1,
-      "media": {
-        "id": 16,
-        "name": "proposal.docx",
-        "file_name": "proposal.docx",
-        "mime_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "size": 1024000,
-        "url": "https://storage.example.com/files/proposal.docx",
-        "created_at": "2024-01-16T09:15:00Z"
+        "id": 12,
+        "title": "proposal.pdf",
+        "ext": "pdf",
+        "size": 204800,
+        "url": "https://storage.taskip.net/tenant-123/files/proposal.pdf",
+        "media_type": "file",
+        "createdAt": "15-02-2024 10:30:15"
       }
     }
   ],
@@ -1830,9 +2124,18 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123de
 }
 ```
 
+The `msg` value of this response is `Deal file added`, as returned by the API.
+
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "Sales Pipeline not found" }` or `{ "msg": "Sales Pipeline Deal not found" }` |
+
+---
+
 ## Upload a File
 
-Upload a new file for a deal.
+Attach an already uploaded media file to a deal.
 
 ```http
 POST /api/public-v1/sales-pipeline/{uuid}/deal/{id}/file
@@ -1847,16 +2150,16 @@ POST /api/public-v1/sales-pipeline/{uuid}/deal/{id}/file
 ### Request Body
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `file_id` | integer | Yes | Media upload ID (obtained from media upload endpoint) |
+| `file_id` | integer | Yes | ID of an uploaded media file |
 
 ### Example Request
 
 ```bash
-curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123def456/deal/1/file" \
+curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/deal/156/file" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json" \
   -d '{
-    "file_id": 15
+    "file_id": 12
   }'
 ```
 
@@ -1866,27 +2169,34 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123d
 {
   "msg": "Deal file added",
   "data": {
-    "deal_id": 1,
+    "deal_id": 156,
     "media": {
-      "id": 15,
-      "name": "contract.pdf",
-      "file_name": "contract.pdf",
-      "mime_type": "application/pdf",
-      "size": 2048576,
-      "url": "https://storage.example.com/files/contract.pdf",
-      "created_at": "2024-01-15T10:30:00Z"
+      "id": 12,
+      "title": "proposal.pdf",
+      "ext": "pdf",
+      "size": 204800,
+      "url": "https://storage.taskip.net/tenant-123/files/proposal.pdf",
+      "media_type": "file",
+      "createdAt": "15-02-2024 10:30:15"
     }
   },
   "status": 200
 }
 ```
 
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "Sales Pipeline not found" }` or `{ "msg": "Sales Pipeline Deal not found" }` |
+
+---
+
 ## Delete a File
 
-Delete a specific file from a deal.
+Delete a file from a deal. The file is also removed from storage.
 
 ```http
-DELETE /api/public-v1/sales-pipeline/{uuid}/deal/{id}/file/{file_id}
+DELETE /api/public-v1/sales-pipeline/{uuid}/deal/{id}/file/{file}
 ```
 
 ### Path Parameters
@@ -1894,12 +2204,17 @@ DELETE /api/public-v1/sales-pipeline/{uuid}/deal/{id}/file/{file_id}
 |-----------|------|----------|-------------|
 | `uuid` | string | Yes | Sales pipeline UUID |
 | `id` | integer | Yes | Deal ID |
-| `file_id` | integer | Yes | File/Media ID |
+| `file` | integer | Yes | Required by the route but not used; any value works |
+
+### Request Body
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `file_id` | integer | Yes | ID of the media file to delete (query string or body) |
 
 ### Example Request
 
 ```bash
-curl -X DELETE "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123def456/deal/1/file/15" \
+curl -X DELETE "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/deal/156/file/12?file_id=12" \
   -H "X-Secret-Key: your-secret-key-here"
 ```
 
@@ -1912,13 +2227,18 @@ curl -X DELETE "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc12
 }
 ```
 
-# Meeting Management
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "file not found" }`, `{ "msg": "Sales Pipeline not found" }` or `{ "msg": "Sales Pipeline Deal not found" }` |
 
-Manage meetings and appointments within sales pipeline deals. This allows you to schedule, track, and manage meetings related to specific deals.
+---
+
+# Meeting Management
 
 ## Get All Meetings
 
-Retrieve all meetings for a specific deal.
+Retrieve all meetings of a deal, newest first. The result is not paginated.
 
 ```http
 GET /api/public-v1/sales-pipeline/{uuid}/deal/{id}/meeting
@@ -1933,9 +2253,8 @@ GET /api/public-v1/sales-pipeline/{uuid}/deal/{id}/meeting
 ### Example Request
 
 ```bash
-curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123def456/deal/1/meeting" \
-  -H "X-Secret-Key: your-secret-key-here" \
-  -H "Content-Type: application/json"
+curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/deal/156/meeting" \
+  -H "X-Secret-Key: your-secret-key-here"
 ```
 
 ### Example Response
@@ -1944,48 +2263,65 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123de
 {
   "data": [
     {
-      "id": 1,
-      "title": "Project kickoff meeting",
-      "deal": 1,
-      "type": 0,
-      "description": "Initial project discussion and requirements gathering",
-      "priority": 2,
+      "id": 7,
+      "title": "Project kickoff",
+      "deal": 156,
+      "type": 2,
+      "description": "Discuss scope and timeline",
+      "priority": 1,
       "duration": 1,
       "notify_client": true,
-      "meeting_day": "Monday",
+      "meeting_day": "Thursday",
       "date": "February 15, 2024",
-      "time_slot_start": "14:00",
-      "time_slot_end": "15:00",
-      "created_at": "2 days ago",
+      "time_slot_start": "10:00",
+      "time_slot_end": "10:30",
+      "created_at": "1 day ago",
       "assignee_id": 8,
-      "location": "Conference Room A",
+      "location": null,
       "phone_number": null,
-      "meeting_url": null,
-      "google_meet_integration_id": null,
+      "meeting_url": "https://meet.google.com/abc-defg-hij",
+      "google_meet_integration_id": 3,
       "assignee": {
         "id": 8,
         "name": "Sarah Johnson",
-        "email": "sarah@company.com"
+        "email": "sarah@company.com",
+        "uuid": "a1b2c3d4-0000-4000-8000-000000000008",
+        "type": 1,
+        "image": null
       },
       "assignedBy": {
-        "id": 5,
-        "name": "Manager Name",
-        "email": "manager@company.com"
+        "id": 8,
+        "name": "Sarah Johnson",
+        "email": "sarah@company.com",
+        "uuid": "a1b2c3d4-0000-4000-8000-000000000008",
+        "type": 1,
+        "image": null
       },
-      "reminder": {
-        "id": 1,
-        "reminder_date": "2024-02-15",
-        "reminder_time": "13:30"
-      }
+      "reminder": null,
+      "is_completed": false,
+      "completed_at": null,
+      "participants": [],
+      "call_type": null,
+      "relation_to": null,
+      "repeat": false,
+      "repeat_frequency": null,
+      "repeat_until": null,
+      "repeat_until_date": null
     }
-  ],
-  "status": 200
+  ]
 }
 ```
 
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "Sales Pipeline not found" }` |
+
+---
+
 ## Create a Meeting
 
-Create a new meeting for a deal.
+Create a meeting for a deal.
 
 ```http
 POST /api/public-v1/sales-pipeline/{uuid}/deal/{id}/meeting
@@ -2000,45 +2336,41 @@ POST /api/public-v1/sales-pipeline/{uuid}/deal/{id}/meeting
 ### Request Body
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `title` | string | Yes | Meeting title (max 191 chars) |
-| `type` | integer | Yes | Meeting type (0=in-person, 1=phone, 2=google meet, 3=other) |
-| `assignee_id` | integer | Yes | User ID of assignee |
+| `title` | string | Yes | Meeting title (max 191 characters) |
+| `type` | integer | Yes | `0` In person, `1` Phone call, `2` Google Meet, `3` Zoom |
+| `assignee_id` | integer | Yes | Assignee user ID |
+| `priority` | integer | Yes | `0` Low, `1` Medium, `2` High, `3` Urgent |
+| `duration` | integer | Yes | `0` 15 minutes, `1` 30 minutes, `2` 1 hour |
+| `notify_client` | boolean | Yes | Notify the client |
+| `location` | string | Conditional | Required when `type` = `0` |
+| `phone_number` | string | Conditional | Required when `type` = `1` |
+| `google_meet_integration_id` | integer | Conditional | Required when `type` = `2` |
 | `description` | string | No | Meeting description |
-| `priority` | integer | Yes | Priority level (0-3) |
-| `duration` | integer | Yes | Duration type (0-2) |
-| `is_completed` | boolean | No | Meeting completion status |
-| `notify_client` | boolean | Yes | Whether to notify client |
-| `google_meet_integration_id` | integer | Conditional | Required if type=2 |
-| `phone_number` | string | Conditional | Required if type=1 |
-| `location` | string | Conditional | Required if type=0 |
-| `reminder` | integer | No | Reminder type |
+| `date` | string | No | Meeting date |
+| `time_slot_start` | string | No | Start time |
+| `time_slot_end` | string | No | End time |
+| `is_completed` | boolean | No | Completion flag |
+| `reminder` | integer | No | `0` 10 minutes before, `1` 30 minutes before, `2` 1 hour before, `3` 1 day before |
 | `reminder_date` | string | No | Reminder date |
 | `reminder_time` | string | No | Reminder time |
-| `time_slot_start` | string | No | Meeting start time |
-| `time_slot_end` | string | No | Meeting end time |
-| `date` | string | No | Meeting date |
 
 ### Example Request
 
 ```bash
-curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123def456/deal/1/meeting" \
+curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/deal/156/meeting" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json" \
   -d '{
-    "title": "Project kickoff meeting",
-    "type": 0,
+    "title": "Project kickoff",
+    "type": 2,
     "assignee_id": 8,
-    "description": "Initial project discussion and requirements gathering",
-    "priority": 2,
+    "priority": 1,
     "duration": 1,
     "notify_client": true,
-    "location": "Conference Room A",
-    "time_slot_start": "14:00",
-    "time_slot_end": "15:00",
+    "google_meet_integration_id": 3,
     "date": "2024-02-15",
-    "reminder": 1,
-    "reminder_date": "2024-02-15",
-    "reminder_time": "13:30"
+    "time_slot_start": "10:00",
+    "time_slot_end": "10:30"
   }'
 ```
 
@@ -2048,46 +2380,65 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123d
 {
   "msg": "Meeting Added successfully",
   "data": {
-    "id": 1,
-    "title": "Project kickoff meeting",
-    "deal": 1,
-    "type": 0,
-    "description": "Initial project discussion and requirements gathering",
-    "priority": 2,
+    "id": 7,
+    "title": "Project kickoff",
+    "deal": 156,
+    "type": 2,
+    "description": "Discuss scope and timeline",
+    "priority": 1,
     "duration": 1,
     "notify_client": true,
-    "meeting_day": "Monday",
+    "meeting_day": "Thursday",
     "date": "February 15, 2024",
-    "time_slot_start": "14:00",
-    "time_slot_end": "15:00",
-    "created_at": "just now",
+    "time_slot_start": "10:00",
+    "time_slot_end": "10:30",
+    "created_at": "1 day ago",
     "assignee_id": 8,
-    "location": "Conference Room A",
+    "location": null,
     "phone_number": null,
-    "meeting_url": null,
-    "google_meet_integration_id": null,
+    "meeting_url": "https://meet.google.com/abc-defg-hij",
+    "google_meet_integration_id": 3,
     "assignee": {
       "id": 8,
       "name": "Sarah Johnson",
-      "email": "sarah@company.com"
+      "email": "sarah@company.com",
+      "uuid": "a1b2c3d4-0000-4000-8000-000000000008",
+      "type": 1,
+      "image": null
     },
     "assignedBy": {
-      "id": 5,
-      "name": "Manager Name",
-      "email": "manager@company.com"
+      "id": 8,
+      "name": "Sarah Johnson",
+      "email": "sarah@company.com",
+      "uuid": "a1b2c3d4-0000-4000-8000-000000000008",
+      "type": 1,
+      "image": null
     },
-    "reminder": {
-      "id": 1,
-      "reminder_date": "2024-02-15",
-      "reminder_time": "13:30"
-    }
+    "reminder": null,
+    "is_completed": false,
+    "completed_at": null,
+    "participants": [],
+    "call_type": null,
+    "relation_to": null,
+    "repeat": false,
+    "repeat_frequency": null,
+    "repeat_until": null,
+    "repeat_until_date": null
   }
 }
 ```
 
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "Sales Pipeline not found" }` or `{ "msg": "Sales Pipeline Deal not found" }` |
+| `422` | Validation failed: `{ "error": { "<field>": ["message"] } }` |
+
+---
+
 ## Get a Specific Meeting
 
-Retrieve details of a specific meeting.
+Retrieve a specific meeting. The response is the meeting object itself (no `data` wrapper).
 
 ```http
 GET /api/public-v1/sales-pipeline/{uuid}/deal/{id}/meeting/{meeting_id}
@@ -2103,60 +2454,75 @@ GET /api/public-v1/sales-pipeline/{uuid}/deal/{id}/meeting/{meeting_id}
 ### Example Request
 
 ```bash
-curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123def456/deal/1/meeting/1" \
-  -H "X-Secret-Key: your-secret-key-here" \
-  -H "Content-Type: application/json"
+curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/deal/156/meeting/7" \
+  -H "X-Secret-Key: your-secret-key-here"
 ```
 
 ### Example Response
 
 ```json
 {
-  "data": {
-    "id": 1,
-    "title": "Project kickoff meeting",
-    "deal": 1,
-    "type": 0,
-    "description": "Initial project discussion and requirements gathering",
-    "priority": 2,
-    "duration": 1,
-    "notify_client": true,
-    "meeting_day": "Monday",
-    "date": "February 15, 2024",
-    "time_slot_start": "14:00",
-    "time_slot_end": "15:00",
-    "created_at": "2 days ago",
-    "assignee_id": 8,
-    "location": "Conference Room A",
-    "phone_number": null,
-    "meeting_url": null,
-    "google_meet_integration_id": null,
-    "assignee": {
-      "id": 8,
-      "name": "Sarah Johnson",
-      "email": "sarah@company.com"
-    },
-    "assignedBy": {
-      "id": 5,
-      "name": "Manager Name",
-      "email": "manager@company.com"
-    },
-    "reminder": {
-      "id": 1,
-      "reminder_date": "2024-02-15",
-      "reminder_time": "13:30"
-    }
+  "id": 7,
+  "title": "Project kickoff",
+  "deal": 156,
+  "type": 2,
+  "description": "Discuss scope and timeline",
+  "priority": 1,
+  "duration": 1,
+  "notify_client": true,
+  "meeting_day": "Thursday",
+  "date": "February 15, 2024",
+  "time_slot_start": "10:00",
+  "time_slot_end": "10:30",
+  "created_at": "1 day ago",
+  "assignee_id": 8,
+  "location": null,
+  "phone_number": null,
+  "meeting_url": "https://meet.google.com/abc-defg-hij",
+  "google_meet_integration_id": 3,
+  "assignee": {
+    "id": 8,
+    "name": "Sarah Johnson",
+    "email": "sarah@company.com",
+    "uuid": "a1b2c3d4-0000-4000-8000-000000000008",
+    "type": 1,
+    "image": null
   },
-  "status": 200
+  "assignedBy": {
+    "id": 8,
+    "name": "Sarah Johnson",
+    "email": "sarah@company.com",
+    "uuid": "a1b2c3d4-0000-4000-8000-000000000008",
+    "type": 1,
+    "image": null
+  },
+  "reminder": null,
+  "is_completed": false,
+  "completed_at": null,
+  "participants": [],
+  "call_type": null,
+  "relation_to": null,
+  "repeat": false,
+  "repeat_frequency": null,
+  "repeat_until": null,
+  "repeat_until_date": null
 }
 ```
 
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "Sales Pipeline not found" }` or `{ "msg": "task not found" }` (meeting not found) |
+
+---
+
 ## Update a Meeting
 
-Update an existing meeting.
+Update a meeting. `PUT` and `PATCH` are handled identically: the body is validated like [Create a Meeting](#create-a-meeting), so all required fields must be sent.
 
 ```http
 PUT /api/public-v1/sales-pipeline/{uuid}/deal/{id}/meeting/{meeting_id}
+PATCH /api/public-v1/sales-pipeline/{uuid}/deal/{id}/meeting/{meeting_id}
 ```
 
 ### Path Parameters
@@ -2167,23 +2533,43 @@ PUT /api/public-v1/sales-pipeline/{uuid}/deal/{id}/meeting/{meeting_id}
 | `meeting_id` | integer | Yes | Meeting ID |
 
 ### Request Body
-Same fields as create meeting. All fields are required for updates.
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `title` | string | Yes | Meeting title (max 191 characters) |
+| `type` | integer | Yes | `0` In person, `1` Phone call, `2` Google Meet, `3` Zoom |
+| `assignee_id` | integer | Yes | Assignee user ID |
+| `priority` | integer | Yes | `0` Low, `1` Medium, `2` High, `3` Urgent |
+| `duration` | integer | Yes | `0` 15 minutes, `1` 30 minutes, `2` 1 hour |
+| `notify_client` | boolean | Yes | Notify the client |
+| `location` | string | Conditional | Required when `type` = `0` |
+| `phone_number` | string | Conditional | Required when `type` = `1` |
+| `google_meet_integration_id` | integer | Conditional | Required when `type` = `2` |
+| `description` | string | No | Meeting description |
+| `date` | string | No | Meeting date |
+| `time_slot_start` | string | No | Start time |
+| `time_slot_end` | string | No | End time |
+| `is_completed` | boolean | No | Completion flag |
+| `reminder` | integer | No | `0` 10 minutes before, `1` 30 minutes before, `2` 1 hour before, `3` 1 day before |
+| `reminder_date` | string | No | Reminder date |
+| `reminder_time` | string | No | Reminder time |
 
 ### Example Request
 
 ```bash
-curl -X PUT "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123def456/deal/1/meeting/1" \
+curl -X PUT "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/deal/156/meeting/7" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json" \
   -d '{
-    "title": "Updated project kickoff meeting",
-    "type": 0,
+    "title": "Project kickoff (rescheduled)",
+    "type": 2,
     "assignee_id": 8,
-    "description": "Updated meeting description",
-    "priority": 3,
-    "duration": 2,
+    "priority": 1,
+    "duration": 1,
     "notify_client": true,
-    "location": "Conference Room B"
+    "google_meet_integration_id": 3,
+    "date": "2024-02-15",
+    "time_slot_start": "11:00",
+    "time_slot_end": "11:30"
   }'
 ```
 
@@ -2193,46 +2579,65 @@ curl -X PUT "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123de
 {
   "msg": "Meeting Update successfully",
   "data": {
-    "id": 1,
-    "title": "Updated project kickoff meeting",
-    "deal": 1,
-    "type": 0,
-    "description": "Updated meeting description",
-    "priority": 3,
-    "duration": 2,
+    "id": 7,
+    "title": "Project kickoff (rescheduled)",
+    "deal": 156,
+    "type": 2,
+    "description": "Discuss scope and timeline",
+    "priority": 1,
+    "duration": 1,
     "notify_client": true,
-    "meeting_day": "Monday",
+    "meeting_day": "Thursday",
     "date": "February 15, 2024",
-    "time_slot_start": "14:00",
-    "time_slot_end": "15:00",
-    "created_at": "2 days ago",
+    "time_slot_start": "10:00",
+    "time_slot_end": "10:30",
+    "created_at": "1 day ago",
     "assignee_id": 8,
-    "location": "Conference Room B",
+    "location": null,
     "phone_number": null,
-    "meeting_url": null,
-    "google_meet_integration_id": null,
+    "meeting_url": "https://meet.google.com/abc-defg-hij",
+    "google_meet_integration_id": 3,
     "assignee": {
       "id": 8,
       "name": "Sarah Johnson",
-      "email": "sarah@company.com"
+      "email": "sarah@company.com",
+      "uuid": "a1b2c3d4-0000-4000-8000-000000000008",
+      "type": 1,
+      "image": null
     },
     "assignedBy": {
-      "id": 5,
-      "name": "Manager Name",
-      "email": "manager@company.com"
+      "id": 8,
+      "name": "Sarah Johnson",
+      "email": "sarah@company.com",
+      "uuid": "a1b2c3d4-0000-4000-8000-000000000008",
+      "type": 1,
+      "image": null
     },
-    "reminder": {
-      "id": 1,
-      "reminder_date": "2024-02-15",
-      "reminder_time": "13:30"
-    }
+    "reminder": null,
+    "is_completed": false,
+    "completed_at": null,
+    "participants": [],
+    "call_type": null,
+    "relation_to": null,
+    "repeat": false,
+    "repeat_frequency": null,
+    "repeat_until": null,
+    "repeat_until_date": null
   }
 }
 ```
 
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "meeting not found" }`, `{ "msg": "Sales Pipeline not found" }` or `{ "msg": "Sales Pipeline Deal not found" }` |
+| `422` | Validation failed: `{ "error": { "<field>": ["message"] } }` |
+
+---
+
 ## Delete a Meeting
 
-Delete a specific meeting.
+Delete a meeting.
 
 ```http
 DELETE /api/public-v1/sales-pipeline/{uuid}/deal/{id}/meeting/{meeting_id}
@@ -2248,7 +2653,7 @@ DELETE /api/public-v1/sales-pipeline/{uuid}/deal/{id}/meeting/{meeting_id}
 ### Example Request
 
 ```bash
-curl -X DELETE "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123def456/deal/1/meeting/1" \
+curl -X DELETE "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/deal/156/meeting/7" \
   -H "X-Secret-Key: your-secret-key-here"
 ```
 
@@ -2260,9 +2665,16 @@ curl -X DELETE "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc12
 }
 ```
 
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "Meeting not found" }` or `{ "msg": "Sales Pipeline not found" }` |
+
+---
+
 ## Meeting Bulk Actions
 
-Perform bulk operations on meetings.
+Delete several meetings in one request.
 
 ```http
 POST /api/public-v1/sales-pipeline/{uuid}/deal/{id}/meeting/bulk-actions
@@ -2277,18 +2689,19 @@ POST /api/public-v1/sales-pipeline/{uuid}/deal/{id}/meeting/bulk-actions
 ### Request Body
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `ids` | array | Yes | Array of meeting IDs |
-| `action` | string | Yes | Action to perform (e.g., "delete") |
+| `ids` | array | Yes | Meeting IDs to delete |
 
 ### Example Request
 
 ```bash
-curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123def456/deal/1/meeting/bulk-actions" \
+curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/deal/156/meeting/bulk-actions" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json" \
   -d '{
-    "ids": [1, 2, 3],
-    "action": "delete"
+    "ids": [
+      7,
+      8
+    ]
   }'
 ```
 
@@ -2300,9 +2713,16 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123d
 }
 ```
 
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `400` | `{ "msg": "Data not found" }` when `ids` is empty |
+
+---
+
 ## Complete Meeting
 
-Mark a meeting as completed or incomplete.
+Mark a meeting as completed. Completing a meeting also removes its reminder.
 
 ```http
 POST /api/public-v1/sales-pipeline/{uuid}/deal/{id}/meeting/{meeting_id}/complete
@@ -2318,16 +2738,16 @@ POST /api/public-v1/sales-pipeline/{uuid}/deal/{id}/meeting/{meeting_id}/complet
 ### Request Body
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `is_completed` | boolean | Yes | Completion status (true/false) |
+| `is_completed` | integer | Yes | `1` to complete, `0` to mark as not completed |
 
 ### Example Request
 
 ```bash
-curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123def456/deal/1/meeting/1/complete" \
+curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/deal/156/meeting/7/complete" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json" \
   -d '{
-    "is_completed": true
+    "is_completed": 1
   }'
 ```
 
@@ -2337,42 +2757,69 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123d
 {
   "msg": "Meeting Marked Completed",
   "data": {
-    "id": 1,
-    "title": "Project kickoff meeting",
-    "deal_id": 1,
-    "type": 0,
-    "due_date": "2024-02-15",
-    "due_time": "14:00",
-    "priority": 2,
-    "description": "Initial project discussion and requirements gathering",
-    "is_completed": true,
+    "id": 7,
+    "title": "Project kickoff",
+    "deal": 156,
+    "type": 2,
+    "description": "Discuss scope and timeline",
+    "priority": 1,
+    "duration": 1,
+    "notify_client": true,
+    "meeting_day": "Thursday",
+    "date": "February 15, 2024",
+    "time_slot_start": "10:00",
+    "time_slot_end": "10:30",
+    "created_at": "1 day ago",
+    "assignee_id": 8,
+    "location": null,
+    "phone_number": null,
+    "meeting_url": "https://meet.google.com/abc-defg-hij",
+    "google_meet_integration_id": 3,
     "assignee": {
       "id": 8,
       "name": "Sarah Johnson",
-      "email": "sarah@company.com"
+      "email": "sarah@company.com",
+      "uuid": "a1b2c3d4-0000-4000-8000-000000000008",
+      "type": 1,
+      "image": null
     },
     "assignedBy": {
-      "id": 5,
-      "name": "Manager Name",
-      "email": "manager@company.com"
+      "id": 8,
+      "name": "Sarah Johnson",
+      "email": "sarah@company.com",
+      "uuid": "a1b2c3d4-0000-4000-8000-000000000008",
+      "type": 1,
+      "image": null
     },
-    "reminder": {
-      "id": 1,
-      "reminder_date": "2024-02-15",
-      "reminder_time": "13:30"
-    },
-    "repeat": null
+    "reminder": null,
+    "is_completed": true,
+    "completed_at": "2024-02-15T10:35:00.000000Z",
+    "participants": [],
+    "call_type": null,
+    "relation_to": null,
+    "repeat": false,
+    "repeat_frequency": null,
+    "repeat_until": null,
+    "repeat_until_date": null
   }
 }
 ```
 
-# Note Management
+The `data` object is the meeting object (same shape as [Create a Meeting](#create-a-meeting)). Send `is_completed` as `0` to mark the meeting as not completed again; the message is then `Meeting Marked Incomplete` and `completed_at` is `null`.
 
-Manage notes and comments within sales pipeline deals. This allows you to add, view, edit, and delete notes related to specific deals for better communication and tracking.
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "meeting not found" }` or `{ "msg": "Sales Pipeline not found" }` |
+| `422` | `{ "error": { "msg": ["is completed field is required"] } }` |
+
+---
+
+# Note Management
 
 ## Get All Notes
 
-Retrieve all notes for a specific deal.
+Retrieve all notes of a deal, newest first. The result is not paginated. There is no endpoint to retrieve a single note.
 
 ```http
 GET /api/public-v1/sales-pipeline/{uuid}/deal/{id}/note
@@ -2387,9 +2834,8 @@ GET /api/public-v1/sales-pipeline/{uuid}/deal/{id}/note
 ### Example Request
 
 ```bash
-curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123def456/deal/1/note" \
-  -H "X-Secret-Key: your-secret-key-here" \
-  -H "Content-Type: application/json"
+curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/deal/156/note" \
+  -H "X-Secret-Key: your-secret-key-here"
 ```
 
 ### Example Response
@@ -2398,33 +2844,32 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123de
 {
   "data": [
     {
-      "id": 1,
-      "description": "Initial client contact went well. They seem interested in our services.",
+      "id": 9,
+      "description": "Client prefers email contact",
       "createdBy": {
         "id": 8,
         "name": "Sarah Johnson",
-        "email": "sarah@company.com"
+        "email": "sarah@company.com",
+        "uuid": "a1b2c3d4-0000-4000-8000-000000000008",
+        "type": 1,
+        "image": null
       },
-      "createdAt": "Mon 15 2024 02:30PM"
-    },
-    {
-      "id": 2,
-      "description": "Follow-up meeting scheduled for next week to discuss project details.",
-      "createdBy": {
-        "id": 5,
-        "name": "Manager Name",
-        "email": "manager@company.com"
-      },
-      "createdAt": "Tue 16 2024 10:15AM"
+      "createdAt": "Thu 02 2024 10:15AM"
     }
-  ],
-  "status": 200
+  ]
 }
 ```
 
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "Sales Pipeline not found" }` |
+
+---
+
 ## Create a Note
 
-Create a new note for a deal.
+Add a note to a deal.
 
 ```http
 POST /api/public-v1/sales-pipeline/{uuid}/deal/{id}/note
@@ -2439,16 +2884,16 @@ POST /api/public-v1/sales-pipeline/{uuid}/deal/{id}/note
 ### Request Body
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `description` | string | Yes | Note content/description |
+| `description` | string | Yes | Note text |
 
 ### Example Request
 
 ```bash
-curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123def456/deal/1/note" \
+curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/deal/156/note" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json" \
   -d '{
-    "description": "Client expressed interest in premium package. Need to send detailed proposal."
+    "description": "Client prefers email contact"
   }'
 ```
 
@@ -2458,24 +2903,36 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123d
 {
   "msg": "Notes Added Successfully",
   "data": {
-    "id": 3,
-    "description": "Client expressed interest in premium package. Need to send detailed proposal.",
+    "id": 9,
+    "description": "Client prefers email contact",
     "createdBy": {
       "id": 8,
       "name": "Sarah Johnson",
-      "email": "sarah@company.com"
+      "email": "sarah@company.com",
+      "uuid": "a1b2c3d4-0000-4000-8000-000000000008",
+      "type": 1,
+      "image": null
     },
-    "createdAt": "Wed 17 2024 03:45PM"
+    "createdAt": "Thu 02 2024 10:15AM"
   }
 }
 ```
 
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "Sales Pipeline not found" }` or `{ "msg": "Sales Pipeline Deal not found" }` |
+| `422` | Validation failed: `{ "error": { "description": ["..."] } }` |
+
+---
+
 ## Update a Note
 
-Update an existing note.
+Update a note. Only the user who created the note can update it. `PUT` and `PATCH` are handled identically.
 
 ```http
 PUT /api/public-v1/sales-pipeline/{uuid}/deal/{id}/note/{note_id}
+PATCH /api/public-v1/sales-pipeline/{uuid}/deal/{id}/note/{note_id}
 ```
 
 ### Path Parameters
@@ -2488,16 +2945,16 @@ PUT /api/public-v1/sales-pipeline/{uuid}/deal/{id}/note/{note_id}
 ### Request Body
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `description` | string | Yes | Updated note content/description |
+| `description` | string | Yes | New note text |
 
 ### Example Request
 
 ```bash
-curl -X PUT "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123def456/deal/1/note/3" \
+curl -X PUT "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/deal/156/note/9" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json" \
   -d '{
-    "description": "Client confirmed interest in premium package. Proposal sent and waiting for response."
+    "description": "Client prefers phone contact"
   }'
 ```
 
@@ -2507,21 +2964,32 @@ curl -X PUT "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123de
 {
   "msg": "Notes Updated Successfully",
   "data": {
-    "id": 3,
-    "description": "Client confirmed interest in premium package. Proposal sent and waiting for response.",
+    "id": 9,
+    "description": "Client prefers phone contact",
     "createdBy": {
       "id": 8,
       "name": "Sarah Johnson",
-      "email": "sarah@company.com"
+      "email": "sarah@company.com",
+      "uuid": "a1b2c3d4-0000-4000-8000-000000000008",
+      "type": 1,
+      "image": null
     },
-    "createdAt": "Wed 17 2024 03:45PM"
+    "createdAt": "Thu 02 2024 10:15AM"
   }
 }
 ```
 
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "Note not found" }`, `{ "msg": "Sales Pipeline not found" }` or `{ "msg": "Sales Pipeline Deal not found" }` |
+| `422` | `{ "msg": "You can only edit your own note" }` |
+
+---
+
 ## Delete a Note
 
-Delete a specific note.
+Delete a note. Only the user who created the note can delete it.
 
 ```http
 DELETE /api/public-v1/sales-pipeline/{uuid}/deal/{id}/note/{note_id}
@@ -2537,7 +3005,7 @@ DELETE /api/public-v1/sales-pipeline/{uuid}/deal/{id}/note/{note_id}
 ### Example Request
 
 ```bash
-curl -X DELETE "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123def456/deal/1/note/3" \
+curl -X DELETE "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/deal/156/note/9" \
   -H "X-Secret-Key: your-secret-key-here"
 ```
 
@@ -2549,9 +3017,17 @@ curl -X DELETE "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc12
 }
 ```
 
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "Note not found" }`, `{ "msg": "Sales Pipeline not found" }` or `{ "msg": "Sales Pipeline Deal not found" }` |
+| `422` | `{ "msg": "You can only edit your own note" }` |
+
+---
+
 ## Note Bulk Actions
 
-Perform bulk operations on notes.
+Delete several notes of a deal in one request.
 
 ```http
 POST /api/public-v1/sales-pipeline/{uuid}/deal/{id}/note/bulk-actions
@@ -2566,18 +3042,19 @@ POST /api/public-v1/sales-pipeline/{uuid}/deal/{id}/note/bulk-actions
 ### Request Body
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `ids` | array | Yes | Array of note IDs to delete |
-| `action` | string | Yes | Action to perform (e.g., "delete") |
+| `ids` | array | Yes | Note IDs to delete |
 
 ### Example Request
 
 ```bash
-curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123def456/deal/1/note/bulk-actions" \
+curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/deal/156/note/bulk-actions" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json" \
   -d '{
-    "ids": [1, 2, 3],
-    "action": "delete"
+    "ids": [
+      9,
+      10
+    ]
   }'
 ```
 
@@ -2589,24 +3066,36 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/abc123d
 }
 ```
 
-# Attribute Management
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "Notes not found" }`, `{ "msg": "Sales Pipeline not found" }` or `{ "msg": "Sales Pipeline Deal not found" }` |
 
-Manage custom attributes for the sales pipeline system. Attributes allow you to create custom fields and properties that can be used to categorize and filter deals, stages, and other pipeline elements.
+---
 
-## Get All Attributes
+# Activity Management
 
-Retrieve all sales pipeline attributes.
+Activities are the timeline entries of a deal. Entries you create through this API are editable; entries generated by the system (task, meeting, note and deal changes) are returned by the list but belong to the system user. There is no endpoint to retrieve a single activity.
+
+## Get All Activities
+
+Retrieve all activities of a deal, newest first. The result is not paginated.
 
 ```http
-GET /api/public-v1/sales-pipeline/attributes
+GET /api/public-v1/sales-pipeline/{uuid}/deal/{id}/activity
 ```
+
+### Path Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `uuid` | string | Yes | Sales pipeline UUID |
+| `id` | integer | Yes | Deal ID |
 
 ### Example Request
 
 ```bash
-curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline/attributes" \
-  -H "X-Secret-Key: your-secret-key-here" \
-  -H "Content-Type: application/json"
+curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/deal/156/activity" \
+  -H "X-Secret-Key: your-secret-key-here"
 ```
 
 ### Example Response
@@ -2615,34 +3104,412 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline/attribut
 {
   "data": [
     {
-      "id": 1,
-      "title": "Priority Level",
-      "color": "#FF5722",
-      "status": "active",
-      "type": "priority"
-    },
-    {
-      "id": 2,
-      "title": "Industry Type",
-      "color": "#2196F3",
-      "status": "active",
-      "type": "category"
-    },
-    {
-      "id": 3,
-      "title": "Deal Source",
-      "color": "#4CAF50",
-      "status": "active",
-      "type": "source"
+      "type": 13,
+      "deal_id": 156,
+      "time": "14:30",
+      "date": "2024-02-15",
+      "description": "Sent proposal by email",
+      "created_by": {
+        "id": 8,
+        "name": "Sarah Johnson",
+        "email": "sarah@company.com",
+        "uuid": "a1b2c3d4-0000-4000-8000-000000000008",
+        "type": 1,
+        "image": null
+      },
+      "created_at": "1 hour ago",
+      "id": 21,
+      "metadata": null,
+      "message": null,
+      "editable": true
     }
-  ],
-  "status": 200
+  ]
 }
 ```
 
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "Sales Pipeline not found" }` |
+
+---
+
+## Create an Activity
+
+Log an activity on a deal.
+
+```http
+POST /api/public-v1/sales-pipeline/{uuid}/deal/{id}/activity
+```
+
+### Path Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `uuid` | string | Yes | Sales pipeline UUID |
+| `id` | integer | Yes | Deal ID |
+
+### Request Body
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `type` | integer | Yes | Activity type. `0` task created, `1` task updated, `2` task completed, `3` meeting created, `4` meeting updated, `5` meeting completed, `6` note created, `7` note updated, `8` log SMS, `9` log LinkedIn message, `10` log WhatsApp message, `11` log call, `12` log meeting, `13` log email, `14` others, and the other values of the activity type enum (`15`-`37`) |
+| `description` | string | Yes | Activity description |
+| `date` | string | No | Activity date |
+| `time` | string | No | Activity time |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/deal/156/activity" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": 13,
+    "date": "2024-02-15",
+    "time": "14:30",
+    "description": "Sent proposal by email"
+  }'
+```
+
+### Example Response
+
+```json
+{
+  "data": {
+    "type": 13,
+    "deal_id": 156,
+    "time": "14:30",
+    "date": "2024-02-15",
+    "description": "Sent proposal by email",
+    "created_by": {
+      "id": 8,
+      "name": "Sarah Johnson",
+      "email": "sarah@company.com",
+      "uuid": "a1b2c3d4-0000-4000-8000-000000000008",
+      "type": 1,
+      "image": null
+    },
+    "created_at": "1 hour ago",
+    "id": 21,
+    "metadata": null,
+    "message": null,
+    "editable": true
+  },
+  "msg": "Activity log Added Successfully"
+}
+```
+
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "Sales Pipeline not found" }` or `{ "msg": "Sales Pipeline Deal not found" }` |
+| `422` | Validation failed: `{ "error": { "<field>": ["message"] } }` |
+
+---
+
+## Update an Activity
+
+Update an activity. Only the user who created the activity can update it (otherwise `404`). `PUT` and `PATCH` are handled identically: `type` and `description` are required on every call.
+
+```http
+PUT /api/public-v1/sales-pipeline/{uuid}/deal/{id}/activity/{activity_id}
+PATCH /api/public-v1/sales-pipeline/{uuid}/deal/{id}/activity/{activity_id}
+```
+
+### Path Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `uuid` | string | Yes | Sales pipeline UUID |
+| `id` | integer | Yes | Deal ID |
+| `activity_id` | integer | Yes | Activity ID |
+
+### Request Body
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `type` | integer | Yes | Activity type. `0` task created, `1` task updated, `2` task completed, `3` meeting created, `4` meeting updated, `5` meeting completed, `6` note created, `7` note updated, `8` log SMS, `9` log LinkedIn message, `10` log WhatsApp message, `11` log call, `12` log meeting, `13` log email, `14` others, and the other values of the activity type enum (`15`-`37`) |
+| `description` | string | Yes | Activity description |
+| `date` | string | No | Activity date |
+| `time` | string | No | Activity time |
+
+### Example Request
+
+```bash
+curl -X PUT "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/deal/156/activity/21" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": 13,
+    "description": "Sent revised proposal by email"
+  }'
+```
+
+### Example Response
+
+```json
+{
+  "data": {
+    "type": 13,
+    "deal_id": 156,
+    "time": "14:30",
+    "date": "2024-02-15",
+    "description": "Sent revised proposal by email",
+    "created_by": {
+      "id": 8,
+      "name": "Sarah Johnson",
+      "email": "sarah@company.com",
+      "uuid": "a1b2c3d4-0000-4000-8000-000000000008",
+      "type": 1,
+      "image": null
+    },
+    "created_at": "1 hour ago",
+    "id": 21,
+    "metadata": null,
+    "message": null,
+    "editable": true
+  },
+  "msg": "Activity log Updated Successfully"
+}
+```
+
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "Activity not found" }`, `{ "msg": "You can not edit this activity log" }`, `{ "msg": "Sales Pipeline not found" }` or `{ "msg": "Sales Pipeline Deal not found" }` |
+| `422` | Validation failed: `{ "error": { "<field>": ["message"] } }` |
+
+---
+
+## Delete an Activity
+
+Delete an activity. Only the user who created the activity can delete it.
+
+```http
+DELETE /api/public-v1/sales-pipeline/{uuid}/deal/{id}/activity/{activity_id}
+```
+
+### Path Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `uuid` | string | Yes | Sales pipeline UUID |
+| `id` | integer | Yes | Deal ID |
+| `activity_id` | integer | Yes | Activity ID |
+
+### Example Request
+
+```bash
+curl -X DELETE "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/deal/156/activity/21" \
+  -H "X-Secret-Key: your-secret-key-here"
+```
+
+### Example Response
+
+```json
+{
+  "msg": "Activity log Deleted Successfully"
+}
+```
+
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "Activity not found" }`, `{ "msg": "You can not delete this activity log" }`, `{ "msg": "Sales Pipeline not found" }` or `{ "msg": "Sales Pipeline Deal not found" }` |
+
+---
+
+## Activity Bulk Actions
+
+Delete several activities of a deal. All listed activities must have been created by the calling user; the request stops at the first activity that was not.
+
+```http
+POST /api/public-v1/sales-pipeline/{uuid}/deal/{id}/activity/bulk-actions
+```
+
+### Path Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `uuid` | string | Yes | Sales pipeline UUID |
+| `id` | integer | Yes | Deal ID |
+
+### Request Body
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `ids` | array | Yes | Activity IDs to delete |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/deal/156/activity/bulk-actions" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ids": [
+      21,
+      22
+    ]
+  }'
+```
+
+### Example Response
+
+```json
+{
+  "msg": "Activity log Deleted Successfully"
+}
+```
+
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "Activity not found" }`, `{ "msg": "You can not delete this activity log. Id is <id>" }`, `{ "msg": "Sales Pipeline not found" }` or `{ "msg": "Sales Pipeline Deal not found" }` |
+
+---
+
+## Send Activity Mail
+
+Send an email from the workspace's connected mailbox to a contact and log it on the deal as a `Mail sent` activity (type `18`).
+
+```http
+POST /api/public-v1/sales-pipeline/{uuid}/deal/{id}/activity/send-mail
+```
+
+### Path Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `uuid` | string | Yes | Sales pipeline UUID |
+| `id` | integer | Yes | Deal ID |
+
+### Request Body
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `subject` | string | Yes | Email subject |
+| `from_email` | string | Yes (not validated) | Connected sender address |
+| `to_email` | string | Yes (not validated) | Recipient address |
+| `message` | string | No | Email body (HTML) |
+| `cc` | string | No | Comma-separated CC addresses |
+| `bcc` | string | No | Comma-separated BCC addresses |
+| `attachment` | array | No | Attachments |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/pipeline-abc123def456/deal/156/activity/send-mail" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "subject": "Proposal",
+    "from_email": "sales@company.com",
+    "to_email": "john@techsolutions.com",
+    "message": "<p>Please find our proposal.</p>",
+    "cc": "manager@company.com"
+  }'
+```
+
+### Example Response
+
+```json
+{
+  "data": {
+    "uuid": "c3d4e5f6-0000-4000-8000-000000000001",
+    "subject": "Proposal",
+    "from_email": "sales@company.com",
+    "to_email": "john@techsolutions.com"
+  },
+  "msg": "Message Send Successful",
+  "activity": {
+    "type": 18,
+    "deal_id": 156,
+    "time": "14:30",
+    "date": "2024-02-15",
+    "description": "Sent proposal by email",
+    "created_by": {
+      "id": 8,
+      "name": "Sarah Johnson",
+      "email": "sarah@company.com",
+      "uuid": "a1b2c3d4-0000-4000-8000-000000000008",
+      "type": 1,
+      "image": null
+    },
+    "created_at": "1 hour ago",
+    "id": 21,
+    "metadata": "{\"subject\":\"Proposal\",\"cc\":[\"manager@company.com\"],\"bcc\":[],\"email_body\":\"<p>Please find our proposal.</p>\",\"send_form\":\"sales@company.com\"}",
+    "message": null,
+    "editable": false
+  }
+}
+```
+
+`data` is the created inbox conversation (abbreviated above).
+
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `404` | `{ "msg": "Workspace Connected Mail Not Found" }` or `{ "msg": "Workspace Not Found" }` |
+| `422` | Validation failed (standard Laravel shape) |
+
+---
+
+# Attribute Management
+
+Sales pipeline attributes are tags/labels used on deals. `type` values: `0` stages, `1` labels, `2` category, `3` source.
+
+## Get All Attributes
+
+Retrieve attributes of one type, newest first. There is no endpoint to retrieve a single attribute.
+
+```http
+GET /api/public-v1/sales-pipeline/attributes
+```
+
+### Query Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `type` | integer | Yes (in practice) | Attribute type. When omitted, no rows match |
+| `item` | integer | No | Items per page (default: 10). `0` returns all |
+| `page` | integer | No | Page number |
+| `search` | string | No | Search in attribute title |
+
+### Example Request
+
+```bash
+curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline/attributes?type=3" \
+  -H "X-Secret-Key: your-secret-key-here"
+```
+
+### Example Response
+
+```json
+{
+  "data": [
+    {
+      "id": 4,
+      "title": "Referral",
+      "color": "blue",
+      "status": null,
+      "type": 3
+    }
+  ],
+  "links": {
+    "first": "https://public-api.taskip.net/api/public-v1/sales-pipeline/attributes?page=1",
+    "last": "https://public-api.taskip.net/api/public-v1/sales-pipeline/attributes?page=1",
+    "prev": null,
+    "next": null
+  },
+  "meta": {
+    "current_page": 1,
+    "from": 1,
+    "last_page": 1,
+    "path": "https://public-api.taskip.net/api/public-v1/sales-pipeline/attributes",
+    "per_page": 10,
+    "to": 1,
+    "total": 1
+  }
+}
+```
+
+---
+
 ## Create an Attribute
 
-Create a new sales pipeline attribute.
+Create a new attribute.
 
 ```http
 POST /api/public-v1/sales-pipeline/attributes
@@ -2651,9 +3518,9 @@ POST /api/public-v1/sales-pipeline/attributes
 ### Request Body
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `title` | string | Yes | Attribute title/name (max 191 chars) |
-| `color` | string | Yes | Attribute color (max 191 chars) |
-| `type` | string | Yes | Attribute type (max 191 chars) |
+| `title` | string | Yes | Attribute title (max 191 characters) |
+| `color` | string | Yes | Color (max 191 characters) |
+| `type` | integer | Yes | Attribute type (`0`-`3`, see above) |
 
 ### Example Request
 
@@ -2662,9 +3529,9 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/attribu
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json" \
   -d '{
-    "title": "Company Size",
-    "color": "#9C27B0",
-    "type": "category"
+    "title": "Referral",
+    "color": "blue",
+    "type": 3
   }'
 ```
 
@@ -2672,59 +3539,31 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/attribu
 
 ```json
 {
-  "msg": "Attribute Created Successfully",
+  "msg": "New Entry Added",
   "data": {
     "id": 4,
-    "title": "Company Size",
-    "color": "#9C27B0",
-    "status": "active",
-    "type": "category"
+    "title": "Referral",
+    "color": "blue",
+    "status": null,
+    "type": 3
   }
 }
 ```
 
-## Get a Specific Attribute
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `422` | Validation failed (standard Laravel shape: `{ "message": "...", "errors": { ... } }`) |
 
-Retrieve details of a specific attribute.
-
-```http
-GET /api/public-v1/sales-pipeline/attributes/{id}
-```
-
-### Path Parameters
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | integer | Yes | Attribute ID |
-
-### Example Request
-
-```bash
-curl -X GET "https://public-api.taskip.net/api/public-v1/sales-pipeline/attributes/1" \
-  -H "X-Secret-Key: your-secret-key-here" \
-  -H "Content-Type: application/json"
-```
-
-### Example Response
-
-```json
-{
-  "data": {
-    "id": 1,
-    "title": "Priority Level",
-    "color": "#FF5722",
-    "status": "active",
-    "type": "priority"
-  },
-  "status": 200
-}
-```
+---
 
 ## Update an Attribute
 
-Update an existing attribute.
+Update an attribute. `PUT` and `PATCH` are handled identically: `title`, `color` and `type` are required on every call.
 
 ```http
 PUT /api/public-v1/sales-pipeline/attributes/{id}
+PATCH /api/public-v1/sales-pipeline/attributes/{id}
 ```
 
 ### Path Parameters
@@ -2735,22 +3574,20 @@ PUT /api/public-v1/sales-pipeline/attributes/{id}
 ### Request Body
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `title` | string | Yes | Attribute title/name (max 191 chars) |
-| `color` | string | Yes | Attribute color (max 191 chars) |
-| `type` | string | Yes | Attribute type (max 191 chars) |
-
-All fields are required for updates (same validation as create).
+| `title` | string | Yes | Attribute title (max 191 characters) |
+| `color` | string | Yes | Color (max 191 characters) |
+| `type` | integer | Yes | Attribute type (`0`-`3`, see above) |
 
 ### Example Request
 
 ```bash
-curl -X PUT "https://public-api.taskip.net/api/public-v1/sales-pipeline/attributes/1" \
+curl -X PUT "https://public-api.taskip.net/api/public-v1/sales-pipeline/attributes/4" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json" \
   -d '{
-    "title": "High Priority Level",
-    "color": "#F44336",
-    "type": "priority"
+    "title": "Partner referral",
+    "color": "green",
+    "type": 3
   }'
 ```
 
@@ -2762,9 +3599,16 @@ curl -X PUT "https://public-api.taskip.net/api/public-v1/sales-pipeline/attribut
 }
 ```
 
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `422` | `{ "error": { "msg": ["attribute not found"] } }` or validation failure |
+
+---
+
 ## Delete an Attribute
 
-Delete a specific attribute.
+Delete an attribute.
 
 ```http
 DELETE /api/public-v1/sales-pipeline/attributes/{id}
@@ -2778,7 +3622,7 @@ DELETE /api/public-v1/sales-pipeline/attributes/{id}
 ### Example Request
 
 ```bash
-curl -X DELETE "https://public-api.taskip.net/api/public-v1/sales-pipeline/attributes/1" \
+curl -X DELETE "https://public-api.taskip.net/api/public-v1/sales-pipeline/attributes/4" \
   -H "X-Secret-Key: your-secret-key-here"
 ```
 
@@ -2790,9 +3634,16 @@ curl -X DELETE "https://public-api.taskip.net/api/public-v1/sales-pipeline/attri
 }
 ```
 
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `422` | `{ "error": { "msg": ["attribute not found"] } }` |
+
+---
+
 ## Attribute Bulk Actions
 
-Perform bulk operations on attributes.
+Delete several attributes in one request.
 
 ```http
 POST /api/public-v1/sales-pipeline/attributes/bulk-actions
@@ -2801,8 +3652,7 @@ POST /api/public-v1/sales-pipeline/attributes/bulk-actions
 ### Request Body
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `ids` | array | Yes | Array of attribute IDs |
-| `action` | string | Yes | Action to perform (e.g., "delete") |
+| `ids` | array | Yes | Attribute IDs to delete |
 
 ### Example Request
 
@@ -2811,8 +3661,10 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/attribu
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json" \
   -d '{
-    "ids": [1, 2, 3],
-    "action": "delete"
+    "ids": [
+      4,
+      5
+    ]
   }'
 ```
 
@@ -2824,32 +3676,18 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/sales-pipeline/attribu
 }
 ```
 
+### Error Responses
+| Status | Description |
+|--------|-------------|
+| `422` | `{ "error": { "msg": ["attribute not found"] } }` when none of the IDs exist |
+
 ---
 
-# Additional Modules
+# Response Patterns
 
-Due to the comprehensive nature of the Sales Pipeline API with 50+ endpoints, the remaining modules (Activities) follow similar patterns to the above examples.
-
-## Quick Reference for Remaining Endpoints
-
-### Activity Management
-All activity endpoints follow the pattern:
-- GET/POST/PUT/DELETE `/api/public-v1/sales-pipeline/{uuid}/deal/{id}/activity[/{activity_id}]`
-- Special actions: `/activity/bulk-actions`, `/activity/send-mail`
-
-## Standard Response Patterns
-
-All endpoints follow these consistent response patterns:
-
-### Success Responses
-- **Create/Update/Delete operations**: `{"msg": "Operation completed successfully", "status": 200/201}`
-- **Get single resource**: Returns the resource object directly
-- **Get multiple resources**: `{"data": [...], "status": 200}`
-
-### Request Patterns
-- All endpoints require the `X-Secret-Key` header
-- UUID parameters refer to the sales pipeline UUID
-- ID parameters are integer values
-- Bulk actions require arrays of IDs and an action type
-
-For detailed examples of any specific endpoint not covered above, please refer to the patterns established in the Pipeline, Deals, and Stage sections, or contact support for additional documentation.
+- All endpoints require the `X-Secret-Key` header.
+- Validation failures from form requests return `422` with `{ "error": { "<field>": ["message"] } }`. A few endpoints without a custom form request (pipeline list, deals list, deals order change, attributes) return the standard Laravel shape `{ "message": "...", "errors": { ... } }`.
+- Business-rule and permission refusals use `422` with `{ "error": { "msg": ["..."] } }` or `{ "msg": "..." }`.
+- Unknown resources return `404` with `{ "msg": "..." }`.
+- `PUT` and `PATCH` are both routed to the update handler of every resource that supports updates (pipeline, deal, stage, task, meeting, note, activity, attribute). They behave identically and the same required fields must be sent. The only partial update is the deal: its optional fields keep their stored values when omitted (see [Update a Deal](#update-a-deal)).
+- `GET /{id}` routes do not exist for stages, notes, activities and attributes.

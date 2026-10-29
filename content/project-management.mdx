@@ -1,6 +1,15 @@
 # Project Management API
 
-The Project Management API allows you to manage projects, tasks, milestones, and team collaboration in your TaskIP CRM system. You can create and track projects, assign tasks, monitor progress, and manage project workflows with comprehensive reporting and analytics.
+The Project Management API allows you to manage projects, board containers (columns), tasks, labels, assignees, comments, files, discussions and project attributes in your TaskIP workspace.
+
+## Conventions
+
+- **Base path:** all endpoints live under `/api/public-v1`. Send your key in the `X-Secret-Key` header.
+- **Project identifier:** `{uuid}` in a path is the project **UUID** (for example `8f6c2d1e-5b7a-4c0e-9a31-2d4b6e8f0a17`). Task `{id}` is the numeric task id.
+- **Enums are integers:** project and task `priority` is `0` Low, `1` Medium, `2` High, `3` Urgent. Project `status` is `0` Draft, `1` Pinned, `2` Working, `3` Complete, `4` Archived, `5` Review. Project `privacy` is `0` Private, `1` Public. Project attribute `type` is `0` Priority, `1` Label, `2` Category, `3` Tag, `4` Status.
+- **Containers and tasks:** every project has board containers (columns) with a stage category (`backlog`, `todo`, `in_progress`, `review`, `done`). A task's status and completion state follow the container it sits in.
+- **Pagination:** list endpoints take `item` (page size, default `10`) and `page`, and return `data`, `links` and `meta`.
+- **Errors:** see [Error Responses](#error-responses) for the response shapes.
 
 ## Complete Endpoints Overview
 
@@ -9,12 +18,12 @@ The Project Management API allows you to manage projects, tasks, milestones, and
 |--------|----------|-------------|
 | `GET` | [`/api/public-v1/project`](#get-all-projects) | Get all projects |
 | `POST` | [`/api/public-v1/project`](#create-new-project) | Create a new project |
-| `GET` | [`/api/public-v1/project/{id}`](#get-specific-project) | Get a specific project |
-| `PUT` | [`/api/public-v1/project/{id}`](#update-project) | Update a project |
-| `DELETE` | [`/api/public-v1/project/{id}`](#delete-project) | Delete a project |
+| `GET` | [`/api/public-v1/project/{uuid}`](#get-specific-project) | Get a specific project |
+| `PUT` / `PATCH` | [`/api/public-v1/project/{uuid}`](#update-project) | Update a project (partial body) |
+| `DELETE` | [`/api/public-v1/project/{uuid}`](#delete-project) | Delete a project |
 | `POST` | [`/api/public-v1/project/dashboard/activity`](#get-dashboard-activities) | Get dashboard activities |
 | `POST` | [`/api/public-v1/project/{uuid}/activity`](#get-project-activities) | Get project activities |
-| `POST` | [`/api/public-v1/project/all-tasks/list`](#get-all-tasks-list) | Get all tasks list |
+| `POST` | [`/api/public-v1/project/all-tasks/list`](#get-all-tasks-list) | Get your tasks across all projects, grouped by due state |
 | `POST` | [`/api/public-v1/project/{uuid}/change-priority`](#change-project-priority) | Change project priority |
 | `POST` | [`/api/public-v1/project/{uuid}/change-status`](#change-project-status) | Change project status |
 | `POST` | [`/api/public-v1/project/{uuid}/change-category`](#change-project-category) | Change project category |
@@ -22,7 +31,7 @@ The Project Management API allows you to manage projects, tasks, milestones, and
 ### Task Management
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | [`/api/public-v1/project/{uuid}/task`](#get-project-tasks) | Get all tasks in project |
+| `GET` | [`/api/public-v1/project/{uuid}/task`](#get-project-tasks) | Get the project board (containers with their tasks) |
 | `POST` | [`/api/public-v1/project/{uuid}/task`](#create-task) | Create a new task |
 | `GET` | [`/api/public-v1/project/{uuid}/task/{id}`](#get-specific-task) | Get a specific task |
 | `PUT` | [`/api/public-v1/project/{uuid}/task/{id}`](#update-task) | Update a task |
@@ -90,7 +99,9 @@ The Project Management API allows you to manage projects, tasks, milestones, and
 
 ## Get All Projects
 
-Retrieve a list of all projects in your system.
+Retrieve a paginated list of the projects the API user can see. Administrators and managers see every project; any other user only sees projects they are a member of. A client user additionally never sees a disabled project.
+
+By default, projects with status `3` (Complete) are left out of the list. Pass `status=3` explicitly to list them.
 
 ```http
 GET /api/public-v1/project
@@ -105,19 +116,22 @@ Content-Type: application/json
 ### Query Parameters
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `page` | integer | No | Page number for pagination (default: 1) |
-| `limit` | integer | No | Number of projects per page (default: 50) |
-| `search` | string | No | Search term for project name or description |
-| `sort` | string | No | Sort field (`name`, `status`, `start_date`, `end_date`, `created_at`) |
-| `order` | string | No | Sort order (`asc` or `desc`) |
-| `status` | string | No | Filter by status |
-| `client_id` | integer | No | Filter by client ID |
-| `assigned_to` | integer | No | Filter by assigned team member |
+| `item` | integer | No | Projects per page (default: `10`). `0` returns every project in one response without pagination (`data` only, no `links`/`meta`) |
+| `page` | integer | No | Page number |
+| `search` | string | No | Matches the project `title` (partial match) |
+| `status` | integer | No | Filter by status: `0` Draft, `1` Pinned, `2` Working, `3` Complete, `4` Archived, `5` Review |
+| `priority` | integer | No | Filter by priority: `0` Low, `1` Medium, `2` High, `3` Urgent |
+| `tag` | integer | No | Only projects carrying this tag attribute id |
+| `client_only` | any | No | When present, only projects that have a client are returned |
+| `health_band` | string or array | No | Filter by health band (`on_track`, `at_risk`, `off_track`); repeat the parameter (`health_band[]=at_risk`) for several |
+| `program_id` | integer or `none` | No | Only projects in this program; `none` returns projects without a program |
+| `sort` | string | No | `title`, `due` (end date), `status`, `updated`, or `health`. Without `sort`, newest projects (highest `id`) come first |
+| `dir` | string | No | `asc` (default) or `desc`. Applies to `title`, `due`, `status` and `updated` |
 
 ### Example Request
 
 ```bash
-curl -X GET "https://public-api.taskip.net/api/public-v1/project?page=1&limit=20" \
+curl -X GET "https://public-api.taskip.net/api/public-v1/project?item=20&status=2&sort=updated&dir=desc" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json"
 ```
@@ -128,60 +142,117 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/project?page=1&limit=20
 {
   "data": [
     {
-      "id": 1,
+      "id": 12,
       "title": "Website Redesign - Acme Corp",
-      "uuid": "proj_abc123def456",
+      "uuid": "8f6c2d1e-5b7a-4c0e-9a31-2d4b6e8f0a17",
+      "key": "WEB",
+      "contact_id": 15,
+      "client_id": null,
       "description": "Complete website redesign and development for Acme Corporation",
-      "priority": 3,
+      "priority": 2,
       "privacy": 1,
-      "status": "active",
-      "started_at": "15-Jan-2024",
-      "ended_at": "15-Apr-2024",
+      "status": 2,
+      "is_disabled": 0,
+      "allow_manual_time_tracking": true,
+      "show_time_details_to_client": true,
+      "allow_team_member_task_create": true,
+      "allow_client_task_create": true,
+      "task_move_access": "own",
+      "task_status_access": "own",
+      "task_priority_access": "managers",
+      "stage_categories_confirmed_at": null,
+      "default_client_visible": true,
+      "client_intake_enabled": true,
+      "client_intake_types": null,
+      "allows_client_intake": true,
+      "budget_hours": 120.0,
+      "budget_amount": null,
+      "budget_cap_mode": "hard",
+      "budget_overrun_percent": null,
+      "budget_alert_thresholds": [],
+      "contract_value": null,
+      "started_at": "2024-01-15",
+      "ended_at": "2024-04-15",
       "client": [
         {
-          "id": 15,
-          "name": "John Smith",
-          "email": "john@acmecorp.com"
+          "id": 28,
+          "uuid": "0b1c9d2e-7f43-4a55-8e12-6c3d5a7b9e01",
+          "first_name": "John",
+          "last_name": "Smith",
+          "full_name": "John Smith",
+          "email": "john@acmecorp.com",
+          "timezone": "America/New_York",
+          "image": null
         }
       ],
       "created_by": {
         "id": 3,
-        "name": "Sarah Johnson",
-        "email": "sarah@company.com"
+        "uuid": "5a7c9e1b-3d52-4f68-a0b4-8c2e4f6a8d03",
+        "first_name": "Sarah",
+        "last_name": "Johnson",
+        "full_name": "Sarah Johnson",
+        "email": "sarah@company.com",
+        "timezone": "UTC",
+        "image": null
       },
-      "created_at": "10-Jan-2024",
-      "updated_at": "20-Jan-2024",
-      "project_manager": [
-        {
-          "id": 5,
-          "name": "Mike Wilson",
-          "email": "mike@company.com"
-        }
-      ],
+      "created_at": "2024-01-10",
+      "updated_at": "2024-01-20",
+      "project_manager": {
+        "id": 5,
+        "uuid": "9d3f5b7a-1c64-4e82-b6a0-4e6a8c0e2f05",
+        "first_name": "Mike",
+        "last_name": "Wilson",
+        "full_name": "Mike Wilson",
+        "email": "mike@company.com",
+        "timezone": "UTC",
+        "image": null
+      },
       "assignees": [
         {
           "id": 8,
-          "name": "David Chen",
-          "email": "david@company.com"
+          "uuid": "2e4a6c8e-0b75-4d91-8c23-7a9b1d3f5e08",
+          "first_name": "David",
+          "last_name": "Chen",
+          "full_name": "David Chen",
+          "email": "david@company.com",
+          "timezone": "UTC",
+          "image": null
         }
       ],
       "tags": [
-        {
-          "id": 1,
-          "name": "website",
-          "color": "#FF5722"
-        }
+        { "id": 4, "title": "website", "color": "orange", "type": 3 }
       ],
       "categories": [
-        {
-          "id": 2,
-          "name": "Development",
-          "color": "#4CAF50"
-        }
+        { "id": 9, "title": "Development", "color": "green", "type": 2 }
       ],
       "total_tasks": 45,
       "completed_tasks": 29,
-      "completion_percentage": 64.44
+      "completion_percentage": 64.44,
+      "members": [
+        {
+          "user": { "id": 5, "uuid": "9d3f5b7a-1c64-4e82-b6a0-4e6a8c0e2f05", "first_name": "Mike", "last_name": "Wilson", "full_name": "Mike Wilson", "email": "mike@company.com", "timezone": "UTC", "image": null },
+          "role": "lead",
+          "role_label": "Lead",
+          "workspace_role": 2,
+          "added_by": 3,
+          "via_company": null,
+          "created_at": "2024-01-10T09:30:00+00:00",
+          "is_you": false
+        }
+      ],
+      "my_role": "lead",
+      "leads": [
+        { "id": 5, "uuid": "9d3f5b7a-1c64-4e82-b6a0-4e6a8c0e2f05", "first_name": "Mike", "last_name": "Wilson", "full_name": "Mike Wilson", "email": "mike@company.com", "timezone": "UTC", "image": null }
+      ],
+      "auto_shift_dependents": false,
+      "next_milestone": null,
+      "methodology": "kanban",
+      "estimate_unit": "hours",
+      "active_sprint_uuid": null,
+      "health": null,
+      "program": null,
+      "template_uuid": null,
+      "template_name": null
     }
   ],
   "links": {
@@ -195,18 +266,26 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/project?page=1&limit=20
     "from": 1,
     "last_page": 3,
     "path": "https://public-api.taskip.net/api/public-v1/project",
-    "per_page": 15,
-    "to": 15,
+    "per_page": 20,
+    "to": 20,
     "total": 45
   }
 }
 ```
 
+### Response Notes
+
+- `priority`, `privacy` and `status` are returned as integers (see the enum tables under [Create New Project](#create-new-project)).
+- `client`, `project_manager` and `assignees` are deprecated, derived from `members`; prefer `members` and `leads`. `project_manager` is a single user object (the earliest lead), or `[]` when the project has no lead.
+- `budget_*` keys are omitted entirely for a client user. `contract_value` is omitted unless the API user has permission to view project rates.
+- `health` is `{ "score", "band", "computed_at" }` when a health band has been computed, otherwise `null`. `program` is `{ "id", "uuid", "name", "color" }` or `null`.
+- `tags` and `categories` items come from project attributes: `type` is `3` for tags and `2` for categories.
+
 ---
 
 ## Create New Project
 
-Create a new project in your system.
+Create a new project. The API user becomes the creator (`created_by`); a `created_by` value in the body is ignored. Five default board containers are created for every project (`Backlog`, `To Do`, `In Progress`, `Review`, `Done`).
 
 ```http
 POST /api/public-v1/project
@@ -217,20 +296,56 @@ POST /api/public-v1/project
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `title` | string | Yes | Project title (max 191 characters) |
+| `priority` | integer | Yes | `0` Low, `1` Medium, `2` High, `3` Urgent |
+| `privacy` | integer | Yes | `0` Private, `1` Public |
+| `status` | integer | Yes | `0` Draft, `1` Pinned, `2` Working, `3` Complete, `4` Archived, `5` Review |
 | `description` | string | No | Project description |
-| `priority` | integer | Yes | Priority level (1-5) |
-| `privacy` | integer | Yes | Privacy setting (0=Private, 1=Public) |
-| `status` | string | Yes | Project status enum value |
-| `started_at` | string | No | Start date |
-| `ended_at` | string | No | End date |
-| `client` | array | No | Array of client IDs |
-| `created_by` | integer | No | Creator user ID |
-| `tags` | array | No | Array of tag IDs |
-| `category` | array | No | Array of category IDs |
-| `assignee` | array | No | Array of assignee user IDs |
-| `complete_status_id` | integer | No | Completion status ID |
-| `notify_client` | boolean | No | Send notification to client |
-| `project_manager` | array | No | Array of project manager user IDs |
+| `started_at` | string | No | Start date, e.g. `2024-03-01` |
+| `ended_at` | string | No | End date, e.g. `2024-09-01` |
+| `key` | string | No | Short project key (2-10 uppercase letters or digits, starting with a letter). Must be unique; derived from the title when omitted |
+| `tags` | array | No | Tag attribute ids (type `3`) |
+| `category` | array | No | Category attribute ids (type `2`) |
+| `members` | array | No | Project members: `[{ "user_id": 8, "role": "member" }]`. `role` is one of `lead`, `member`, `viewer`, `client`. When sent, it takes precedence over the legacy `client`, `assignee` and `project_manager` fields |
+| `client` | array | No | Legacy: client user ids (become `client` members) |
+| `assignee` | array | No | Legacy: team member user ids (become `member` members) |
+| `project_manager` | integer | No | Legacy: a single user id (becomes `lead`) |
+| `notify_client` | boolean | No | Send a notification email to the client (default `false`) |
+| `allow_manual_time_tracking` | boolean | No | Default `true` |
+| `show_time_details_to_client` | boolean | No | Default `true` |
+| `allow_team_member_task_create` | boolean | No | Default `true` |
+| `allow_client_task_create` | boolean | No | Defaults to the value of `client_intake_enabled` (`true` when that is omitted) |
+| `task_move_access` | string | No | `managers`, `own` or `all` |
+| `task_status_access` | string | No | `managers`, `own` or `all` |
+| `task_priority_access` | string | No | `managers`, `own` or `all` |
+| `billing_type` | string | No | `hourly`, `fixed_price`, `retainer`, `non_billable` or `internal` |
+| `default_billable` | boolean | No | Whether new time entries are billable by default |
+| `billable_rate` | number | No | Min `0` |
+| `cost_rate` | number | No | Min `0` |
+| `currency` | string | No | 3-letter currency code, e.g. `USD` |
+| `billing_profile_id` | integer | No | Must exist in billing profiles |
+| `budget_hours` | number | No | Hours cap, `0.01` to `99999999.99`. `null` means no cap |
+| `budget_amount` | number | No | Amount cap, `0.01` to `999999999999.99`. `null` means no cap |
+| `budget_cap_mode` | string | No | `hard`, `overrun_limited` or `warn_only`. Must be a mode the workspace policy allows |
+| `budget_overrun_percent` | number | No | Greater than `0`, max `100`. Required when the mode is `overrun_limited` and no default is configured |
+| `budget_alert_thresholds` | array | No | Up to 10 integers between `1` and `100` |
+| `contract_value` | number | No | Planned revenue (`0.01` to `999999999999.99`). Refused with a validation error unless the API user may view project rates |
+| `show_financials_to_client` | boolean | No | Same permission rule as `contract_value` |
+| `default_client_visible` | boolean | No | Default `true` |
+| `client_intake_enabled` | boolean | No | Default `true` |
+| `client_intake_types` | array | No | One or more of `feedback`, `bug`, `change_request` |
+| `auto_shift_dependents` | boolean | No | Default `false` |
+| `methodology` | string | No | `kanban` or `scrum` |
+| `estimate_unit` | string | No | `hours` or `points` |
+| `client_voting_enabled` | boolean | No | Default `false` |
+| `show_health_to_client` | boolean | No | Default `false` |
+
+### Enum Reference
+
+| Field | Values |
+|-------|--------|
+| `priority` | `0` Low, `1` Medium, `2` High, `3` Urgent |
+| `privacy` | `0` Private, `1` Public |
+| `status` | `0` Draft, `1` Pinned, `2` Working, `3` Complete, `4` Archived, `5` Review |
 
 ### Example Request
 
@@ -241,21 +356,26 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/project" \
   -d '{
     "title": "E-commerce Platform",
     "description": "Build complete e-commerce platform",
-    "priority": 4,
+    "priority": 2,
     "privacy": 1,
-    "status": "planning",
+    "status": 2,
     "started_at": "2024-03-01",
     "ended_at": "2024-09-01",
-    "client": [28],
-    "tags": [1, 3],
-    "category": [2],
-    "assignee": [8, 12],
-    "project_manager": [5],
-    "notify_client": true
+    "tags": [4, 6],
+    "category": [9],
+    "members": [
+      { "user_id": 5, "role": "lead" },
+      { "user_id": 8, "role": "member" },
+      { "user_id": 28, "role": "client" }
+    ],
+    "notify_client": true,
+    "budget_hours": 400
   }'
 ```
 
 ### Example Response
+
+The response is a `ProjectResource` (same shape as one item of the list). Task counters are not computed on create, so `total_tasks` and `completed_tasks` are `null`.
 
 ```json
 {
@@ -263,150 +383,185 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/project" \
   "data": {
     "id": 26,
     "title": "E-commerce Platform",
-    "uuid": "proj_xyz789ghi012",
+    "uuid": "c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26",
+    "key": "ECOM",
+    "contact_id": 31,
+    "client_id": null,
     "description": "Build complete e-commerce platform",
-    "priority": 4,
+    "priority": 2,
     "privacy": 1,
-    "status": "planning",
-    "started_at": "01-Mar-2024",
-    "ended_at": "01-Sep-2024",
-    "client": [
-      {
-        "id": 28,
-        "name": "GreenTech Solutions",
-        "email": "contact@greentech.com"
-      }
-    ],
-    "created_by": {
-      "id": 3,
-      "name": "Current User",
-      "email": "current@company.com"
-    },
-    "created_at": "20-Feb-2024",
-    "updated_at": "20-Feb-2024",
-    "project_manager": [
-      {
-        "id": 5,
-        "name": "Mike Wilson",
-        "email": "mike@company.com"
-      }
-    ],
-    "assignees": [
-      {
-        "id": 8,
-        "name": "David Chen",
-        "email": "david@company.com"
-      },
-      {
-        "id": 12,
-        "name": "Lisa Park",
-        "email": "lisa@company.com"
-      }
-    ],
+    "status": 2,
+    "is_disabled": 0,
+    "budget_hours": 400.0,
+    "budget_amount": null,
+    "budget_cap_mode": "hard",
+    "started_at": "2024-03-01",
+    "ended_at": "2024-09-01",
     "tags": [
-      {
-        "id": 1,
-        "name": "ecommerce",
-        "color": "#2196F3"
-      },
-      {
-        "id": 3,
-        "name": "platform",
-        "color": "#FF9800"
-      }
+      { "id": 4, "title": "website", "color": "orange", "type": 3 },
+      { "id": 6, "title": "platform", "color": "blue", "type": 3 }
     ],
     "categories": [
-      {
-        "id": 2,
-        "name": "Development",
-        "color": "#4CAF50"
-      }
+      { "id": 9, "title": "Development", "color": "green", "type": 2 }
     ],
-    "total_tasks": 0,
-    "completed_tasks": 0,
-    "completion_percentage": 0
+    "total_tasks": null,
+    "completed_tasks": null,
+    "completion_percentage": 0,
+    "my_role": null,
+    "methodology": "kanban",
+    "estimate_unit": "hours"
   }
 }
+```
+
+The example above is abbreviated; the full object contains every key shown in [Get All Projects](#get-all-projects).
+
+### Error Responses
+
+Validation failure (HTTP `422`):
+
+```json
+{
+  "error": {
+    "title": ["The title field is required."],
+    "priority": ["The selected priority is invalid."]
+  }
+}
+```
+
+Permission refusal (HTTP `422`), when the API user is not allowed to create projects:
+
+```json
+{
+  "error": {
+    "msg": ["You don't have permission to create project"]
+  }
+}
+```
+
+Business-rule failure (HTTP `422`), for example a member role that is not valid for that user:
+
+```json
+{ "msg": "<reason>" }
 ```
 
 ---
 
 ## Get Specific Project
 
-Retrieve details of a specific project.
+Retrieve a single project by its UUID. Returns `404` when the project does not exist or the API user is not allowed to see it (non-admin users must be a member of the project).
 
 ```http
-GET /api/public-v1/project/{id}
+GET /api/public-v1/project/{uuid}
 ```
 
 ### Path Parameters
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | string | Yes | Project ID or UUID |
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `uuid` | string | Project UUID |
+
+### Example Request
+
+```bash
+curl -X GET "https://public-api.taskip.net/api/public-v1/project/8f6c2d1e-5b7a-4c0e-9a31-2d4b6e8f0a17" \
+  -H "X-Secret-Key: your-secret-key-here"
+```
 
 ### Example Response
+
+The single-project resource contains everything the list item has, plus billing, finance and planning details.
 
 ```json
 {
   "data": {
-    "id": 26,
-    "title": "E-commerce Platform",
-    "uuid": "proj_xyz789ghi012",
-    "description": "Build complete e-commerce platform",
-    "priority": 4,
+    "id": 12,
+    "title": "Website Redesign - Acme Corp",
+    "uuid": "8f6c2d1e-5b7a-4c0e-9a31-2d4b6e8f0a17",
+    "key": "WEB",
+    "contact_id": 15,
+    "description": "Complete website redesign and development for Acme Corporation",
+    "priority": 2,
     "privacy": 1,
-    "status": "planning",
-    "started_at": "01-Mar-2024",
-    "ended_at": "01-Sep-2024",
-    "client_id": 28,
-    "client": [
-      {
-        "id": 28,
-        "name": "GreenTech Solutions",
-        "email": "contact@greentech.com"
-      }
-    ],
-    "created_by": {
-      "id": 3,
-      "name": "Current User",
-      "email": "current@company.com"
+    "status": 2,
+    "is_disabled": 0,
+    "task_move_access": "own",
+    "task_status_access": "own",
+    "task_priority_access": "managers",
+    "billing_type": "fixed_price",
+    "default_billable": true,
+    "billable_rate": 75.0,
+    "cost_rate": 40.0,
+    "currency": "USD",
+    "billing_profile_id": null,
+    "budget_hours": 120.0,
+    "budget_amount": null,
+    "budget_cap_mode": "hard",
+    "budget_overrun_percent": null,
+    "budget_alert_thresholds": [],
+    "budget_policy": {
+      "allowed_cap_modes": ["hard", "overrun_limited", "warn_only"],
+      "default_overrun_percent": 10.0,
+      "can_change_caps": true
     },
-    "created_at": "01-Mar-2024",
-    "updated_at": "01-Mar-2024",
-    "assignees": [
-      {
-        "id": 8,
-        "name": "David Chen",
-        "email": "david@company.com"
-      }
-    ],
-    "tags": [
-      {
-        "id": 1,
-        "name": "ecommerce",
-        "color": "#2196F3"
-      }
-    ],
-    "categories": [
-      {
-        "id": 2,
-        "name": "Development",
-        "color": "#4CAF50"
-      }
-    ],
-    "project_manager": [
-      {
-        "id": 5,
-        "name": "Mike Wilson",
-        "email": "mike@company.com"
-      }
-    ],
-    "complete_status_id": null,
-    "total_tasks": 0,
-    "completed_tasks": 0,
-    "completion_percentage": 0
+    "can_view_finance": true,
+    "contract_value": 15000.0,
+    "started_at": "2024-01-15",
+    "ended_at": "2024-04-15",
+    "client_id": null,
+    "client": [],
+    "created_by": { "id": 3, "uuid": "5a7c9e1b-3d52-4f68-a0b4-8c2e4f6a8d03", "first_name": "Sarah", "last_name": "Johnson", "full_name": "Sarah Johnson", "email": "sarah@company.com", "timezone": "UTC", "image": null },
+    "created_at": "15-Jan-2024",
+    "updated_at": "15-Jan-2024",
+    "assignees": [],
+    "tags": [{ "id": 4, "title": "website", "color": "orange", "type": 3 }],
+    "categories": [{ "id": 9, "title": "Development", "color": "green", "type": 2 }],
+    "project_manager": [],
+    "complete_status_id": 87,
+    "total_tasks": 45,
+    "completed_tasks": 29,
+    "completion_percentage": 64.44,
+    "short_description": "Complete website redesign and development for Acme Corporation",
+    "members": [],
+    "my_role": "lead",
+    "leads": [],
+    "custom_fields": [],
+    "auto_shift_dependents": false,
+    "next_milestone": {
+      "id": 3,
+      "title": "Design sign-off",
+      "due_date": "2024-02-15",
+      "percent": 50
+    },
+    "methodology": "kanban",
+    "estimate_unit": "hours",
+    "active_sprint_uuid": null,
+    "show_health_to_client": false,
+    "show_financials_to_client": false,
+    "program": null,
+    "health": {
+      "score": 82,
+      "band": "on_track",
+      "computed_at": "2024-01-20T06:00:00+00:00",
+      "factors": []
+    },
+    "template_uuid": null,
+    "template_name": null
   },
   "status": 200
+}
+```
+
+`members`, `leads`, `client`, `assignees` and `project_manager` use the same shapes as in [Get All Projects](#get-all-projects) (they are empty in the example above only to keep it short). `complete_status_id` is deprecated.
+
+`created_at` and `updated_at` are the real timestamps of the project record (formatted `d-M-Y`), independent of `started_at`. The same applies to the `data` object returned by [Update Project](#update-project).
+
+### Error Responses
+
+Project not found (HTTP `404`):
+
+```json
+{
+  "msg": "Project not found"
 }
 ```
 
@@ -414,35 +569,53 @@ GET /api/public-v1/project/{id}
 
 ## Update Project
 
-Update an existing project.
+Update a project. The body is **partial**: only the keys you send are written; anything you omit is left untouched.
+
+- `tags`, `category` and `members` (or the legacy `client`, `assignee`, `project_manager`) **replace** the existing relation when sent. Sending `"tags": []` clears all tags.
+- Sending `null` for `budget_hours`, `budget_amount` or `contract_value` removes that cap/value.
+- `task_move_access`, `task_status_access` and `task_priority_access` fall back to their defaults (`own`, `own`, `managers`) if sent as `null`.
 
 ```http
-PUT /api/public-v1/project/{id}
+PUT /api/public-v1/project/{uuid}
+PATCH /api/public-v1/project/{uuid}
 ```
 
 ### Path Parameters
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | string | Yes | Project ID or UUID |
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `uuid` | string | Project UUID (a numeric project id is also accepted) |
 
 ### Request Body
 
+Any of the fields from [Create New Project](#create-new-project), all optional on update. If a field is sent, the create-time validation rules still apply to it (for example `title` cannot be empty and `priority` must be `0`-`3`). `key` cannot be changed through this endpoint.
+
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `title` | string | Yes | Project title (max 191 characters) |
-| `description` | string | No | Project description |
-| `priority` | integer | Yes | Priority level (1-5) |
-| `privacy` | integer | Yes | Privacy setting (0=Private, 1=Public) |
-| `status` | string | Yes | Project status enum value |
-| `started_at` | string | No | Start date |
-| `ended_at` | string | No | End date |
-| `client` | array | No | Array of client IDs |
-| `tags` | array | No | Array of tag IDs |
-| `category` | array | No | Array of category IDs |
-| `assignee` | array | No | Array of assignee user IDs |
-| `complete_status_id` | integer | No | Completion status ID |
-| `notify_client` | boolean | No | Send notification to client |
-| `project_manager` | array | No | Array of project manager user IDs |
+| `title` | string | No | Max 191 characters; cannot be null when sent |
+| `description` | string | No | May be `null` |
+| `priority` | integer | No | `0`-`3` |
+| `privacy` | integer | No | `0` or `1` |
+| `status` | integer | No | `0`-`5` |
+| `started_at` / `ended_at` | string | No | May be `null` |
+| `tags` | array | No | Replaces the project's tags |
+| `category` | array | No | Replaces the project's categories |
+| `members` | array | No | Replaces the project's members (`[{ "user_id", "role" }]`) |
+| `budget_hours` / `budget_amount` | number | No | `null` removes the cap |
+| `methodology` | string | No | `kanban` or `scrum`. Switching a scrum project with an active sprint to `kanban` is refused |
+
+### Example Request
+
+```bash
+curl -X PUT "https://public-api.taskip.net/api/public-v1/project/8f6c2d1e-5b7a-4c0e-9a31-2d4b6e8f0a17" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": 5,
+    "ended_at": "2024-05-01",
+    "tags": [4, 7],
+    "budget_amount": null
+  }'
+```
 
 ### Example Response
 
@@ -451,38 +624,54 @@ PUT /api/public-v1/project/{id}
   "msg": "Project Updated",
   "status": 200,
   "data": {
-    "id": 26,
-    "title": "E-commerce Platform - Updated",
-    "uuid": "proj_xyz789ghi012",
-    "description": "Updated e-commerce platform description",
-    "priority": 5,
+    "id": 12,
+    "title": "Website Redesign - Acme Corp",
+    "uuid": "8f6c2d1e-5b7a-4c0e-9a31-2d4b6e8f0a17",
+    "priority": 2,
     "privacy": 1,
-    "status": "active",
-    "started_at": "01-Mar-2024",
-    "ended_at": "01-Oct-2024",
-    "client_id": 28,
-    "client": [
-      {
-        "id": 28,
-        "name": "GreenTech Solutions",
-        "email": "contact@greentech.com"
-      }
-    ],
-    "created_by": {
-      "id": 3,
-      "name": "Current User",
-      "email": "current@company.com"
-    },
-    "created_at": "01-Mar-2024",
-    "updated_at": "21-Feb-2024",
-    "assignees": [],
-    "tags": [],
-    "categories": [],
-    "project_manager": [],
-    "complete_status_id": null,
-    "total_tasks": 5,
-    "completed_tasks": 2,
-    "completion_percentage": 40.0
+    "status": 5,
+    "ended_at": "2024-05-01",
+    "budget_amount": null,
+    "tags": [
+      { "id": 4, "title": "website", "color": "orange", "type": 3 },
+      { "id": 7, "title": "priority-client", "color": "red", "type": 3 }
+    ]
+  }
+}
+```
+
+The `data` object is the full single-project resource described in [Get Specific Project](#get-specific-project); it is abbreviated here.
+
+### Error Responses
+
+Project not found (HTTP `404`):
+
+```json
+{ "msg": "Project not found" }
+```
+
+Validation failure (HTTP `422`):
+
+```json
+{
+  "error": {
+    "status": ["The selected status is invalid."]
+  }
+}
+```
+
+Business-rule failure (HTTP `422`), for example an invalid member role, or `Finish the active sprint before switching to Kanban.` when changing `methodology`:
+
+```json
+{ "msg": "Finish the active sprint before switching to Kanban." }
+```
+
+Permission refusal (HTTP `422`). The project role checks are defined in the platform, but they are bypassed for requests made with an API key to `/api/public-v1`, so you are not expected to receive this response from the public API:
+
+```json
+{
+  "error": {
+    "msg": ["You don't have permission to update project"]
   }
 }
 ```
@@ -491,16 +680,23 @@ PUT /api/public-v1/project/{id}
 
 ## Delete Project
 
-Delete a project from the system.
+Delete a project. Only an administrator or the project's lead may delete it (subject to the role's delete scope). Disabled projects are treated as not found.
 
 ```http
-DELETE /api/public-v1/project/{id}
+DELETE /api/public-v1/project/{uuid}
 ```
 
 ### Path Parameters
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | string | Yes | Project ID or UUID |
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `uuid` | string | Project UUID (a numeric project id is also accepted) |
+
+### Example Request
+
+```bash
+curl -X DELETE "https://public-api.taskip.net/api/public-v1/project/8f6c2d1e-5b7a-4c0e-9a31-2d4b6e8f0a17" \
+  -H "X-Secret-Key: your-secret-key-here"
+```
 
 ### Example Response
 
@@ -511,23 +707,53 @@ DELETE /api/public-v1/project/{id}
 }
 ```
 
+### Error Responses
+
+Not found (HTTP `404`):
+
+```json
+{
+  "msg": "We couldn't find this project. It may have been deleted or you may no longer have access to it."
+}
+```
+
+Permission refusal (HTTP `422`). The permission is checked for the API key's user before anything is logged or deleted:
+
+```json
+{
+  "error": {
+    "msg": ["You don't have permission to delete this project."]
+  }
+}
+```
+
 ---
 
 ## Get Dashboard Activities
 
-Get dashboard activities across all projects.
+Get the legacy activity feed across the projects the API user can access. A client user only sees activity for projects where they are the client; administrators see everything; any other user only sees activity for projects they are a member of. Newest activity comes first.
+
+This endpoint is a `POST`, but it takes no required body. The paging parameters below can be sent in the query string or the JSON body.
 
 ```http
 POST /api/public-v1/project/dashboard/activity
 ```
 
-### Request Body
+### Parameters
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `limit` | integer | No | Number of activities (default: 50) |
-| `from_date` | string | No | Filter from date |
-| `to_date` | string | No | Filter to date |
+| `item` | integer | No | Activities per page (default: `10`). `0` returns all activities without pagination |
+| `page` | integer | No | Page number |
+| `search` | string | No | Echoed back in `meta.search`; it does not filter the results on this endpoint |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/project/dashboard/activity?item=20" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json"
+```
 
 ### Example Response
 
@@ -535,8 +761,8 @@ POST /api/public-v1/project/dashboard/activity
 {
   "data": [
     {
-      "id": 1,
-      "project_uuid": "proj_xyz789ghi012",
+      "id": 981,
+      "project_uuid": "c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26",
       "activity_type": "task_created",
       "content": "New task created: Design database schema",
       "metadata": {
@@ -544,21 +770,25 @@ POST /api/public-v1/project/dashboard/activity
         "task_title": "Design database schema"
       },
       "old_value": null,
-      "new_value": "task_created",
+      "new_value": null,
+      "task": null,
       "createdBy": {
         "id": 3,
-        "name": "Sarah Johnson",
-        "email": "sarah@company.com"
+        "uuid": "5a7c9e1b-3d52-4f68-a0b4-8c2e4f6a8d03",
+        "first_name": "Sarah",
+        "last_name": "Johnson",
+        "full_name": "Sarah Johnson",
+        "email": "sarah@company.com",
+        "timezone": "UTC",
+        "image": null
       },
-      "updatedBy": {
-        "id": 3,
-        "name": "Sarah Johnson",
-        "email": "sarah@company.com"
-      },
+      "updatedBy": null,
       "project": {
         "id": 26,
         "title": "E-commerce Platform",
-        "uuid": "proj_xyz789ghi012"
+        "uuid": "c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26",
+        "status": 2,
+        "priority": 2
       },
       "createdAt": "2 hours ago"
     }
@@ -574,18 +804,20 @@ POST /api/public-v1/project/dashboard/activity
     "from": 1,
     "last_page": 1,
     "path": "https://public-api.taskip.net/api/public-v1/project/dashboard/activity",
-    "per_page": 15,
-    "to": 5,
-    "total": 5
+    "per_page": 10,
+    "to": 1,
+    "total": 1
   }
 }
 ```
+
+`project` is the full project resource described in [Get All Projects](#get-all-projects) (abbreviated above). `createdBy` / `updatedBy` use the user shape from that section and can be `null`.
 
 ---
 
 ## Get Project Activities
 
-Get activities for a specific project.
+Get the paginated activity feed of one project, newest first. Despite being a `POST`, the endpoint takes no required body; all parameters are optional and can be sent in the query string or JSON body.
 
 ```http
 POST /api/public-v1/project/{uuid}/activity
@@ -596,12 +828,23 @@ POST /api/public-v1/project/{uuid}/activity
 |-----------|------|----------|-------------|
 | `uuid` | string | Yes | Project UUID |
 
-### Request Body
+### Parameters
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `limit` | integer | No | Number of activities |
+| `item` | integer | No | Activities per page (default: `10`, maximum: `100`) |
 | `page` | integer | No | Page number |
+| `search` | string | No | Matches the activity text or the actor's name/email |
+| `category` | string | No | Exact activity category string, as returned in `type.category` (for example `Project Operations`, `Project Attributes`, `Task Operations`, `Task Comments`, `Containers`) |
+
+Finance-related activity lines are hidden from users who may not view project money.
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/project/c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26/activity?item=20&category=Task%20Operations" \
+  -H "X-Secret-Key: your-secret-key-here"
+```
 
 ### Example Response
 
@@ -609,36 +852,42 @@ POST /api/public-v1/project/{uuid}/activity
 {
   "data": [
     {
-      "id": 2,
-      "project_uuid": "proj_xyz789ghi012",
-      "activity_type": "status_changed",
-      "content": "Project status changed from planning to active",
+      "id": 5120,
+      "task": "Task 'Design database schema' was created.",
+      "description": "A new task has been added to the project.",
+      "type": {
+        "value": 20,
+        "label": "Task created",
+        "category": "Task Operations"
+      },
+      "status": 1,
       "metadata": {
-        "field_changed": "status"
+        "task_id": 245,
+        "task_title": "Design database schema",
+        "priority": 2,
+        "status": 0
       },
-      "old_value": "planning",
-      "new_value": "active",
-      "createdBy": {
-        "id": 5,
-        "name": "Mike Wilson",
-        "email": "mike@company.com"
+      "related_entity": {
+        "id": 245,
+        "type": "Modules\\Project\\Models\\ProjectTask"
       },
-      "updatedBy": {
-        "id": 5,
-        "name": "Mike Wilson",
-        "email": "mike@company.com"
+      "user": {
+        "id": 3,
+        "full_name": "Sarah Johnson",
+        "email": "sarah@company.com"
       },
       "project": {
-        "id": 26,
-        "title": "E-commerce Platform",
-        "uuid": "proj_xyz789ghi012"
+        "uuid": "c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26",
+        "title": "E-commerce Platform"
       },
-      "createdAt": "1 day ago"
+      "created_at": "2024-03-04T10:15:00+00:00",
+      "created_at_human": "2 hours ago",
+      "updated_at": "2024-03-04T10:15:00+00:00"
     }
   ],
   "links": {
-    "first": "https://public-api.taskip.net/api/public-v1/project/proj_xyz789ghi012/activity?page=1",
-    "last": "https://public-api.taskip.net/api/public-v1/project/proj_xyz789ghi012/activity?page=1",
+    "first": "https://public-api.taskip.net/api/public-v1/project/c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26/activity?page=1",
+    "last": "https://public-api.taskip.net/api/public-v1/project/c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26/activity?page=1",
     "prev": null,
     "next": null
   },
@@ -646,19 +895,39 @@ POST /api/public-v1/project/{uuid}/activity
     "current_page": 1,
     "from": 1,
     "last_page": 1,
-    "path": "https://public-api.taskip.net/api/public-v1/project/proj_xyz789ghi012/activity",
-    "per_page": 15,
-    "to": 3,
-    "total": 3
+    "path": "https://public-api.taskip.net/api/public-v1/project/c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26/activity",
+    "per_page": 20,
+    "to": 1,
+    "total": 1
   }
 }
+```
+
+### Error Responses
+
+Unknown project UUID (HTTP `404`):
+
+```json
+{ "msg": "Project not found" }
 ```
 
 ---
 
 ## Get All Tasks List
 
-Get all tasks across projects.
+List tasks across **all** projects, grouped by due state. Only tasks that the API user can see are returned: by default the tasks the user created **or** is assigned to, narrowed by `type`.
+
+Results are paginated, and the groups are built from the tasks on the current page. Tasks are grouped as:
+
+| Group | Meaning |
+|-------|---------|
+| `Completed` | Task is completed (or has status `3`) |
+| `Today` | Both `started_at` and `due_date` are set and today falls between them |
+| `Upcoming` | `started_at` is in the future |
+| `Overdue` | `due_date` has passed |
+| `Other` | Everything else |
+
+Groups with no tasks on the page are not present in `data`.
 
 ```http
 POST /api/public-v1/project/all-tasks/list
@@ -666,60 +935,132 @@ POST /api/public-v1/project/all-tasks/list
 
 ### Request Body
 
+All fields are optional and can be sent in the JSON body or the query string.
+
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `status` | string | No | Filter by status |
-| `assigned_to` | integer | No | Filter by assignee |
-| `project_ids` | array | No | Filter by project IDs |
+| `type` | integer | No | `1` only tasks created by the API user, `2` only tasks assigned to the API user. Any other value or no value returns tasks that are either created by or assigned to the API user |
+| `status` | integer | No | Task status: `0` To Do/Backlog, `2` In Progress, `3` Complete, `5` Review |
+| `search` | string | No | Matches the task `title` (partial match) |
+| `item` | integer | No | Tasks per page (default: `10`, minimum `0`) |
+| `page` | integer | No | Page number |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/project/all-tasks/list" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": 2,
+    "status": 2,
+    "search": "design",
+    "item": 20
+  }'
+```
 
 ### Example Response
 
 ```json
 {
-  "data": [
-    {
-      "id": 245,
-      "title": "Design database schema",
-      "project_uuid": "proj_xyz789ghi012",
-      "priority": 4,
-      "is_completed": false,
-      "description": "Create comprehensive database schema for the e-commerce platform",
-      "due_date": "2024-03-20",
-      "order": "2024-03-20",
-      "container_id": 1,
-      "created_at": "21/Mar/2024",
-      "assignees": [
-        {
-          "id": 8,
-          "name": "David Chen",
-          "email": "david@company.com"
-        }
-      ],
-      "labels": [
-        {
-          "id": 1,
-          "name": "backend",
-          "color": "#4285F4"
-        },
-        {
-          "id": 2,
-          "name": "database",
-          "color": "#FF9800"
-        }
-      ],
-      "updated_at": "22/Mar/2024",
-      "created_by": {
-        "id": 3,
-        "name": "Sarah Johnson",
-        "email": "sarah@company.com"
-      },
-      "project": {
-        "id": 26,
-        "title": "E-commerce Platform",
-        "uuid": "proj_xyz789ghi012"
+  "data": {
+    "Overdue": [
+      {
+        "id": 245,
+        "number": 12,
+        "key": "ECOM-12",
+        "watchers_count": 2,
+        "is_watching": true,
+        "title": "Design database schema",
+        "project_uuid": "c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26",
+        "priority": 2,
+        "is_completed": false,
+        "description": "Create ERD for the platform",
+        "due_date": "2024-03-01",
+        "started_at": "2024-02-20",
+        "order": 3,
+        "container_id": 88,
+        "container_category": "in_progress",
+        "milestone": null,
+        "sprint": null,
+        "story_points": null,
+        "estimate_unit": "hours",
+        "estimate_value": null,
+        "status": 2,
+        "type": "task",
+        "triage_status": "none",
+        "created_at": "20/Feb/2024",
+        "assignees": [
+          {
+            "task_id": 245,
+            "assignee_id": {
+              "id": 8,
+              "uuid": "2e4a6c8e-0b75-4d91-8c23-7a9b1d3f5e08",
+              "first_name": "David",
+              "last_name": "Chen",
+              "full_name": "David Chen",
+              "email": "david@company.com",
+              "timezone": "UTC",
+              "image": null
+            },
+            "assigned_by": {
+              "id": 3,
+              "uuid": "5a7c9e1b-3d52-4f68-a0b4-8c2e4f6a8d03",
+              "first_name": "Sarah",
+              "last_name": "Johnson",
+              "full_name": "Sarah Johnson",
+              "email": "sarah@company.com",
+              "timezone": "UTC",
+              "image": null
+            },
+            "created_at": "20/Feb/2024",
+            "id": 311
+          }
+        ],
+        "labels": [],
+        "updated_at": "28/Feb/2024",
+        "created_by": { "id": 3, "uuid": "5a7c9e1b-3d52-4f68-a0b4-8c2e4f6a8d03", "first_name": "Sarah", "last_name": "Johnson", "full_name": "Sarah Johnson", "email": "sarah@company.com", "timezone": "UTC", "image": null },
+        "client_visible": true,
+        "comments_count": 1,
+        "internal_comments_count": 0,
+        "client_state": "in_progress"
       }
-    }
-  ]
+    ]
+  },
+  "links": {
+    "first": "https://public-api.taskip.net/api/public-v1/project/all-tasks/list?page=1",
+    "last": "https://public-api.taskip.net/api/public-v1/project/all-tasks/list?page=1",
+    "prev": null,
+    "next": null
+  },
+  "meta": {
+    "current_page": 1,
+    "from": 1,
+    "last_page": 1,
+    "links": [
+      { "url": null, "label": "&laquo; Previous", "active": false },
+      { "url": "https://public-api.taskip.net/api/public-v1/project/all-tasks/list?page=1", "label": "1", "active": true },
+      { "url": null, "label": "Next &raquo;", "active": false }
+    ],
+    "path": "https://public-api.taskip.net/api/public-v1/project/all-tasks/list",
+    "per_page": 20,
+    "to": 1,
+    "total": 1
+  }
+}
+```
+
+### Error Responses
+
+Validation failure (HTTP `422`), for example `status` that is not an integer or a negative `item`:
+
+```json
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": {
+    "status": ["The status field must be an integer."]
+  }
 }
 ```
 
@@ -727,7 +1068,7 @@ POST /api/public-v1/project/all-tasks/list
 
 ## Change Project Priority
 
-Change the priority of a project.
+Change a project's priority. `priority` is required and must be a priority enum value (`0` Low, `1` Medium, `2` High, `3` Urgent); anything else is rejected with a validation error before any permission check.
 
 ```http
 POST /api/public-v1/project/{uuid}/change-priority
@@ -739,24 +1080,64 @@ POST /api/public-v1/project/{uuid}/change-priority
 | `uuid` | string | Yes | Project UUID |
 
 ### Request Body
-
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `priority` | string | Yes | New priority (`low`, `medium`, `high`, `critical`) |
+| `priority` | integer | Yes | `0` Low, `1` Medium, `2` High, `3` Urgent |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/project/8f6c2d1e-5b7a-4c0e-9a31-2d4b6e8f0a17/change-priority" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{ "priority": 3 }'
+```
 
 ### Example Response
 
+The success body is a JSON array containing one message string:
+
 ```json
-[
-  "Project Priority Updated"
-]
+["Project Priority Updated"]
+```
+
+### Error Responses
+
+Missing or invalid `priority` (HTTP `422`, standard validation response):
+
+```json
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": {
+    "priority": ["The selected priority is invalid."]
+  }
+}
+```
+
+Project not found (HTTP `404`):
+
+```json
+{
+  "msg": "We couldn't find this project. It may have been deleted or you may no longer have access to it."
+}
+```
+
+Permission refusal (HTTP `422`), when the workspace edit scope does not allow the API user to change this project:
+
+```json
+{
+  "error": {
+    "msg": ["You don't have permission to change this project's priority."]
+  }
+}
 ```
 
 ---
 
 ## Change Project Status
 
-Change the status of a project.
+Change a project's status. `status` is required and must be a status enum value (`0`-`5`); anything else is rejected with a validation error before any permission check.
 
 ```http
 POST /api/public-v1/project/{uuid}/change-status
@@ -768,24 +1149,113 @@ POST /api/public-v1/project/{uuid}/change-status
 | `uuid` | string | Yes | Project UUID |
 
 ### Request Body
-
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `status` | string | Yes | New status |
+| `status` | integer | Yes | `0` Draft, `1` Pinned, `2` Working, `3` Complete, `4` Archived, `5` Review |
+
+Moving a project to `3` (Complete) or `4` (Archived) is subject to the project close-out checklist:
+
+- If the API user is a workspace **administrator**, the status is changed directly. If any close-out item is still open, the success array also carries a `warning.open_items` entry.
+- If the API user is a **manager**, the project goes through the close-out checklist instead; when items are still open the request is refused with `422` and the list of open items.
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/project/8f6c2d1e-5b7a-4c0e-9a31-2d4b6e8f0a17/change-status" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{ "status": 2 }'
+```
 
 ### Example Response
 
 ```json
-[
-  "Project Status Updated"
-]
+["Project Status Updated"]
+```
+
+When an administrator completes or archives a project that still has open close-out items, the response also contains a `warning` key (the array becomes an object with numeric key `0`):
+
+```json
+{
+  "0": "Project Status Updated",
+  "warning": {
+    "open_items": [
+      {
+        "key": "tasks_done",
+        "label": "All tasks done or moved",
+        "description": "No open tasks outside Done or Backlog.",
+        "auto": true,
+        "done": false,
+        "done_by": null,
+        "done_at": null,
+        "note": null,
+        "blockers": null
+      }
+    ]
+  }
+}
+```
+
+### Error Responses
+
+Missing or invalid `status` (HTTP `422`, standard validation response):
+
+```json
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": {
+    "status": ["The selected status is invalid."]
+  }
+}
+```
+
+Open close-out items (HTTP `422`):
+
+```json
+{
+  "msg": "Some close-out items are still open.",
+  "data": {
+    "open_items": [
+      {
+        "key": "files_handed_over",
+        "label": "Files handed over",
+        "description": "Deliverables and files have been handed over to the client.",
+        "auto": false,
+        "done": false,
+        "done_by": null,
+        "done_at": null,
+        "note": null,
+        "blockers": null
+      }
+    ]
+  }
+}
+```
+
+Project not found (HTTP `404`):
+
+```json
+{
+  "msg": "We couldn't find this project. It may have been deleted or you may no longer have access to it."
+}
+```
+
+Permission refusal (HTTP `422`):
+
+```json
+{
+  "error": {
+    "msg": ["You don't have permission to change this project's status."]
+  }
+}
 ```
 
 ---
 
 ## Change Project Category
 
-Change the category of a project.
+Replace the categories of a project. The categories you send become the project's complete category list; categories not in the array are removed.
 
 ```http
 POST /api/public-v1/project/{uuid}/change-category
@@ -797,24 +1267,66 @@ POST /api/public-v1/project/{uuid}/change-category
 | `uuid` | string | Yes | Project UUID |
 
 ### Request Body
-
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `category_id` | integer | Yes | New category ID |
+| `category` | array of integers | Yes | Category attribute ids. Every id must exist in the project attributes (use [Get All Attributes](#get-all-attributes) with `type=2` to list categories) |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/project/8f6c2d1e-5b7a-4c0e-9a31-2d4b6e8f0a17/change-category" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{ "category": [9, 11] }'
+```
 
 ### Example Response
 
+The success body is a JSON array containing one message string:
+
 ```json
-[
-  "Project Category Updated"
-]
+["Project Category Updated"]
+```
+
+### Error Responses
+
+Project not found (HTTP `404`):
+
+```json
+{
+  "msg": "We couldn't find this project. It may have been deleted or you may no longer have access to it."
+}
+```
+
+Validation failure (HTTP `422`), for example a missing `category` or an id that does not exist:
+
+```json
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": {
+    "category.0": ["The selected category.0 is invalid."]
+  }
+}
+```
+
+Permission refusal (HTTP `422`), when the workspace edit scope does not allow the API user to change this project:
+
+```json
+{
+  "error": {
+    "msg": ["You don't have permission to change this project's category."]
+  }
+}
 ```
 
 ---
 
 ## Get Project Tasks
 
-Get all tasks in a project.
+Retrieve a project's board: its containers (columns) in board order, each with its tasks. The result is **grouped by container**, not a flat task list.
+
+The Backlog container is not included. Tasks that are still awaiting triage (`triage_status` = `pending`) are not included. A client user only receives client-visible tasks.
 
 ```http
 GET /api/public-v1/project/{uuid}/task
@@ -825,82 +1337,63 @@ GET /api/public-v1/project/{uuid}/task
 |-----------|------|----------|-------------|
 | `uuid` | string | Yes | Project UUID |
 
+### Query Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `search` | string | No | Matches the task `title` (partial match). Containers are still returned, with an empty `items` list when nothing matches |
+| `item` | integer | No | Containers per page (default: `10`). `0` returns every container without pagination |
+| `page` | integer | No | Page number |
+
+### Example Request
+
+```bash
+curl -X GET "https://public-api.taskip.net/api/public-v1/project/c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26/task?search=auth" \
+  -H "X-Secret-Key: your-secret-key-here"
+```
+
 ### Example Response
 
 ```json
 {
   "data": [
     {
-      "id": "container-1",
-      "container_id": 1,
-      "title": "To Do",
-      "color": "#FF5722",
-      "order": 1,
+      "id": "container-89",
+      "container_id": 89,
+      "title": "In Progress",
+      "color": "blue",
+      "order": 2,
+      "category": "in_progress",
+      "is_system": false,
       "stats": {
-        "total_tasks": 5,
+        "total_tasks": 4,
         "completed_tasks": 0,
         "completion_percentage": 0
       },
       "items": [
         {
-          "id": 245,
-          "title": "Design database schema",
-          "project_uuid": "proj_xyz789ghi012",
-          "priority": "high",
+          "id": 246,
+          "number": 13,
+          "key": "ECOM-13",
+          "title": "Setup authentication",
+          "project_uuid": "c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26",
+          "priority": 1,
           "is_completed": false,
-          "description": "Create comprehensive database schema for the e-commerce platform",
-          "due_date": "2024-03-20",
-          "order": "2024-03-20",
-          "container_id": 1,
-          "created_at": "21/Feb/2024",
-          "documents": [],
-          "assignees": [
-            {
-              "id": 8,
-              "name": "David Chen",
-              "email": "david@company.com"
-            }
-          ],
-          "labels": [
-            {
-              "id": 1,
-              "name": "backend",
-              "color": "#4285F4"
-            },
-            {
-              "id": 2,
-              "name": "database",
-              "color": "#FF9800"
-            }
-          ],
-          "files": [],
-          "comments": [],
-          "updated_at": "22/Feb/2024",
-          "created_by": {
-            "id": 3,
-            "name": "Sarah Johnson",
-            "email": "sarah@company.com"
-          }
+          "due_date": "2024-03-15",
+          "order": 2,
+          "container_id": 89,
+          "container_category": "in_progress",
+          "status": 2,
+          "type": "task",
+          "assignees": [],
+          "labels": [],
+          "comments_count": 0
         }
       ]
-    },
-    {
-      "id": "container-2",
-      "container_id": 2,
-      "title": "In Progress",
-      "color": "#2196F3",
-      "order": 2,
-      "stats": {
-        "total_tasks": 3,
-        "completed_tasks": 0,
-        "completion_percentage": 0
-      },
-      "items": []
     }
   ],
   "links": {
-    "first": "https://public-api.taskip.net/api/public-v1/project/proj_xyz789ghi012/task?page=1",
-    "last": "https://public-api.taskip.net/api/public-v1/project/proj_xyz789ghi012/task?page=1",
+    "first": "https://public-api.taskip.net/api/public-v1/project/c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26/task?page=1",
+    "last": "https://public-api.taskip.net/api/public-v1/project/c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26/task?page=1",
     "prev": null,
     "next": null
   },
@@ -908,19 +1401,29 @@ GET /api/public-v1/project/{uuid}/task
     "current_page": 1,
     "from": 1,
     "last_page": 1,
-    "path": "https://public-api.taskip.net/api/public-v1/project/proj_xyz789ghi012/task",
-    "per_page": 15,
-    "to": 8,
-    "total": 8
+    "path": "https://public-api.taskip.net/api/public-v1/project/c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26/task",
+    "per_page": 10,
+    "to": 4,
+    "total": 4
   }
 }
+```
+
+Each entry of `items` is the full task object documented under [Create Task](#create-task) (abbreviated above). `category` is the container's stage category: `backlog`, `todo`, `in_progress`, `review` or `done`.
+
+### Error Responses
+
+Project not found (HTTP `404`):
+
+```json
+{ "msg": "project not found" }
 ```
 
 ---
 
 ## Create Task
 
-Create a new task in a project.
+Create a new task in a project. The task is placed in the given container and takes its status and completion state from the container's stage category (a task created in a `done` container is created completed).
 
 ```http
 POST /api/public-v1/project/{uuid}/task
@@ -936,14 +1439,44 @@ POST /api/public-v1/project/{uuid}/task
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `title` | string | Yes | Task title |
-| `priority` | string | No | Priority enum value |
+| `container_id` | integer or string | Yes | Container (column) id of this project. `89` and `container-89` are both accepted. A container of another project is rejected with `422` |
+| `priority` | integer | No | `0` Low (default), `1` Medium, `2` High, `3` Urgent |
 | `description` | string | No | Task description |
-| `due_date` | string | No | Due date |
-| `order` | integer | No | Task order in container |
-| `container_id` | integer | Yes | Container ID (must exist in project_task_containers) |
-| `assignees` | array | No | Array of assignee user IDs |
-| `labels` | array | No | Array of label IDs |
-| `documents` | array | No | Array of document IDs |
+| `started_at` | string | No | Start date, e.g. `2024-03-01` |
+| `due_date` | string | No | Due date. Must be a valid date |
+| `order` | integer | No | Position in the container. Omit (or `0`) to use the default position |
+| `assignees` | array | No | User ids to assign. Unknown ids are skipped |
+| `type` | string | No | `task` (default), `bug`, `feature`, `feedback`, `change_request` |
+| `client_visible` | boolean | No | Whether clients can see the task. Defaults to the project's `default_client_visible` setting |
+| `milestone_id` | integer | No | Must be a milestone of this project, otherwise `422` |
+| `sprint_id` | integer | No | Must be a sprint of this project, otherwise `422`. Only applied when the project is a scrum project (a kanban project ignores it) |
+| `story_points` | number | No | `0` to `999.9` |
+| `original_estimate_seconds` | integer | No | `0` to `315360000`. When only `current_estimate_seconds` is sent, the original estimate is set to the same value |
+| `current_estimate_seconds` | integer | No | `0` to `315360000` |
+| `custom_fields` | array | No | `[{ "label": "...", "value": "...", "type": "..." }]`; all three keys are required in each entry |
+| `status` | string | No | Ignored on create. The status comes from the container's stage category |
+| `origin` | string | No | Honoured only for administrators/managers: `internal`, `client`, `public_link`, `email`, `ticket`, `ai`, `import`, `workflow`. Origins that need triage place the task in the Backlog, unassigned |
+| `labels`, `documents` | array | No | Accepted by validation but **not applied on create**. Use [Add Task Label](#add-task-label) and [Add Task Document](#add-task-document) after creating the task |
+| `recurrence` | object | No | Validated, but not saved by this endpoint |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/project/c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26/task" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Setup authentication",
+    "description": "Implement user authentication system with JWT",
+    "container_id": 89,
+    "priority": 1,
+    "started_at": "2024-03-04",
+    "due_date": "2024-03-15",
+    "assignees": [12],
+    "type": "feature",
+    "current_estimate_seconds": 28800
+  }'
+```
 
 ### Example Response
 
@@ -952,48 +1485,150 @@ POST /api/public-v1/project/{uuid}/task
   "msg": "Task Created",
   "task": {
     "id": 246,
+    "number": 13,
+    "key": "ECOM-13",
+    "watchers_count": 1,
+    "is_watching": true,
+    "abilities": {
+      "view": true,
+      "comment": true,
+      "time_log": true,
+      "status": true,
+      "estimate": true,
+      "subtask": true,
+      "define": true,
+      "custom_fields": true,
+      "priority": true,
+      "schedule": true,
+      "stage": true,
+      "assign": true,
+      "duplicate": true,
+      "delete": true,
+      "triage": true,
+      "comment_internal": true,
+      "client_visibility": true,
+      "vote": false
+    },
     "title": "Setup authentication",
-    "project_uuid": "proj_xyz789ghi012",
-    "priority": "medium",
+    "project_uuid": "c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26",
+    "priority": 1,
     "is_completed": false,
     "description": "Implement user authentication system with JWT",
     "due_date": "2024-03-15",
-    "order": "2024-03-15",
-    "container_id": 1,
-    "created_at": "22/Feb/2024",
+    "order": 2,
+    "container_id": 89,
+    "container_category": "in_progress",
+    "milestone": null,
+    "sprint": null,
+    "story_points": null,
+    "estimate_unit": "hours",
+    "estimate_value": null,
+    "is_blocked": false,
+    "dependency_counts": { "predecessors": 0, "dependents": 0 },
+    "type": "feature",
+    "origin": "internal",
+    "triage_status": "none",
+    "resolution": null,
+    "resolved_at": null,
+    "triaged_at": null,
+    "created_at": "2024-03-04",
     "documents": [],
     "assignees": [
       {
-        "id": 12,
-        "name": "Lisa Park",
-        "email": "lisa@company.com"
+        "task_id": 246,
+        "assignee_id": {
+          "id": 12,
+          "uuid": "7b9d1f3a-5c20-4e86-a4c8-0e2a4c6e8f12",
+          "first_name": "Lisa",
+          "last_name": "Park",
+          "full_name": "Lisa Park",
+          "email": "lisa@company.com",
+          "timezone": "UTC",
+          "image": null
+        },
+        "assigned_by": {
+          "id": 3,
+          "uuid": "5a7c9e1b-3d52-4f68-a0b4-8c2e4f6a8d03",
+          "first_name": "Sarah",
+          "last_name": "Johnson",
+          "full_name": "Sarah Johnson",
+          "email": "sarah@company.com",
+          "timezone": "UTC",
+          "image": null
+        },
+        "created_at": "04/Mar/2024",
+        "id": 312
       }
     ],
-    "labels": [
-      {
-        "id": 3,
-        "name": "authentication",
-        "color": "#9C27B0"
-      }
-    ],
+    "labels": [],
     "files": [],
     "comments": [],
-    "updated_at": "22/Feb/2024",
+    "client_visible": true,
+    "comments_count": 0,
+    "internal_comments_count": 0,
+    "client_state": "in_progress",
+    "updated_at": "2024-03-04",
     "created_by": {
       "id": 3,
-      "name": "Sarah Johnson",
-      "email": "sarah@company.com"
-    }
+      "uuid": "5a7c9e1b-3d52-4f68-a0b4-8c2e4f6a8d03",
+      "first_name": "Sarah",
+      "last_name": "Johnson",
+      "full_name": "Sarah Johnson",
+      "email": "sarah@company.com",
+      "timezone": "UTC",
+      "image": null
+    },
+    "status": 2,
+    "started_at": "2024-03-04",
+    "ended_at": null,
+    "name": null,
+    "subtasks": [],
+    "custom_fields": [],
+    "parent_task_id": null,
+    "original_estimate_seconds": 28800,
+    "current_estimate_seconds": 28800,
+    "sla": null,
+    "votes_count": 0,
+    "voted_by_me": false
   },
   "status": 200
 }
 ```
 
+`is_blocked`, `dependency_counts`, `sprint`, `story_points`, `estimate_*`, `internal_comments_count` and `sla` are omitted for client users. `recurrence` is included when the task has recurring settings loaded, and `email_source` only for email-origin tasks.
+
+### Error Responses
+
+Project not found (HTTP `404`):
+
+```json
+{ "msg": "project not found" }
+```
+
+Validation failure (HTTP `422`):
+
+```json
+{
+  "error": {
+    "title": ["The title field is required."],
+    "container_id": ["The board column field is required."]
+  }
+}
+```
+
+Business-rule failure (HTTP `422`), for example a `milestone_id` that belongs to another project:
+
+```json
+{ "msg": "The milestone belongs to another project." }
+```
+
+The same shape is used for a `container_id` or `sprint_id` that belongs to another project (`The container belongs to another project.`, `The sprint belongs to another project.`).
+
 ---
 
 ## Get Specific Task
 
-Get details of a specific task.
+Retrieve one task of a project, including its container, files, comments and subtasks.
 
 ```http
 GET /api/public-v1/project/{uuid}/task/{id}
@@ -1003,78 +1638,94 @@ GET /api/public-v1/project/{uuid}/task/{id}
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `uuid` | string | Yes | Project UUID |
-| `id` | integer | Yes | Task ID |
+| `id` | integer | Yes | Task id |
+
+### Example Request
+
+```bash
+curl -X GET "https://public-api.taskip.net/api/public-v1/project/c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26/task/246" \
+  -H "X-Secret-Key: your-secret-key-here"
+```
 
 ### Example Response
 
 ```json
 {
   "data": {
-    "title": "Design database schema",
-    "project_uuid": "proj_xyz789ghi012",
-    "priority": "high",
+    "id": 246,
+    "number": 13,
+    "key": "ECOM-13",
+    "watchers_count": 1,
+    "is_watching": true,
+    "abilities": { "view": true, "comment": true, "delete": true },
+    "title": "Setup authentication",
+    "project_uuid": "c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26",
+    "priority": 1,
     "is_completed": false,
-    "description": "Create comprehensive database schema for the e-commerce platform",
-    "due_date": "20/Mar/2024",
-    "order": 1,
+    "description": "Implement user authentication system with JWT",
+    "due_date": "2024-03-15",
+    "order": 2,
     "container": {
-      "id": 1,
-      "title": "To Do",
-      "color": "#FF5722",
-      "order": 1
+      "id": 89,
+      "project_uuid": "c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26",
+      "title": "In Progress",
+      "color": "blue",
+      "order": 2,
+      "category": "in_progress",
+      "is_system": false,
+      "created_at": "04/Mar/2024"
     },
+    "milestone": null,
+    "type": "feature",
+    "origin": "internal",
+    "triage_status": "none",
+    "resolution": null,
     "labels": [
       {
-        "id": 1,
-        "name": "backend",
-        "color": "#4285F4"
-      },
-      {
-        "id": 2,
-        "name": "database",
-        "color": "#FF9800"
+        "id": 31,
+        "task_id": 246,
+        "attribute_id": 14,
+        "attribute": { "color": "red", "title": "Backend", "type": 1 }
       }
     ],
-    "files": [
-      {
-        "id": 10,
-        "name": "schema.sql",
-        "size": 5120,
-        "type": "text/sql"
-      }
-    ],
-    "comments": [
-      {
-        "id": 45,
-        "content": "Started working on user tables",
-        "author": "David Chen",
-        "created_at": "22/Feb/2024"
-      }
-    ],
-    "documents": [
-      {
-        "id": 15,
-        "name": "Database Requirements",
-        "type": "requirement"
-      }
-    ],
-    "assignees": [
-      {
-        "id": 8,
-        "name": "David Chen",
-        "email": "david@company.com"
-      }
-    ],
-    "created_at": "21/Feb/2024",
-    "updated_at": "22/Feb/2024",
-    "created_by": {
-      "id": 3,
-      "name": "Sarah Johnson",
-      "email": "sarah@company.com"
-    },
-    "id": 245
+    "files": [],
+    "comments": [],
+    "client_visible": true,
+    "comments_count": 0,
+    "client_state": "in_progress",
+    "documents": [],
+    "assignees": [],
+    "created_at": "2024-03-04",
+    "updated_at": "2024-03-04",
+    "started_at": "2024-03-04",
+    "ended_at": null,
+    "subtasks": [],
+    "custom_fields": [],
+    "original_estimate_seconds": 28800,
+    "current_estimate_seconds": 28800,
+    "sla": null,
+    "votes_count": 0,
+    "voted_by_me": false
   },
   "status": 200
+}
+```
+
+This is the single-task shape, abbreviated. It is close to the list/create task object but returns the full `container` object instead of `container_id`/`container_category`. In this response each `assignees` entry is a plain user-style object; see the note below.
+
+> Known quirk: on this endpoint `assignees` is rendered from the assignment rows with the user transformer, so the entries contain the assignment id in `id` and `null` for the name and email fields. Use the `assignees` of the list, create or update responses (or the assignee endpoints) when you need the member details.
+
+### Error Responses
+
+Project or task not found (HTTP `404`):
+
+```json
+{ "msg": "We couldn't find this task." }
+```
+
+```json
+{
+  "msg": "We couldn't find this project. It may have been deleted or you may no longer have access to it."
 }
 ```
 
@@ -1082,7 +1733,9 @@ GET /api/public-v1/project/{uuid}/task/{id}
 
 ## Update Task
 
-Update an existing task.
+Update a task. `title` and `container_id` are always required (the container must belong to this project). Every other column is **partial**: only the keys present in the request are written, so omitting `description`, `due_date`, `started_at`, `order`, `story_points`, `sprint_id` or `custom_fields` leaves the stored value untouched. Send `null` to clear a nullable value.
+
+Fields that are only written when sent: `priority`, `status`, `type`, `client_visible`, `milestone_id`.
 
 ```http
 PUT /api/public-v1/project/{uuid}/task/{id}
@@ -1092,21 +1745,40 @@ PUT /api/public-v1/project/{uuid}/task/{id}
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `uuid` | string | Yes | Project UUID |
-| `id` | integer | Yes | Task ID |
+| `id` | integer | Yes | Task id |
 
 ### Request Body
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `title` | string | Yes | Task title |
-| `priority` | string | No | Priority enum value |
-| `description` | string | No | Task description |
-| `due_date` | string | No | Due date |
-| `order` | integer | No | Task order in container |
-| `container_id` | integer | Yes | Container ID (must exist in project_task_containers) |
-| `assignees` | array | No | Array of assignee user IDs |
-| `labels` | array | No | Array of label IDs |
-| `documents` | array | No | Array of document IDs |
+Same fields and rules as [Create Task](#create-task). Differences on update:
+
+| Field | Behavior on update |
+|-------|--------------------|
+| `assignees` | When non-empty, the task's assignees are synced to exactly this list (missing members are removed). An empty or omitted list leaves assignees unchanged |
+| `labels` | When non-empty, the task's labels are synced to exactly this list of label attribute ids. An empty or omitted list leaves labels unchanged |
+| `documents` | When non-empty, the task's documents are synced to exactly this list of document ids. An empty or omitted list leaves documents unchanged |
+| `status` | Written as sent |
+| `type`, `priority`, `client_visible`, `milestone_id` | Written only when sent. `origin` is never changed |
+| `milestone_id` | Must belong to this project, otherwise `422`. It cannot be cleared through this endpoint |
+| `sprint_id` | Must belong to this project, otherwise `422`. Only applied when the project is a scrum project (a kanban project ignores it) and only when sent; leaving it out keeps the task's current sprint |
+
+### Example Request
+
+```bash
+curl -X PUT "https://public-api.taskip.net/api/public-v1/project/c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26/task/246" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Setup authentication and authorization",
+    "description": "Implement user auth with JWT and role-based access",
+    "container_id": 89,
+    "priority": 2,
+    "started_at": "2024-03-04",
+    "due_date": "2024-03-20",
+    "order": 2,
+    "assignees": [12, 8],
+    "labels": [14]
+  }'
+```
 
 ### Example Response
 
@@ -1114,64 +1786,59 @@ PUT /api/public-v1/project/{uuid}/task/{id}
 {
   "msg": "Task Update",
   "task": {
-    "id": 245,
-    "title": "Design database schema - Updated",
-    "project_uuid": "proj_xyz789ghi012",
-    "priority": "critical",
+    "id": 246,
+    "number": 13,
+    "key": "ECOM-13",
+    "title": "Setup authentication and authorization",
+    "project_uuid": "c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26",
+    "priority": 2,
     "is_completed": false,
-    "description": "Updated: Create comprehensive database schema with performance optimization",
-    "due_date": "2024-03-18",
-    "order": "2024-03-18",
-    "container_id": 2,
-    "created_at": "21/Feb/2024",
-    "documents": [],
-    "assignees": [
-      {
-        "id": 8,
-        "name": "David Chen",
-        "email": "david@company.com"
-      },
-      {
-        "id": 12,
-        "name": "Lisa Park",
-        "email": "lisa@company.com"
-      }
-    ],
+    "description": "Implement user auth with JWT and role-based access",
+    "due_date": "2024-03-20",
+    "order": 2,
+    "container_id": 89,
+    "type": "feature",
     "labels": [
       {
-        "id": 1,
-        "name": "backend",
-        "color": "#4285F4"
-      },
-      {
-        "id": 2,
-        "name": "database",
-        "color": "#FF9800"
-      },
-      {
-        "id": 4,
-        "name": "performance",
-        "color": "#4CAF50"
+        "id": 31,
+        "task_id": 246,
+        "attribute_id": 14,
+        "attribute": { "color": "red", "title": "Backend", "type": 1 }
       }
     ],
-    "files": [],
-    "comments": [],
-    "updated_at": "23/Feb/2024",
-    "created_by": {
-      "id": 3,
-      "name": "Sarah Johnson",
-      "email": "sarah@company.com"
-    }
+    "updated_at": "2024-03-06"
   },
   "status": 200
 }
 ```
 
+`task` is the full task object described under [Create Task](#create-task) (abbreviated here).
+
+### Error Responses
+
+Project or task not found (HTTP `404`):
+
+```json
+{ "msg": "project not found" }
+```
+
+```json
+{ "msg": "task not found" }
+```
+
+Validation failure (HTTP `422`) uses `{ "error": { "field": ["..."] } }`. A business-rule failure such as a milestone, container or sprint from another project returns HTTP `422`:
+
+```json
+{ "msg": "The container belongs to another project." }
+```
+
+Other messages of the same shape: `The milestone belongs to another project.` and `The sprint belongs to another project.`.
+
 ---
 
 ## Delete Task
 
-Delete a task from the project.
+Delete a task. A task that has tracked time entries cannot be deleted.
 
 ```http
 DELETE /api/public-v1/project/{uuid}/task/{id}
@@ -1181,14 +1848,44 @@ DELETE /api/public-v1/project/{uuid}/task/{id}
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `uuid` | string | Yes | Project UUID |
-| `id` | integer | Yes | Task ID |
+| `id` | integer | Yes | Task id |
+
+### Example Request
+
+```bash
+curl -X DELETE "https://public-api.taskip.net/api/public-v1/project/c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26/task/246" \
+  -H "X-Secret-Key: your-secret-key-here"
+```
 
 ### Example Response
 
 ```json
 {
-  "status": 200,
-  "msg": "Task deleted successfully"
+  "msg": "Task Deleted",
+  "status": 200
+}
+```
+
+### Error Responses
+
+Project or task not found (HTTP `404`):
+
+```json
+{ "msg": "We couldn't find this task." }
+```
+
+The API user is not allowed to delete this task (HTTP `422`):
+
+```json
+{ "msg": "You don't have permission to perform this action." }
+```
+
+The task has tracked time (HTTP `409`):
+
+```json
+{
+  "msg": "This task has 3 tracked time entries and cannot be deleted. Archive it instead to preserve the history.",
+  "entry_count": 3
 }
 ```
 
@@ -1196,7 +1893,7 @@ DELETE /api/public-v1/project/{uuid}/task/{id}
 
 ## Change Task Order
 
-Change the order of tasks within a container.
+Set the position of tasks inside one container. Use it after reordering or after dropping tasks into a column. Every listed task is set to the given `order` value and moved into the target container (taking the container's status and completion state).
 
 ```http
 POST /api/public-v1/project/{uuid}/task/change-order
@@ -1211,8 +1908,25 @@ POST /api/public-v1/project/{uuid}/task/change-order
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `container_id` | integer | Yes | Target container ID |
-| `order` | array | Yes | Array of order objects with `item_id` and `order` |
+| `container_id` | integer or string | Yes | Target container. `89` and `container-89` are both accepted |
+| `order` | array | Yes | List of `{ "item_id": <task id>, "order": <position> }`. Must be present and an array; a missing or non-array `order` is rejected with `422` |
+
+Every `item_id` must be a task of this project; an unknown id makes the whole request return `404` (tasks listed before it have already been updated).
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/project/c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26/task/change-order" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "container_id": "container-89",
+    "order": [
+      { "item_id": 247, "order": 1 },
+      { "item_id": 246, "order": 2 }
+    ]
+  }'
+```
 
 ### Example Response
 
@@ -1223,11 +1937,21 @@ POST /api/public-v1/project/{uuid}/task/change-order
 }
 ```
 
+### Error Responses
+
+Project not found (HTTP `404`):
+
+```json
+{ "msg": "project not found" }
+```
+
+Validation failure (HTTP `422`), for example a missing `container_id` or a missing/non-array `order`: `{ "success": false, "message": "Validation failed", "errors": { "container_id": ["The board column field is required."] } }`.
+
 ---
 
 ## Change Task Container
 
-Move a task to a different container/column.
+Move a task to another container (column). The task takes the status and completion state of the target container's stage category.
 
 ```http
 POST /api/public-v1/project/{uuid}/task/{id}/change-container
@@ -1237,14 +1961,21 @@ POST /api/public-v1/project/{uuid}/task/{id}/change-container
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `uuid` | string | Yes | Project UUID |
-| `id` | integer | Yes | Task ID |
+| `id` | integer | Yes | Task id |
 
 ### Request Body
-
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `container_id` | integer | Yes | New container ID |
-| `order` | integer | No | Position in new container |
+| `container_id` | integer or string | Yes | Target container of the same project. `89` and `container-89` are both accepted |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/project/c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26/task/246/change-container" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{ "container_id": 91 }'
+```
 
 ### Example Response
 
@@ -1255,11 +1986,21 @@ POST /api/public-v1/project/{uuid}/task/{id}/change-container
 }
 ```
 
+### Error Responses
+
+Missing `container_id` (HTTP `422`):
+
+```json
+{ "msg": "container_id field is required" }
+```
+
+Not found (HTTP `404`): the response `msg` is one of `We couldn't find this project. It may have been deleted or you may no longer have access to it.`, `We couldn't find this task.` or `We couldn't find this board column.`.
+
 ---
 
 ## Change Task Priority
 
-Change the priority of a task.
+Change a task's priority. The value must be a priority enum value: `0` Low, `1` Medium, `2` High or `3` Urgent.
 
 ```http
 POST /api/public-v1/project/{uuid}/task/{id}/change-priority
@@ -1269,28 +2010,52 @@ POST /api/public-v1/project/{uuid}/task/{id}/change-priority
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `uuid` | string | Yes | Project UUID |
-| `id` | integer | Yes | Task ID |
+| `id` | integer | Yes | Task id |
 
 ### Request Body
-
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `priority` | string | Yes | New priority |
+| `priority` | integer | Yes | `0` Low, `1` Medium, `2` High, `3` Urgent. `0` is accepted; an empty value is not |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/project/c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26/task/246/change-priority" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{ "priority": 3 }'
+```
 
 ### Example Response
 
 ```json
 {
-  "msg": "Task Priority Changed",
+  "msg": "Task priority Changed",
   "status": 200
 }
 ```
+
+### Error Responses
+
+Missing priority (HTTP `422`):
+
+```json
+{ "msg": "Field is required" }
+```
+
+Value outside the priority enum (HTTP `422`):
+
+```json
+{ "msg": "Invalid priority value" }
+```
+
+Not found (HTTP `404`): `msg` is `We couldn't find this project. It may have been deleted or you may no longer have access to it.` or `We couldn't find this task.`.
 
 ---
 
 ## Mark Task Complete
 
-Mark a task as complete.
+Mark a task complete or not complete. Completing moves the task to the project's first Done container; re-opening a task that sits in a Done container moves it back to the first In Progress container (or To Do when there is none).
 
 ```http
 POST /api/public-v1/project/{uuid}/task/{id}/mark-as-complete
@@ -1300,15 +2065,25 @@ POST /api/public-v1/project/{uuid}/task/{id}/mark-as-complete
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `uuid` | string | Yes | Project UUID |
-| `id` | integer | Yes | Task ID |
+| `id` | integer | Yes | Task id |
 
 ### Request Body
-
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `is_completed` | integer | Yes | Completion status (0=Not Complete, 1=Complete) |
+| `is_completed` | integer or boolean | Yes | `1` / `true` marks the task complete, `0` / `false` marks it not complete. The key must be present |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/project/c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26/task/246/mark-as-complete" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{ "is_completed": 1 }'
+```
 
 ### Example Response
+
+`stats` is the project-wide task progress after the change.
 
 ```json
 {
@@ -1322,11 +2097,23 @@ POST /api/public-v1/project/{uuid}/task/{id}/mark-as-complete
 }
 ```
 
+With `is_completed` set to `0` the message is `Task Marked as Not Complete`.
+
+### Error Responses
+
+Missing `is_completed` (HTTP `422`):
+
+```json
+{ "msg": "is completed field is required" }
+```
+
+Not found (HTTP `404`): `{ "msg": "project not found" }` or `{ "msg": "task not found" }`.
+
 ---
 
 ## Add Task Label
 
-Add a label to a task.
+Attach a label to a task. The call is idempotent: attaching a label that is already on the task returns the existing attachment.
 
 ```http
 POST /api/public-v1/project/{uuid}/task/{id}/label
@@ -1336,34 +2123,65 @@ POST /api/public-v1/project/{uuid}/task/{id}/label
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `uuid` | string | Yes | Project UUID |
-| `id` | integer | Yes | Task ID |
+| `id` | integer | Yes | Task id |
 
 ### Request Body
-
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `label_id` | integer | Yes | Label/Attribute ID to add to task |
+| `label_id` | integer | Yes | Id of a project attribute of type `1` (label). Create labels with [Create Attribute](#create-attribute) |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/project/c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26/task/246/label" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{ "label_id": 14 }'
+```
 
 ### Example Response
 
 ```json
 {
-  "msg": "Task Label added",
+  "msg": "Label added",
   "data": {
-    "id": 3,
-    "title": "backend",
-    "color": "#4285F4",
-    "type": "label"
-  },
-  "status": 200
+    "id": 31,
+    "task_id": 246,
+    "attribute_id": 14,
+    "attribute": {
+      "color": "red",
+      "title": "Backend",
+      "type": 1
+    }
+  }
 }
 ```
+
+### Error Responses
+
+Validation failure (HTTP `422`):
+
+```json
+{
+  "error": {
+    "label_id": ["The selected label id is invalid."]
+  }
+}
+```
+
+The attribute exists but is not a label (HTTP `422`):
+
+```json
+{ "msg": "This attribute isn't a label." }
+```
+
+The API user may not edit this task (HTTP `422`): `{ "msg": "You don't have permission to perform this action." }`. Project or task not found: HTTP `404` with `msg` `We couldn't find this project. It may have been deleted or you may no longer have access to it.` or `We couldn't find this task.`.
 
 ---
 
 ## Remove Task Label
 
-Remove a label from a task.
+Detach a label from a task. The call is idempotent: removing a label that is not on the task still succeeds.
 
 ```http
 DELETE /api/public-v1/project/{uuid}/task/{id}/label
@@ -1373,28 +2191,41 @@ DELETE /api/public-v1/project/{uuid}/task/{id}/label
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `uuid` | string | Yes | Project UUID |
-| `id` | integer | Yes | Task ID |
+| `id` | integer | Yes | Task id |
 
 ### Request Body
-
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `label_id` | integer | Yes | Label ID to remove |
+| `label_id` | integer | Yes | Id of a label attribute (type `1`) |
+
+### Example Request
+
+```bash
+curl -X DELETE "https://public-api.taskip.net/api/public-v1/project/c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26/task/246/label" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{ "label_id": 14 }'
+```
 
 ### Example Response
 
 ```json
 {
-  "msg": "Task Label removed",
-  "status": 200
+  "msg": "Label removed"
 }
 ```
+
+### Error Responses
+
+Same errors as [Add Task Label](#add-task-label): validation failure `{ "error": { "label_id": [...] } }` (HTTP `422`), `This attribute isn't a label.` (HTTP `422`), permission refusal (HTTP `422`) and `404` for an unknown project or task.
 
 ---
 
 ## Add Task Assignee
 
-Assign a user to a task.
+Assign a member to a task. The assignment is recorded as made by the API user (`assigned_by`), and the assignee is notified and starts watching the task.
+
+This call is idempotent: if the member is already assigned to the task, it returns `200` with the existing assignment, creates no duplicate and does not notify the member again.
 
 ```http
 POST /api/public-v1/project/{uuid}/task/{id}/assignee
@@ -1404,13 +2235,21 @@ POST /api/public-v1/project/{uuid}/task/{id}/assignee
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `uuid` | string | Yes | Project UUID |
-| `id` | integer | Yes | Task ID |
+| `id` | integer | Yes | Task id |
 
 ### Request Body
-
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `assignee_id` | integer | Yes | User ID to assign to the task |
+| `assignee_id` | integer | Yes | User id of the member to assign |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/project/c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26/task/246/assignee" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{ "assignee_id": 8 }'
+```
 
 ### Example Response
 
@@ -1418,29 +2257,49 @@ POST /api/public-v1/project/{uuid}/task/{id}/assignee
 {
   "msg": "Task Assignee added",
   "data": {
-    "task_id": 245,
+    "task_id": 246,
     "assignee_id": {
-      "id": 12,
-      "name": "Lisa Park",
-      "email": "lisa@company.com"
+      "id": 8,
+      "uuid": "2e4a6c8e-0b75-4d91-8c23-7a9b1d3f5e08",
+      "first_name": "David",
+      "last_name": "Chen",
+      "full_name": "David Chen",
+      "email": "david@company.com",
+      "timezone": "UTC",
+      "image": null
     },
     "assigned_by": {
       "id": 3,
-      "name": "Sarah Johnson",
-      "email": "sarah@company.com"
+      "uuid": "5a7c9e1b-3d52-4f68-a0b4-8c2e4f6a8d03",
+      "first_name": "Sarah",
+      "last_name": "Johnson",
+      "full_name": "Sarah Johnson",
+      "email": "sarah@company.com",
+      "timezone": "UTC",
+      "image": null
     },
-    "created_at": "23/Feb/2024",
-    "id": 15
+    "created_at": "06/Mar/2024",
+    "id": 313
   },
   "status": 200
 }
 ```
 
+### Error Responses
+
+No `assignee_id` sent (HTTP `422`):
+
+```json
+{ "msg": "Please select a member to assign." }
+```
+
+Member, project or task not found (HTTP `404`): `msg` is `We couldn't find this member.`, `We couldn't find this project. It may have been deleted or you may no longer have access to it.` or `We couldn't find this task.`.
+
 ---
 
 ## Remove Task Assignee
 
-Remove an assignee from a task.
+Remove a member from a task.
 
 ```http
 DELETE /api/public-v1/project/{uuid}/task/{id}/assignee
@@ -1450,13 +2309,21 @@ DELETE /api/public-v1/project/{uuid}/task/{id}/assignee
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `uuid` | string | Yes | Project UUID |
-| `id` | integer | Yes | Task ID |
+| `id` | integer | Yes | Task id |
 
 ### Request Body
-
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `assignee_id` | integer | Yes | User ID to remove from task |
+| `assignee_id` | integer | Yes | User id of the member to remove |
+
+### Example Request
+
+```bash
+curl -X DELETE "https://public-api.taskip.net/api/public-v1/project/c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26/task/246/assignee" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{ "assignee_id": 8 }'
+```
 
 ### Example Response
 
@@ -1467,11 +2334,27 @@ DELETE /api/public-v1/project/{uuid}/task/{id}/assignee
 }
 ```
 
+### Error Responses
+
+No `assignee_id` sent (HTTP `422`):
+
+```json
+{ "msg": "Please select a member to assign." }
+```
+
+The member is not assigned to this task (HTTP `404`):
+
+```json
+{ "msg": "This member isn't assigned to this task." }
+```
+
+Unknown member, project or task (HTTP `404`): `msg` is `We couldn't find this member.`, `We couldn't find this project. It may have been deleted or you may no longer have access to it.` or `We couldn't find this task.`.
+
 ---
 
 ## Get Task Documents
 
-Get documents attached to a task.
+List the documents attached to a task.
 
 ```http
 GET /api/public-v1/project/{uuid}/task/{id}/document
@@ -1481,7 +2364,14 @@ GET /api/public-v1/project/{uuid}/task/{id}/document
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `uuid` | string | Yes | Project UUID |
-| `id` | integer | Yes | Task ID |
+| `id` | integer | Yes | Task id |
+
+### Example Request
+
+```bash
+curl -X GET "https://public-api.taskip.net/api/public-v1/project/c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26/task/246/document" \
+  -H "X-Secret-Key: your-secret-key-here"
+```
 
 ### Example Response
 
@@ -1489,45 +2379,32 @@ GET /api/public-v1/project/{uuid}/task/{id}/document
 {
   "data": [
     {
-      "task_id": 245,
-      "document_id": 10,
+      "task_id": 246,
+      "document_id": 57,
       "document": {
-        "id": 10,
-        "title": "Project Requirements Document",
-        "description": "Detailed requirements for the e-commerce platform",
-        "file_name": "requirements.pdf",
-        "file_size": 1024000,
-        "file_type": "application/pdf",
-        "created_at": "20/Feb/2024",
-        "updated_at": "20/Feb/2024"
+        "id": 57,
+        "uuid": "e1f3a5c7-9b04-4d26-8f48-0a2c4e6a8b57",
+        "name": "API Authentication Spec",
+        "thumbnail": null
       },
-      "id": 245
-    },
-    {
-      "task_id": 245,
-      "document_id": 15,
-      "document": {
-        "id": 15,
-        "title": "Database Schema Design",
-        "description": "Visual representation of database structure",
-        "file_name": "schema_diagram.png",
-        "file_size": 512000,
-        "file_type": "image/png",
-        "created_at": "21/Feb/2024",
-        "updated_at": "21/Feb/2024"
-      },
-      "id": 245
+      "id": 246
     }
   ],
   "status": 200
 }
 ```
 
+`id` repeats the task id (it is not a link id). Use `document_id` when removing a document.
+
+### Error Responses
+
+Project or task not found (HTTP `404`): `msg` is `We couldn't find this project. It may have been deleted or you may no longer have access to it.` or `We couldn't find this task.`.
+
 ---
 
 ## Add Task Document
 
-Add a document to a task.
+Attach an existing document to a task.
 
 ```http
 POST /api/public-v1/project/{uuid}/task/{id}/document
@@ -1537,13 +2414,21 @@ POST /api/public-v1/project/{uuid}/task/{id}/document
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `uuid` | string | Yes | Project UUID |
-| `id` | integer | Yes | Task ID |
+| `id` | integer | Yes | Task id |
 
 ### Request Body
-
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `document_id` | integer | Yes | Document ID to attach to the task |
+| `document_id` | integer | Yes | Id of a document in your workspace (see the Document Management API). Must exist, otherwise `404`. Attaching the same document twice returns the existing link instead of creating a duplicate |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/project/c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26/task/246/document" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{ "document_id": 57 }'
+```
 
 ### Example Response
 
@@ -1551,29 +2436,41 @@ POST /api/public-v1/project/{uuid}/task/{id}/document
 {
   "msg": "Task Document added",
   "data": {
-    "task_id": 245,
-    "document_id": 18,
+    "task_id": 246,
+    "document_id": 57,
     "document": {
-      "id": 18,
-      "title": "API Documentation",
-      "description": "Complete API documentation for the project",
-      "file_name": "api_docs.pdf",
-      "file_size": 2048000,
-      "file_type": "application/pdf",
-      "created_at": "23/Feb/2024",
-      "updated_at": "23/Feb/2024"
+      "id": 57,
+      "uuid": "e1f3a5c7-9b04-4d26-8f48-0a2c4e6a8b57",
+      "name": "API Authentication Spec",
+      "thumbnail": null
     },
-    "id": 245
+    "id": 246
   },
   "status": 200
 }
+```
+
+### Error Responses
+
+No `document_id` sent (HTTP `422`):
+
+```json
+{ "msg": "Please select a document." }
+```
+
+Project or task not found (HTTP `404`): `msg` is `We couldn't find this project. It may have been deleted or you may no longer have access to it.` or `We couldn't find this task.`.
+
+Unknown `document_id` (HTTP `404`):
+
+```json
+{ "msg": "Document not found" }
 ```
 
 ---
 
 ## Remove Task Document
 
-Remove a document from a task.
+Detach a document from a task. The document itself is not deleted.
 
 ```http
 DELETE /api/public-v1/project/{uuid}/task/{id}/document
@@ -1583,13 +2480,21 @@ DELETE /api/public-v1/project/{uuid}/task/{id}/document
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `uuid` | string | Yes | Project UUID |
-| `id` | integer | Yes | Task ID |
+| `id` | integer | Yes | Task id |
 
 ### Request Body
-
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `document_id` | integer | Yes | Document ID to remove |
+| `document_id` | integer | Yes | Id of the attached document |
+
+### Example Request
+
+```bash
+curl -X DELETE "https://public-api.taskip.net/api/public-v1/project/c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26/task/246/document" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{ "document_id": 57 }'
+```
 
 ### Example Response
 
@@ -1600,11 +2505,27 @@ DELETE /api/public-v1/project/{uuid}/task/{id}/document
 }
 ```
 
+### Error Responses
+
+No `document_id` sent (HTTP `422`):
+
+```json
+{ "msg": "Please select a document." }
+```
+
+The document is not attached to the task (HTTP `404`):
+
+```json
+{ "msg": "We couldn't find this document." }
+```
+
+Project or task not found (HTTP `404`): `msg` is `We couldn't find this project. It may have been deleted or you may no longer have access to it.` or `We couldn't find this task.`.
+
 ---
 
 ## Get Task Comments
 
-Get comments on a task.
+List the top-level comments of a task, oldest first, each with its replies. Internal (staff-only) comments are hidden from client users.
 
 ```http
 GET /api/public-v1/project/{uuid}/task/{id}/comment
@@ -1614,7 +2535,14 @@ GET /api/public-v1/project/{uuid}/task/{id}/comment
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `uuid` | string | Yes | Project UUID |
-| `id` | integer | Yes | Task ID |
+| `id` | integer | Yes | Task id |
+
+### Example Request
+
+```bash
+curl -X GET "https://public-api.taskip.net/api/public-v1/project/c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26/task/246/comment" \
+  -H "X-Secret-Key: your-secret-key-here"
+```
 
 ### Example Response
 
@@ -1622,37 +2550,78 @@ GET /api/public-v1/project/{uuid}/task/{id}/comment
 {
   "data": [
     {
-      "id": 45,
-      "task_id": 245,
-      "description": "Started working on this task - implementing user authentication module",
+      "id": 77,
+      "task_id": 246,
+      "parent_id": null,
+      "description": "Started working on the JWT middleware.",
+      "is_internal": false,
+      "edited_at": null,
       "user": {
         "id": 8,
-        "name": "David Chen",
-        "email": "david@company.com"
+        "uuid": "2e4a6c8e-0b75-4d91-8c23-7a9b1d3f5e08",
+        "first_name": "David",
+        "last_name": "Chen",
+        "full_name": "David Chen",
+        "email": "david@company.com",
+        "timezone": "UTC",
+        "image": null
       },
-      "createdAt": "22 Feb 2024 14:30"
-    },
-    {
-      "id": 46,
-      "task_id": 245,
-      "description": "Good progress! Let me know if you need help with JWT implementation.",
-      "user": {
-        "id": 3,
-        "name": "Sarah Johnson",
-        "email": "sarah@company.com"
-      },
-      "createdAt": "22 Feb 2024 16:45"
+      "createdAt": "05 Mar 2024 14:30",
+      "created_at_iso": "2024-03-05T14:30:00+00:00",
+      "reactions": [
+        { "emoji": "👍", "count": 1, "reacted": false }
+      ],
+      "attachments": [],
+      "replies": [
+        {
+          "id": 78,
+          "task_id": 246,
+          "parent_id": 77,
+          "description": "Looks good, thanks.",
+          "is_internal": false,
+          "edited_at": null,
+          "user": {
+            "id": 3,
+            "uuid": "5a7c9e1b-3d52-4f68-a0b4-8c2e4f6a8d03",
+            "first_name": "Sarah",
+            "last_name": "Johnson",
+            "full_name": "Sarah Johnson",
+            "email": "sarah@company.com",
+            "timezone": "UTC",
+            "image": null
+          },
+          "createdAt": "05 Mar 2024 15:02",
+          "created_at_iso": "2024-03-05T15:02:00+00:00",
+          "reactions": [],
+          "attachments": [],
+          "can_edit": true,
+          "can_delete": true
+        }
+      ],
+      "replies_count": 1,
+      "can_edit": true,
+      "can_delete": true
     }
   ],
   "status": 200
 }
 ```
 
+### Error Responses
+
+Project, task not found, or task not visible to the API user (HTTP `404`):
+
+```json
+{ "msg": "task not found" }
+```
+
+The project case returns `{ "msg": "project not found" }`.
+
 ---
 
 ## Add Task Comment
 
-Add a comment to a task.
+Add a comment to a task, or a reply to an existing top-level comment.
 
 ```http
 POST /api/public-v1/project/{uuid}/task/{id}/comment
@@ -1662,13 +2631,27 @@ POST /api/public-v1/project/{uuid}/task/{id}/comment
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `uuid` | string | Yes | Project UUID |
-| `id` | integer | Yes | Task ID |
+| `id` | integer | Yes | Task id |
 
 ### Request Body
-
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `description` | string | Yes | Comment description/text |
+| `description` | string | Yes | Comment text (HTML allowed; max 20000 characters). `span` elements carrying `data-mention-id` notify the mentioned users |
+| `parent_id` | integer | No | Id of a top-level comment on the same task to reply to. Replies cannot be nested |
+| `is_internal` | boolean | No | `true` posts a staff-only comment. Not available to client users |
+| `attachment_ids` | array | No | Up to 10 media upload ids. Each must be an unattached upload created by the API user |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/project/c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26/task/246/comment" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "description": "Started working on the JWT middleware.",
+    "is_internal": false
+  }'
+```
 
 ### Example Response
 
@@ -1676,25 +2659,53 @@ POST /api/public-v1/project/{uuid}/task/{id}/comment
 {
   "msg": "Task comment added",
   "data": {
-    "id": 47,
-    "task_id": 245,
-    "description": "Completed the initial design and ready for review",
+    "id": 77,
+    "task_id": 246,
+    "parent_id": null,
+    "description": "Started working on the JWT middleware.",
+    "is_internal": false,
+    "edited_at": null,
     "user": {
-      "id": 12,
-      "name": "Lisa Park",
-      "email": "lisa@company.com"
+      "id": 3,
+      "uuid": "5a7c9e1b-3d52-4f68-a0b4-8c2e4f6a8d03",
+      "first_name": "Sarah",
+      "last_name": "Johnson",
+      "full_name": "Sarah Johnson",
+      "email": "sarah@company.com",
+      "timezone": "UTC",
+      "image": null
     },
-    "createdAt": "23 Feb 2024 10:00"
+    "createdAt": "05 Mar 2024 14:30",
+    "created_at_iso": "2024-03-05T14:30:00+00:00",
+    "reactions": [],
+    "attachments": [],
+    "replies_count": 0,
+    "can_edit": true,
+    "can_delete": true
   },
   "status": 200
 }
 ```
 
+### Error Responses
+
+Validation failure (HTTP `422`):
+
+```json
+{
+  "error": {
+    "description": ["The description field is required."]
+  }
+}
+```
+
+Business-rule failures (HTTP `422`): `{ "msg": "You can only reply to a top-level comment." }`, `{ "msg": "One or more attachments are invalid." }`, and `{ "msg": "You don't have permission to perform this action." }` (for example `is_internal` by a client). Unknown project, task, or parent comment: HTTP `404` with `msg` `project not found`, `task not found` or `comment not found`.
+
 ---
 
 ## Remove Task Comment
 
-Delete a comment from a task.
+Delete a comment (and its replies and attachments). Only the comment's author, an administrator/manager, or the project lead may delete it.
 
 ```http
 DELETE /api/public-v1/project/{uuid}/task/{id}/comment
@@ -1704,13 +2715,21 @@ DELETE /api/public-v1/project/{uuid}/task/{id}/comment
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `uuid` | string | Yes | Project UUID |
-| `id` | integer | Yes | Task ID |
+| `id` | integer | Yes | Task id |
 
 ### Request Body
-
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `comment_id` | integer | Yes | Comment ID to delete from task |
+| `comment_id` | integer | Yes | Id of the comment to delete |
+
+### Example Request
+
+```bash
+curl -X DELETE "https://public-api.taskip.net/api/public-v1/project/c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26/task/246/comment" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{ "comment_id": 77 }'
+```
 
 ### Example Response
 
@@ -1721,11 +2740,21 @@ DELETE /api/public-v1/project/{uuid}/task/{id}/comment
 }
 ```
 
+### Error Responses
+
+No `comment_id` sent (HTTP `422`):
+
+```json
+{ "msg": "comment id field is required" }
+```
+
+Not allowed to delete this comment (HTTP `422`): `{ "msg": "You don't have permission to perform this action." }`. Unknown project, task or comment: HTTP `404` with `msg` `project not found`, `task not found` or `comment not found`.
+
 ---
 
 ## Get All Task Files
 
-Get all task files in a project.
+Get every file attached to any task of a project. Files that are not visible to the API user (for example internal files, for a client user) are left out.
 
 ```http
 GET /api/public-v1/project/{uuid}/task/files
@@ -1736,6 +2765,13 @@ GET /api/public-v1/project/{uuid}/task/files
 |-----------|------|----------|-------------|
 | `uuid` | string | Yes | Project UUID |
 
+### Example Request
+
+```bash
+curl -X GET "https://public-api.taskip.net/api/public-v1/project/c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26/task/files" \
+  -H "X-Secret-Key: your-secret-key-here"
+```
+
 ### Example Response
 
 ```json
@@ -1744,6 +2780,7 @@ GET /api/public-v1/project/{uuid}/task/files
   "msg": "Project task files retrieved successfully",
   "data": [
     {
+      "id": 41,
       "task_id": 245,
       "media": {
         "id": 12,
@@ -1751,23 +2788,24 @@ GET /api/public-v1/project/{uuid}/task/files
         "ext": "sql",
         "size": 5120,
         "url": "https://storage.taskip.net/tenant-123/files/schema.sql",
-        "createdAt": "22-Feb-2024 10:30:15"
+        "media_type": "file",
+        "createdAt": "22-02-2024 10:30:15"
       },
+      "client_visible": true,
       "createdAt": "22-Feb-2024 10:30:15"
-    },
-    {
-      "task_id": 246,
-      "media": {
-        "id": 15,
-        "title": "mockup.png",
-        "ext": "png",
-        "size": 102400,
-        "url": "https://storage.taskip.net/tenant-123/files/mockup.png",
-        "createdAt": "23-Feb-2024 14:45:22"
-      },
-      "createdAt": "23-Feb-2024 14:45:22"
     }
   ]
+}
+```
+
+### Error Responses
+
+Project not found (HTTP `404`):
+
+```json
+{
+  "status": 404,
+  "msg": "We couldn't find this project. It may have been deleted or you may no longer have access to it."
 }
 ```
 
@@ -1775,7 +2813,7 @@ GET /api/public-v1/project/{uuid}/task/files
 
 ## Get Task Files
 
-Get files attached to a specific task.
+Get the files attached to one task.
 
 ```http
 GET /api/public-v1/project/{uuid}/task/{id}/files
@@ -1785,15 +2823,25 @@ GET /api/public-v1/project/{uuid}/task/{id}/files
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `uuid` | string | Yes | Project UUID |
-| `id` | integer | Yes | Task ID |
+| `id` | integer | Yes | Task id |
+
+### Example Request
+
+```bash
+curl -X GET "https://public-api.taskip.net/api/public-v1/project/c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26/task/245/files" \
+  -H "X-Secret-Key: your-secret-key-here"
+```
 
 ### Example Response
+
+The `msg` text of this list response is `Task file added` (the same text the upload returns); ignore it and read `data`.
 
 ```json
 {
   "msg": "Task file added",
   "data": [
     {
+      "id": 41,
       "task_id": 245,
       "media": {
         "id": 12,
@@ -1801,32 +2849,26 @@ GET /api/public-v1/project/{uuid}/task/{id}/files
         "ext": "sql",
         "size": 5120,
         "url": "https://storage.taskip.net/tenant-123/files/schema.sql",
-        "createdAt": "22-Feb-2024 15:00:30"
+        "media_type": "file",
+        "createdAt": "22-02-2024 10:30:15"
       },
-      "createdAt": "22-Feb-2024 15:00:30"
-    },
-    {
-      "task_id": 245,
-      "media": {
-        "id": 18,
-        "title": "design_wireframe.pdf",
-        "ext": "pdf",
-        "size": 256000,
-        "url": "https://storage.taskip.net/tenant-123/files/design_wireframe.pdf",
-        "createdAt": "23-Feb-2024 11:20:45"
-      },
-      "createdAt": "23-Feb-2024 11:20:45"
+      "client_visible": true,
+      "createdAt": "22-Feb-2024 10:30:15"
     }
   ],
   "status": 200
 }
 ```
 
+### Error Responses
+
+Project or task not found, or the task is not visible to the API user (HTTP `404`): `msg` is `We couldn't find this project. It may have been deleted or you may no longer have access to it.` or `We couldn't find this task.`.
+
 ---
 
 ## Upload Task File
 
-Upload a file to a task.
+Attach an already-uploaded file to a task. The API does not receive the file itself here: `file_id` is the id of an existing media upload in your workspace.
 
 ```http
 POST /api/public-v1/project/{uuid}/task/{id}/files
@@ -1836,13 +2878,23 @@ POST /api/public-v1/project/{uuid}/task/{id}/files
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `uuid` | string | Yes | Project UUID |
-| `id` | integer | Yes | Task ID |
+| `id` | integer | Yes | Task id |
 
 ### Request Body
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `file_id` | integer | Yes | Media/File ID to attach to task |
+| `file_id` | integer | Yes | Id of an existing media upload to attach. An unknown id is rejected with `404` and nothing is created |
+| `client_visible` | boolean | No | Whether clients can see this file. Defaults to the project's default client visibility |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/project/c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26/task/245/files" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{ "file_id": 12, "client_visible": true }'
+```
 
 ### Example Response
 
@@ -1850,26 +2902,49 @@ POST /api/public-v1/project/{uuid}/task/{id}/files
 {
   "msg": "Task file added",
   "data": {
+    "id": 41,
     "task_id": 245,
     "media": {
-      "id": 19,
-      "title": "updated_mockup.png",
-      "ext": "png",
-      "size": 102400,
-      "url": "https://storage.taskip.net/tenant-123/files/updated_mockup.png",
-      "createdAt": "24-Feb-2024 09:15:30"
+      "id": 12,
+      "title": "schema.sql",
+      "ext": "sql",
+      "size": 5120,
+      "url": "https://storage.taskip.net/tenant-123/files/schema.sql",
+      "media_type": "file",
+      "createdAt": "22-02-2024 10:30:15"
     },
-    "createdAt": "24-Feb-2024 09:15:30"
+    "client_visible": true,
+    "createdAt": "22-Feb-2024 10:30:15"
   },
   "status": 200
 }
+```
+
+### Error Responses
+
+Validation failure (HTTP `422`):
+
+```json
+{
+  "error": {
+    "file_id": ["The file id field is required."]
+  }
+}
+```
+
+Project or task not found (HTTP `404`): `msg` is `We couldn't find this project. It may have been deleted or you may no longer have access to it.` or `We couldn't find this task.`.
+
+Unknown `file_id` (HTTP `404`):
+
+```json
+{ "msg": "File not found" }
 ```
 
 ---
 
 ## Delete Task File
 
-Delete a file from a task.
+Remove a file from a task. The uploaded file itself is deleted from storage.
 
 ```http
 DELETE /api/public-v1/project/{uuid}/task/{id}/files
@@ -1879,13 +2954,21 @@ DELETE /api/public-v1/project/{uuid}/task/{id}/files
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `uuid` | string | Yes | Project UUID |
-| `id` | integer | Yes | Task ID |
+| `id` | integer | Yes | Task id |
 
 ### Request Body
-
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `file_id` | integer | Yes | Media/File ID to delete from task |
+| `file_id` | integer | Yes | The media id (`media.id`) of the attached file |
+
+### Example Request
+
+```bash
+curl -X DELETE "https://public-api.taskip.net/api/public-v1/project/c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26/task/245/files" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{ "file_id": 12 }'
+```
 
 ### Example Response
 
@@ -1896,11 +2979,21 @@ DELETE /api/public-v1/project/{uuid}/task/{id}/files
 }
 ```
 
+### Error Responses
+
+File not attached to this task (HTTP `404`):
+
+```json
+{ "msg": "We couldn't find this file." }
+```
+
+Project or task not found (HTTP `404`): `msg` is `We couldn't find this project. It may have been deleted or you may no longer have access to it.` or `We couldn't find this task.`.
+
 ---
 
 ## Get Project Files
 
-Get all files in a project.
+Get all uploaded files related to a project: files posted in the project discussion and files attached to its tasks, as media objects.
 
 ```http
 GET /api/public-v1/project/{uuid}/files
@@ -1911,44 +3004,53 @@ GET /api/public-v1/project/{uuid}/files
 |-----------|------|----------|-------------|
 | `uuid` | string | Yes | Project UUID |
 
+### Example Request
+
+```bash
+curl -X GET "https://public-api.taskip.net/api/public-v1/project/c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26/files" \
+  -H "X-Secret-Key: your-secret-key-here"
+```
+
 ### Example Response
 
 ```json
 {
   "data": [
     {
-      "id": 10,
-      "title": "project-brief.pdf",
+      "id": 12,
+      "title": "schema.sql",
+      "ext": "sql",
+      "size": 5120,
+      "url": "https://storage.taskip.net/tenant-123/files/schema.sql",
+      "media_type": "file",
+      "createdAt": "22-02-2024 10:30:15"
+    },
+    {
+      "id": 18,
+      "title": "kickoff-notes.pdf",
       "ext": "pdf",
       "size": 204800,
-      "url": "https://storage.taskip.net/tenant-123/files/project-brief.pdf",
-      "createdAt": "20-Feb-2024 09:00:00"
-    },
-    {
-      "id": 25,
-      "title": "project-logo.png",
-      "ext": "png",
-      "size": 51200,
-      "url": "https://storage.taskip.net/tenant-123/files/project-logo.png",
-      "createdAt": "21-Feb-2024 14:30:45"
-    },
-    {
-      "id": 30,
-      "title": "technical-specs.docx",
-      "ext": "docx",
-      "size": 128000,
-      "url": "https://storage.taskip.net/tenant-123/files/technical-specs.docx",
-      "createdAt": "22-Feb-2024 16:20:10"
+      "url": "https://storage.taskip.net/tenant-123/files/kickoff-notes.pdf",
+      "media_type": "file",
+      "createdAt": "01-03-2024 09:12:44"
     }
   ]
 }
+```
+
+### Error Responses
+
+Project not found (HTTP `404`):
+
+```json
+{ "msg": "Project not found" }
 ```
 
 ---
 
 ## Get Project Discussions
 
-Get discussions in a project.
+Get all messages of a project's discussion. The list is not paginated.
 
 ```http
 GET /api/public-v1/project/{uuid}/discussion
@@ -1959,65 +3061,61 @@ GET /api/public-v1/project/{uuid}/discussion
 |-----------|------|----------|-------------|
 | `uuid` | string | Yes | Project UUID |
 
+### Example Request
+
+```bash
+curl -X GET "https://public-api.taskip.net/api/public-v1/project/c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26/discussion" \
+  -H "X-Secret-Key: your-secret-key-here"
+```
+
 ### Example Response
 
 ```json
 {
   "data": [
     {
-      "id": 5,
-      "status": "active",
-      "msg_content": "Let's discuss the system architecture for the e-commerce platform. I think we should consider microservices approach.",
-      "user_id": 5,
-      "project_id": 26,
-      "createdAt": "2 hours ago",
-      "user": {
-        "id": 5,
-        "uuid": "user_mno345pqr678",
-        "name": "Mike Wilson",
-        "media": {
-          "id": 25,
-          "title": "mike_avatar.jpg",
-          "ext": "jpg",
-          "size": 15360,
-          "url": "https://storage.taskip.net/tenant-123/avatars/mike_avatar.jpg",
-          "createdAt": "15-Jan-2024 10:20:30"
-        },
-        "email": "mike@company.com"
-      },
-      "attachment": {
-        "id": 30,
-        "title": "architecture_diagram.png",
-        "ext": "png",
-        "size": 256000,
-        "url": "https://storage.taskip.net/tenant-123/files/architecture_diagram.png",
-        "createdAt": "21-Feb-2024 11:00:15"
-      }
-    },
-    {
-      "id": 6,
-      "status": "active",
-      "msg_content": "Great idea! I agree with the microservices approach. We should also consider using Docker for containerization.",
+      "id": 301,
+      "status": 1,
+      "msg_content": "Kickoff is scheduled for Monday.",
       "user_id": 3,
-      "project_id": 26,
-      "createdAt": "1 hour ago",
+      "project_id": null,
+      "createdAt": "01 Mar 2024 09:12:44",
+      "date": "01 Mar 2024",
       "user": {
         "id": 3,
-        "uuid": "user_abc123def456",
+        "uuid": "5a7c9e1b-3d52-4f68-a0b4-8c2e4f6a8d03",
         "name": "Sarah Johnson",
-        "media": {
-          "id": 15,
-          "title": "sarah_avatar.jpg",
-          "ext": "jpg",
-          "size": 12800,
-          "url": "https://storage.taskip.net/tenant-123/avatars/sarah_avatar.jpg",
-          "createdAt": "10-Jan-2024 09:15:45"
-        },
-        "email": "sarah@company.com"
+        "media": null
       },
-      "attachment": null
+      "attachment": {
+        "id": 18,
+        "title": "kickoff-notes.pdf",
+        "ext": "pdf",
+        "size": 204800,
+        "url": "https://storage.taskip.net/tenant-123/files/kickoff-notes.pdf",
+        "media_type": "file",
+        "createdAt": "01-03-2024 09:12:44"
+      },
+      "parent": null,
+      "reactions": [],
+      "isEdited": false,
+      "isVoiceMessage": false,
+      "voiceDuration": null,
+      "is_pinned": false
     }
   ]
+}
+```
+
+`parent` is `null` when the message is not a reply; when it is a reply it holds `{ id, project_uuid, user, msg_content, status, created_at }` of the parent message. `attachment` is the message's single media object, or `null` when there is none. The list is cached for about 10 seconds per user. Posting a message clears the poster's own cached list, so your new message shows up immediately; other members may take up to 10 seconds to see it.
+
+### Error Responses
+
+Project not found (HTTP `404`):
+
+```json
+{
+  "msg": "We couldn't find this project. It may have been deleted or you may no longer have access to it."
 }
 ```
 
@@ -2025,7 +3123,7 @@ GET /api/public-v1/project/{uuid}/discussion
 
 ## Create Discussion
 
-Create a new discussion in a project.
+Post a message to a project's discussion. The author is the API user.
 
 ```http
 POST /api/public-v1/project/{uuid}/discussion
@@ -2040,8 +3138,22 @@ POST /api/public-v1/project/{uuid}/discussion
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `msg` | string | Yes | Discussion message content |
-| `attachment` | array | No | Array of attachment/media IDs |
+| `msg` | string | Yes | Message text |
+| `attachment` | array | No | Array holding the id of an existing media upload. Only the first id is used; the message carries one attachment |
+
+Other fields accepted by validation (`replyToId`, `isEdited`, `isVoiceMessage`, `duration`) are not stored by this endpoint.
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/project/c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26/discussion" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "msg": "Kickoff is scheduled for Monday.",
+    "attachment": [18]
+  }'
+```
 
 ### Example Response
 
@@ -2049,43 +3161,57 @@ POST /api/public-v1/project/{uuid}/discussion
 {
   "msg": "Message Send Successfully",
   "data": {
-    "id": 7,
-    "status": "active",
-    "msg_content": "I've reviewed the project timeline and made some suggestions for optimization.",
-    "user_id": 8,
-    "project_id": 26,
-    "createdAt": "just now",
+    "id": 301,
+    "status": 1,
+    "msg_content": "Kickoff is scheduled for Monday.",
+    "user_id": 3,
+    "project_id": null,
+    "createdAt": "01 Mar 2024 09:12:44",
+    "date": "01 Mar 2024",
     "user": {
-      "id": 8,
-      "uuid": "user_ghi789jkl012",
-      "name": "David Chen",
-      "media": {
-        "id": 20,
-        "title": "david_avatar.jpg",
-        "ext": "jpg",
-        "size": 18432,
-        "url": "https://storage.taskip.net/tenant-123/avatars/david_avatar.jpg",
-        "createdAt": "12-Jan-2024 14:30:20"
-      },
-      "email": "david@company.com"
+      "id": 3,
+      "uuid": "5a7c9e1b-3d52-4f68-a0b4-8c2e4f6a8d03",
+      "name": "Sarah Johnson",
+      "media": null
     },
     "attachment": {
-      "id": 35,
-      "title": "timeline_suggestions.pdf",
+      "id": 18,
+      "title": "kickoff-notes.pdf",
       "ext": "pdf",
-      "size": 128000,
-      "url": "https://storage.taskip.net/tenant-123/files/timeline_suggestions.pdf",
-      "createdAt": "23-Feb-2024 14:00:30"
-    }
+      "size": 204800,
+      "url": "https://storage.taskip.net/tenant-123/files/kickoff-notes.pdf",
+      "media_type": "file",
+      "createdAt": "01-03-2024 09:12:44"
+    },
+    "parent": null,
+    "reactions": [],
+    "isEdited": false,
+    "isVoiceMessage": false,
+    "voiceDuration": null,
+    "is_pinned": false
   }
 }
 ```
+
+### Error Responses
+
+Validation failure (HTTP `422`):
+
+```json
+{
+  "error": {
+    "msg": ["The msg field is required."]
+  }
+}
+```
+
+Project not found (HTTP `404`): `msg` is `We couldn't find this project. It may have been deleted or you may no longer have access to it.`.
 
 ---
 
 ## Get Discussion Files
 
-Get files from project discussions.
+Get the files that were attached to messages of the project's discussion.
 
 ```http
 GET /api/public-v1/project/{uuid}/discussion/files
@@ -2096,44 +3222,40 @@ GET /api/public-v1/project/{uuid}/discussion/files
 |-----------|------|----------|-------------|
 | `uuid` | string | Yes | Project UUID |
 
+### Example Request
+
+```bash
+curl -X GET "https://public-api.taskip.net/api/public-v1/project/c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26/discussion/files" \
+  -H "X-Secret-Key: your-secret-key-here"
+```
+
 ### Example Response
 
 ```json
 {
   "data": [
     {
-      "id": 30,
-      "title": "architecture_diagram.png",
-      "ext": "png",
-      "size": 256000,
-      "url": "https://storage.taskip.net/tenant-123/files/architecture_diagram.png",
-      "createdAt": "21-Feb-2024 11:00:15"
-    },
-    {
-      "id": 35,
-      "title": "timeline_suggestions.pdf",
+      "id": 18,
+      "title": "kickoff-notes.pdf",
       "ext": "pdf",
-      "size": 128000,
-      "url": "https://storage.taskip.net/tenant-123/files/timeline_suggestions.pdf",
-      "createdAt": "23-Feb-2024 14:00:30"
-    },
-    {
-      "id": 42,
-      "title": "tech_stack_comparison.xlsx",
-      "ext": "xlsx",
-      "size": 87040,
-      "url": "https://storage.taskip.net/tenant-123/files/tech_stack_comparison.xlsx",
-      "createdAt": "24-Feb-2024 09:45:10"
+      "size": 204800,
+      "url": "https://storage.taskip.net/tenant-123/files/kickoff-notes.pdf",
+      "media_type": "file",
+      "createdAt": "01-03-2024 09:12:44"
     }
   ]
 }
 ```
 
+### Error Responses
+
+Project not found (HTTP `404`): `msg` is `We couldn't find this project. It may have been deleted or you may no longer have access to it.`.
+
 ---
 
 ## Create Container
 
-Create a new container/column for tasks.
+Create a container (board column) in a project. Containers are ordered by `order`.
 
 ```http
 POST /api/public-v1/project/{uuid}/container
@@ -2148,9 +3270,26 @@ POST /api/public-v1/project/{uuid}/container
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `name` | string | Yes | Container name |
-| `color` | string | No | Container color (hex) |
-| `order` | integer | No | Display order |
+| `title` | string | Yes | Container title (max 191 characters) |
+| `color` | string | No | Color name, e.g. `slate`, `yellow`, `blue`, `purple`, `green` |
+| `order` | integer | No | Position among the containers |
+| `category` | string | No | Stage category: `todo`, `in_progress`, `review` or `done`. Tasks in a `done` container are treated as completed. `backlog` cannot be set |
+
+Every project is created with five containers: `Backlog` (`backlog`, system), `To Do`, `In Progress`, `Review` and `Done`.
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/project/c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26/container" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "QA",
+    "color": "purple",
+    "order": 4,
+    "category": "review"
+  }'
+```
 
 ### Example Response
 
@@ -2158,12 +3297,27 @@ POST /api/public-v1/project/{uuid}/container
 {
   "msg": "New Container Added",
   "data": {
-    "id": 4,
-    "project_uuid": "proj_xyz789ghi012",
-    "title": "In Review",
-    "color": "#FFA500",
-    "order": 3,
-    "created_at": "24/Feb/2024"
+    "id": 92,
+    "project_uuid": "c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26",
+    "title": "QA",
+    "color": "purple",
+    "order": 4,
+    "category": "review",
+    "is_system": false,
+    "created_at": "06/Mar/2024"
+  }
+}
+```
+
+### Error Responses
+
+Validation failure (HTTP `422`):
+
+```json
+{
+  "error": {
+    "title": ["The title field is required."],
+    "category": ["The selected category is invalid."]
   }
 }
 ```
@@ -2172,7 +3326,7 @@ POST /api/public-v1/project/{uuid}/container
 
 ## Rename Container
 
-Rename an existing container.
+Change a container's title.
 
 ```http
 PUT /api/public-v1/project/{uuid}/container/{id}/rename
@@ -2182,13 +3336,21 @@ PUT /api/public-v1/project/{uuid}/container/{id}/rename
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `uuid` | string | Yes | Project UUID |
-| `id` | integer | Yes | Container ID |
+| `id` | integer | Yes | Container id |
 
 ### Request Body
-
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `name` | string | Yes | New container name |
+| `title` | string | Yes | New title |
+
+### Example Request
+
+```bash
+curl -X PUT "https://public-api.taskip.net/api/public-v1/project/c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26/container/92/rename" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{ "title": "Quality Assurance" }'
+```
 
 ### Example Response
 
@@ -2198,11 +3360,31 @@ PUT /api/public-v1/project/{uuid}/container/{id}/rename
 }
 ```
 
+### Error Responses
+
+Missing title, or a container that does not belong to the project, are refused with HTTP `422` (not `404`):
+
+```json
+{
+  "error": {
+    "msg": ["title field is required"]
+  }
+}
+```
+
+```json
+{
+  "error": {
+    "msg": ["Container not found"]
+  }
+}
+```
+
 ---
 
 ## Change Container Color
 
-Change the color of a container.
+Change a container's color.
 
 ```http
 POST /api/public-v1/project/{uuid}/container/{id}/change-color
@@ -2212,13 +3394,21 @@ POST /api/public-v1/project/{uuid}/container/{id}/change-color
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `uuid` | string | Yes | Project UUID |
-| `id` | integer | Yes | Container ID |
+| `id` | integer | Yes | Container id |
 
 ### Request Body
-
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `color` | string | Yes | New color (hex) |
+| `color` | string | Yes | Color name, e.g. `green` |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/project/c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26/container/92/change-color" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{ "color": "green" }'
+```
 
 ### Example Response
 
@@ -2228,11 +3418,25 @@ POST /api/public-v1/project/{uuid}/container/{id}/change-color
 }
 ```
 
+### Error Responses
+
+Missing color or unknown container (HTTP `422`):
+
+```json
+{
+  "error": {
+    "msg": ["Color field is required"]
+  }
+}
+```
+
+An unknown container returns `{ "error": { "msg": ["Container not found"] } }`.
+
 ---
 
 ## Change Container Order
 
-Change the display order of containers.
+Set the position of containers. **The request body is a JSON array** (not an object): each element gives a container and its new `order`.
 
 ```http
 POST /api/public-v1/project/{uuid}/container/change-order
@@ -2245,15 +3449,43 @@ POST /api/public-v1/project/{uuid}/container/change-order
 
 ### Request Body
 
+A JSON array of objects:
+
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `order` | array | Yes | Array of order objects with `container_id` and `order` fields |
+| `container_id` | integer or string | Yes | Container id. `92` and `container-92` are both accepted. Elements whose `container_id` is `null` are skipped |
+| `order` | integer | Yes | New position |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/project/c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26/container/change-order" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '[
+    { "container_id": "container-89", "order": 2 },
+    { "container_id": "container-92", "order": 3 },
+    { "container_id": "container-90", "order": 4 }
+  ]'
+```
 
 ### Example Response
 
 ```json
 {
-  "msg": "Order changed"
+  "msg": "Container Order changed"
+}
+```
+
+### Error Responses
+
+Empty body (HTTP `422`):
+
+```json
+{
+  "error": {
+    "msg": ["Order field is required"]
+  }
 }
 ```
 
@@ -2261,7 +3493,7 @@ POST /api/public-v1/project/{uuid}/container/change-order
 
 ## Delete Container
 
-Delete a container from the project.
+Delete a container. The system Backlog container cannot be deleted, and neither can the last remaining Done container.
 
 ```http
 DELETE /api/public-v1/project/{uuid}/container/{id}/delete
@@ -2271,7 +3503,14 @@ DELETE /api/public-v1/project/{uuid}/container/{id}/delete
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `uuid` | string | Yes | Project UUID |
-| `id` | integer | Yes | Container ID |
+| `id` | integer | Yes | Container id |
+
+### Example Request
+
+```bash
+curl -X DELETE "https://public-api.taskip.net/api/public-v1/project/c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26/container/92/delete" \
+  -H "X-Secret-Key: your-secret-key-here"
+```
 
 ### Example Response
 
@@ -2281,11 +3520,35 @@ DELETE /api/public-v1/project/{uuid}/container/{id}/delete
 }
 ```
 
+### Error Responses
+
+Container not found for this project (HTTP `422`):
+
+```json
+{
+  "error": {
+    "msg": ["Container not found"]
+  }
+}
+```
+
+Protected containers (HTTP `422`):
+
+```json
+{ "msg": "The backlog stage cannot be changed." }
+```
+
+```json
+{ "msg": "A project needs at least one Done stage." }
+```
+
+Consider moving the container's tasks first with [Move All Tasks](#move-all-tasks).
+
 ---
 
 ## Move All Tasks
 
-Move all tasks from one container to another.
+Move every task of one container into another container of the same project.
 
 ```http
 POST /api/public-v1/project/{uuid}/container/{id}/move-all-tasks
@@ -2295,13 +3558,21 @@ POST /api/public-v1/project/{uuid}/container/{id}/move-all-tasks
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `uuid` | string | Yes | Project UUID |
-| `id` | integer | Yes | Source container ID |
+| `id` | integer | Yes | Source container id |
 
 ### Request Body
-
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `target_container_id` | integer | Yes | Target container ID |
+| `to_container_id` | integer | Yes | Target container id. Must be a container of the same project |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/project/c4e6a8b0-2d13-4f57-9b81-3a5c7e9f1b26/container/92/move-all-tasks" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{ "to_container_id": 90 }'
+```
 
 ### Example Response
 
@@ -2311,14 +3582,47 @@ POST /api/public-v1/project/{uuid}/container/{id}/move-all-tasks
 }
 ```
 
+### Error Responses
+
+Target container missing or not part of this project (HTTP `422`):
+
+```json
+{ "msg": "Target container not found" }
+```
+
+Source container not found (HTTP `422`):
+
+```json
+{
+  "error": {
+    "msg": ["Container not found"]
+  }
+}
+```
+
 ---
 
 ## Get All Attributes
 
-Get all project attributes (tags, categories, etc.).
+List project attributes. Attributes are the shared tags, categories and labels used across projects and tasks. Send `type` to list one type; without `type`, attributes of all types are returned.
 
 ```http
 GET /api/public-v1/project/attribute/all
+```
+
+### Query Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `type` | integer | No | Attribute type filter: `0` Priority, `1` Label, `2` Category, `3` Tag, `4` Status |
+| `search` | string | No | Matches the attribute `title` (partial match) |
+| `item` | integer | No | Attributes per page (default: `10`). `0` returns all without pagination |
+| `page` | integer | No | Page number |
+
+### Example Request
+
+```bash
+curl -X GET "https://public-api.taskip.net/api/public-v1/project/attribute/all?type=3&item=50" \
+  -H "X-Secret-Key: your-secret-key-here"
 ```
 
 ### Example Response
@@ -2326,48 +3630,9 @@ GET /api/public-v1/project/attribute/all
 ```json
 {
   "data": [
-    {
-      "id": 1,
-      "title": "backend",
-      "color": "#4285F4",
-      "type": "tag"
-    },
-    {
-      "id": 2,
-      "title": "frontend",
-      "color": "#34A853",
-      "type": "tag"
-    },
-    {
-      "id": 3,
-      "title": "Development",
-      "color": "#2196F3",
-      "type": "category"
-    },
-    {
-      "id": 4,
-      "title": "Design",
-      "color": "#9C27B0",
-      "type": "category"
-    },
-    {
-      "id": 5,
-      "title": "low",
-      "color": "#999999",
-      "type": "priority"
-    },
-    {
-      "id": 6,
-      "title": "medium",
-      "color": "#FFA500",
-      "type": "priority"
-    },
-    {
-      "id": 7,
-      "title": "high",
-      "color": "#FF0000",
-      "type": "priority"
-    }
+    { "id": 7, "title": "priority-client", "color": "red", "type": 3 },
+    { "id": 6, "title": "platform", "color": "blue", "type": 3 },
+    { "id": 4, "title": "website", "color": "orange", "type": 3 }
   ],
   "links": {
     "first": "https://public-api.taskip.net/api/public-v1/project/attribute/all?page=1",
@@ -2380,18 +3645,20 @@ GET /api/public-v1/project/attribute/all
     "from": 1,
     "last_page": 1,
     "path": "https://public-api.taskip.net/api/public-v1/project/attribute/all",
-    "per_page": 15,
-    "to": 7,
-    "total": 7
+    "per_page": 50,
+    "to": 3,
+    "total": 3
   }
 }
 ```
+
+Attributes are returned newest first (highest `id` first).
 
 ---
 
 ## Create Attribute
 
-Create a new project attribute.
+Create a project attribute (tag, category, label, priority or status).
 
 ```http
 POST /api/public-v1/project/attribute
@@ -2402,8 +3669,21 @@ POST /api/public-v1/project/attribute
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `title` | string | Yes | Attribute title (max 191 characters) |
-| `color` | string | Yes | Color hex code (max 50 characters) |
-| `type` | string | Yes | Attribute type enum value |
+| `color` | string | Yes | Color name (max 50 characters), e.g. `slate`, `red`, `blue` |
+| `type` | integer | Yes | `0` Priority, `1` Label, `2` Category, `3` Tag, `4` Status |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/project/attribute" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Mobile",
+    "color": "blue",
+    "type": 2
+  }'
+```
 
 ### Example Response
 
@@ -2411,10 +3691,23 @@ POST /api/public-v1/project/attribute
 {
   "msg": "Project Attribute Created Successfully",
   "data": {
-    "id": 8,
-    "title": "database",
-    "color": "#FF9800",
-    "type": "tag"
+    "id": 18,
+    "title": "Mobile",
+    "color": "blue",
+    "type": 2
+  }
+}
+```
+
+### Error Responses
+
+Validation failure (HTTP `422`):
+
+```json
+{
+  "error": {
+    "title": ["The title field is required."],
+    "type": ["The selected type is invalid."]
   }
 }
 ```
@@ -2423,7 +3716,7 @@ POST /api/public-v1/project/attribute
 
 ## Update Attribute
 
-Update an existing attribute.
+Update an attribute. The body is validated like [Create Attribute](#create-attribute): `title`, `color` and `type` are all required.
 
 ```http
 PUT /api/public-v1/project/attribute/{id}/update
@@ -2432,15 +3725,27 @@ PUT /api/public-v1/project/attribute/{id}/update
 ### Path Parameters
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `id` | integer | Yes | Attribute ID |
+| `id` | integer | Yes | Attribute id |
 
 ### Request Body
-
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `title` | string | Yes | Attribute title (max 191 characters) |
-| `color` | string | Yes | Color hex code (max 50 characters) |
-| `type` | string | Yes | Attribute type enum value |
+| `title` | string | Yes | Max 191 characters |
+| `color` | string | Yes | Max 50 characters |
+| `type` | integer | Yes | `0` Priority, `1` Label, `2` Category, `3` Tag, `4` Status |
+
+### Example Request
+
+```bash
+curl -X PUT "https://public-api.taskip.net/api/public-v1/project/attribute/18/update" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Mobile Apps",
+    "color": "indigo",
+    "type": 2
+  }'
+```
 
 ### Example Response
 
@@ -2449,6 +3754,19 @@ PUT /api/public-v1/project/attribute/{id}/update
   "msg": "Project Attribute Updated"
 }
 ```
+
+### Error Responses
+
+Attribute not found (HTTP `404`):
+
+```json
+{
+  "msg": "We couldn't find this attribute.",
+  "status": 404
+}
+```
+
+Validation failure (HTTP `422`): `{ "error": { "field": ["..."] } }`.
 
 ---
 
@@ -2463,7 +3781,14 @@ DELETE /api/public-v1/project/attribute/{id}/delete
 ### Path Parameters
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `id` | integer | Yes | Attribute ID |
+| `id` | integer | Yes | Attribute id |
+
+### Example Request
+
+```bash
+curl -X DELETE "https://public-api.taskip.net/api/public-v1/project/attribute/18/delete" \
+  -H "X-Secret-Key: your-secret-key-here"
+```
 
 ### Example Response
 
@@ -2473,11 +3798,24 @@ DELETE /api/public-v1/project/attribute/{id}/delete
 }
 ```
 
+### Error Responses
+
+Attribute not found (HTTP `404`):
+
+```json
+{
+  "msg": "We couldn't find this attribute.",
+  "status": 404
+}
+```
+
+Permission refusal (HTTP `422`): `{ "error": { "msg": ["You don't have permission to delete this attribute."] } }`.
+
 ---
 
 ## Bulk Update Tags
 
-Bulk update tags for multiple projects/tasks.
+Create or update several tag attributes in one call. Each element is matched by `id`: an existing id is updated; an element without `id` (or with `null`) creates a new attribute. Attributes that are not listed are left untouched (nothing is deleted).
 
 ```http
 POST /api/public-v1/project/attribute/tags/update
@@ -2487,15 +3825,43 @@ POST /api/public-v1/project/attribute/tags/update
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `title` | string | Yes | Attribute title (max 191 characters) |
-| `color` | string | Yes | Color hex code (max 50 characters) |
-| `type` | string | Yes | Attribute type enum value |
+| `tags` | array | Yes | List of attribute objects (see below) |
+| `tags[].id` | integer or null | No | Existing attribute id to update; omit or `null` to create |
+| `tags[].title` | string | Yes | Attribute title (max 191 characters) |
+| `tags[].color` | string | No | Color name (max 50 characters); defaults to `slate` |
+| `tags[].type` | integer | Yes | Attribute type. Use `3` (Tag) for tags |
+
+The input is validated before anything is written. A missing `tags` array or an invalid item returns HTTP `422` in the standard validation shape, for example:
+
+```json
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": {
+    "tags.1.title": ["The tags.1.title field is required."]
+  }
+}
+```
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/project/attribute/tags/update" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tags": [
+      { "id": 4, "title": "website", "color": "orange", "type": 3 },
+      { "id": null, "title": "urgent-client", "color": "red", "type": 3 }
+    ]
+  }'
+```
 
 ### Example Response
 
 ```json
 {
-  "msg": "Project Attribute Updated"
+  "msg": "Project Tags Updated"
 }
 ```
 
@@ -2503,7 +3869,7 @@ POST /api/public-v1/project/attribute/tags/update
 
 ## Bulk Update Categories
 
-Bulk update categories for multiple projects.
+Create or update several category attributes in one call. Each element is matched by `id`: an existing id is updated; an element without `id` (or with `null`) creates a new attribute. Attributes that are not listed are left untouched (nothing is deleted).
 
 ```http
 POST /api/public-v1/project/attribute/categories/update
@@ -2513,8 +3879,27 @@ POST /api/public-v1/project/attribute/categories/update
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `project_ids` | array | Yes | Array of project IDs to update |
-| `category_id` | integer | Yes | Category ID to apply to projects |
+| `categories` | array | Yes | List of attribute objects (see below). The historical misspelling `categroies` is also accepted |
+| `categories[].id` | integer or null | No | Existing attribute id to update; omit or `null` to create |
+| `categories[].title` | string | Yes | Attribute title (max 191 characters) |
+| `categories[].color` | string | No | Color name (max 50 characters); defaults to `slate` |
+| `categories[].type` | integer | Yes | Attribute type. Use `2` (Category) for categories |
+
+The input is validated before anything is written. If neither `categories` nor `categroies` is sent, or an item is invalid, the call returns HTTP `422` in the standard validation shape (`errors` keys look like `categories.0.title`).
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/project/attribute/categories/update" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "categories": [
+      { "id": 9, "title": "Development", "color": "green", "type": 2 },
+      { "id": null, "title": "Design", "color": "purple", "type": 2 }
+    ]
+  }'
+```
 
 ### Example Response
 
@@ -2528,27 +3913,64 @@ POST /api/public-v1/project/attribute/categories/update
 
 ## Error Responses
 
-### Common Error Codes
+Errors in this API come in a few shapes. Check the HTTP status first, then the body.
 
-| Status Code | Error Type | Description |
-|-------------|------------|-------------|
-| `400` | Bad Request | Invalid request data |
-| `401` | Unauthorized | Invalid or missing X-Secret-Key |
-| `403` | Forbidden | Insufficient permissions |
-| `404` | Not Found | Resource not found |
-| `422` | Validation Error | Request validation failed |
+### Common Status Codes
+
+| Status Code | Meaning | Typical cause |
+|-------------|---------|---------------|
+| `401` | Unauthorized | `X-Secret-Key` header missing: `{ "message": "Secret keys are missing." }` |
+| `404` | Not Found | Unknown secret key (`{ "status": 404, "msg": "Workspace not found" }`), or a project, task, comment, member or attribute that does not exist or is not visible to the API user |
+| `409` | Conflict | Task cannot be deleted because it has tracked time |
+| `422` | Unprocessable | Validation failed, a business rule refused the request, or the API user lacks permission |
 | `429` | Too Many Requests | Rate limit exceeded |
+| `500` | Server Error | Unexpected failure |
 
-### Example Error Response
+### Validation Errors: `error` keyed by field
+
+Request validation for project create/update, task create/update, labels, comments, task files, discussion, containers and attributes returns HTTP `422`:
 
 ```json
 {
-  "status": 422,
-  "error": "Validation Error",
-  "message": "The given data was invalid",
-  "errors": {
-    "name": ["The name field is required."],
-    "start_date": ["The start date must be before end date."]
+  "error": {
+    "title": ["The title field is required."],
+    "priority": ["The selected priority is invalid."]
   }
 }
 ```
+
+### Validation Errors: `errors` keyed by field
+
+Endpoints that validate inline (All Tasks List, Change Project Priority/Status/Category, Bulk Update Tags/Categories) and Change Task Order return HTTP `422`:
+
+```json
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": {
+    "category": ["The category field is required."]
+  }
+}
+```
+
+### Permission Refusals and Container Lookups: `error.msg`
+
+Permission refusals (Create Project, Update Project, Delete Project, Change Project Priority/Status/Category, Delete Attribute) and container lookups that fail return HTTP `422` with a list of messages under `error.msg`. Create Project and Delete Project check the permissions of the API key's user; some project-level role and scope checks (for example on Update Project) are bypassed for API-key requests, so those variants are not expected in practice. The container lookups (`Container not found`, `title field is required`) are:
+
+```json
+{
+  "error": {
+    "msg": ["You don't have permission to update project"]
+  }
+}
+```
+
+### Plain `msg` Errors
+
+Lookups and business-rule failures return a single `msg`:
+
+```json
+{ "msg": "We couldn't find this task." }
+```
+
+The status code tells them apart: `404` for a missing resource, `422` for a rule such as `Target container not found`, `Please select a member to assign.`, `The milestone belongs to another project.`, `The container belongs to another project.` or `Invalid priority value`, and `409` for a task that has tracked time. A few endpoints return additional keys, for example `entry_count` on the `409` and `data.open_items` when [Change Project Status](#change-project-status) is blocked by the close-out checklist.

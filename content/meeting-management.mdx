@@ -1,16 +1,15 @@
 # Meeting Management API
 
-The Meeting Management API provides comprehensive meeting scheduling, booking, and management capabilities. This powerful API allows you to create meetings, manage bookings, and integrate with calendar systems for seamless scheduling workflows.
+The Meeting Management API lets you read the meetings (booking pages) configured in your TaskIP workspace and work with their bookings: list meetings, inspect a meeting and its booking form, list and inspect bookings, and create a booking for an available time slot.
 
 ## Overview
 
-Meeting Management consists of multiple interconnected features:
-- **Meeting Creation & Scheduling**: Create and schedule meetings with participants
-- **Booking System**: Allow clients to book available time slots
-- **Calendar Integration**: Sync with popular calendar systems
-- **Participant Management**: Handle attendees and notifications
-- **Meeting Status**: Track completion and outcomes
-- **Bulk Operations**: Manage multiple meetings efficiently
+The public API exposes:
+- **Meetings**: list meetings and fetch the full configuration of one meeting (host, availability, booking form, customisation)
+- **Bookings**: list the bookings of a meeting and fetch a single booking
+- **Booking creation**: book a time slot on a meeting
+
+Meetings themselves are created and edited in the TaskIP application; this API does not create, update, or delete meetings or bookings other than creating a booking.
 
 ## Main Endpoints Overview
 
@@ -42,14 +41,10 @@ Content-Type: application/json
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `page` | integer | No | Page number for pagination (default: 1) |
-| `limit` | integer | No | Number of meetings per page (default: 50) |
-| `status` | string | No | Filter by status (`upcoming`, `completed`, `cancelled`) |
-| `type` | string | No | Filter by type (`sales`, `support`, `general`) |
-| `participant` | string | No | Filter by participant email |
-| `date_from` | date | No | Filter meetings from date (YYYY-MM-DD) |
-| `date_to` | date | No | Filter meetings to date (YYYY-MM-DD) |
-| `sort` | string | No | Sort field (`start_time`, `created_at`, `title`) |
-| `order` | string | No | Sort order (`asc` or `desc`) |
+| `item` | integer | No | Meetings per page (default: 10). Use `0` to return all meetings without pagination |
+| `search` | string | No | Search by meeting title |
+
+Results are ordered by `id` descending.
 
 <ApiTester
   endpoint="/api/public-v1/meeting-list"
@@ -60,7 +55,7 @@ Content-Type: application/json
 ### Example Request
 
 ```bash
-curl -X GET "https://public-api.taskip.net/api/public-v1/meeting-list?status=upcoming&limit=20" \
+curl -X GET "https://public-api.taskip.net/api/public-v1/meeting-list?page=1&item=20" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json"
 ```
@@ -72,39 +67,48 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/meeting-list?status=upc
   "data": [
     {
       "id": 1,
-      "uuid": "meeting_abc123def456",
+      "uuid": "9f3a1c52-7d0e-4b1a-9c33-5d2b8e6f1a77",
       "user_id": 12,
       "host": {
         "id": 12,
-        "name": "Jane Smith",
-        "email": "jane@taskip.com"
+        "first_name": "Jane",
+        "last_name": "Smith",
+        "full_name": "Jane Smith",
+        "email": "jane@taskip.com",
+        "timezone": "America/New_York",
+        "image": null
       },
       "created_by": {
         "id": 12,
-        "name": "Jane Smith",
-        "email": "jane@taskip.com"
+        "first_name": "Jane",
+        "last_name": "Smith",
+        "full_name": "Jane Smith",
+        "email": "jane@taskip.com",
+        "timezone": "America/New_York",
+        "image": null
       },
       "title": "Client Discovery Call",
       "description": "Initial discovery call with potential client",
       "duration": 60,
-      "method": "online",
-      "phone_option": false,
+      "method": 2,
+      "phone_option": null,
       "phone": null,
-      "location": "Google Meet",
-      "status": "active",
+      "location": null,
+      "status": 1,
       "slug": "client-discovery-call",
-      "applicable_from": "2024-01-01",
-      "applicable_to": "2024-12-31",
-      "reminder": true,
-      "booking_status": "open",
+      "applicable_from": "2024-01-01T00:00:00.000000Z",
+      "applicable_to": "2024-12-31T00:00:00.000000Z",
+      "reminder": 1,
+      "booking_status": 1,
       "timezone": "America/New_York",
       "booking_count": 3,
       "meeting_integration_id": null,
       "allow_guest": true,
-      "logo": {
-        "id": 45,
-        "original_url": "https://storage.taskip.net/logos/meeting-logo.png"
-      }
+      "repeat": false,
+      "repeat_frequency": null,
+      "repeat_until_type": null,
+      "repeat_until_date": null,
+      "logo": null
     }
   ],
   "links": {
@@ -118,12 +122,24 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/meeting-list?status=upc
     "from": 1,
     "last_page": 2,
     "path": "https://public-api.taskip.net/api/public-v1/meeting-list",
-    "per_page": 15,
-    "to": 15,
+    "per_page": 10,
+    "to": 10,
     "total": 25
   }
 }
 ```
+
+When `search` is supplied, `meta.search` echoes the search term. When `item=0`, the response contains only `data`.
+
+### Meeting Field Values
+
+| Field | Values |
+|-------|--------|
+| `status` | `0` = draft, `1` = published |
+| `method` | `0` = in person, `1` = phone call, `2` = Google Meet, `3` = Zoom |
+| `phone_option` | `0` = host will call, `1` = invitee will call (used with the phone call method) |
+| `booking_status` | `0` = off, `1` = on |
+| `reminder` | integer |
 
 ---
 
@@ -141,7 +157,7 @@ GET /api/public-v1/meeting/details/{uuid}
 | `uuid` | string | Yes | Meeting UUID |
 
 <ApiTester
-  endpoint="/api/public-v1/meeting/details/meeting-abc123def456"
+  endpoint="/api/public-v1/meeting/details/9f3a1c52-7d0e-4b1a-9c33-5d2b8e6f1a77"
   method="GET"
   description="Test getting detailed meeting information"
 />
@@ -149,136 +165,126 @@ GET /api/public-v1/meeting/details/{uuid}
 ### Example Request
 
 ```bash
-curl -X GET "https://public-api.taskip.net/api/public-v1/meeting/details/meeting-abc123def456" \
+curl -X GET "https://public-api.taskip.net/api/public-v1/meeting/details/9f3a1c52-7d0e-4b1a-9c33-5d2b8e6f1a77" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json"
 ```
 
 ### Example Response
 
+The meeting object is returned at the top level (not wrapped in `data`).
+
 ```json
 {
   "id": 1,
-  "uuid": "meeting_abc123def456",
+  "uuid": "9f3a1c52-7d0e-4b1a-9c33-5d2b8e6f1a77",
   "user_id": 12,
   "host": {
     "id": 12,
-    "name": "Jane Smith",
-    "email": "jane@taskip.com"
+    "first_name": "Jane",
+    "last_name": "Smith",
+    "full_name": "Jane Smith",
+    "email": "jane@taskip.com",
+    "timezone": "America/New_York",
+    "image": null
   },
   "allowed_team_members": [
     {
-      "id": 15,
-      "user_id": 15,
-      "name": "Mike Wilson",
-      "email": "mike@taskip.com"
-    },
-    {
-      "id": 18,
-      "user_id": 18,
-      "name": "Sarah Johnson",
-      "email": "sarah@taskip.com"
+      "id": 1,
+      "first_name": "Mike",
+      "last_name": "Wilson",
+      "full_name": "Mike Wilson",
+      "email": "mike@taskip.com",
+      "timezone": "America/New_York",
+      "image": null
     }
   ],
   "created_by": {
     "id": 12,
-    "name": "Jane Smith",
-    "email": "jane@taskip.com"
+    "first_name": "Jane",
+    "last_name": "Smith",
+    "full_name": "Jane Smith",
+    "email": "jane@taskip.com",
+    "timezone": "America/New_York",
+    "image": null
   },
   "title": "Client Discovery Call",
   "description": "Initial discovery call with potential client to understand requirements",
   "duration": 60,
-  "method": "online",
-  "phone_option": false,
+  "method": 2,
+  "phone_option": null,
   "phone": null,
-  "location": "Google Meet",
-  "status": "active",
+  "location": null,
+  "status": 1,
   "slug": "client-discovery-call",
   "availability": [
     {
       "id": 1,
-      "meeting_uuid": "meeting_abc123def456",
-      "day": "monday",
-      "status": "active",
+      "meeting_uuid": "9f3a1c52-7d0e-4b1a-9c33-5d2b8e6f1a77",
+      "day": 1,
+      "status": 1,
       "times": [
         {
           "id": 1,
           "meetings_day_id": 1,
-          "time_slot_start": "09:00",
-          "time_slot_end": "17:00"
-        }
-      ]
-    },
-    {
-      "id": 2,
-      "meeting_uuid": "meeting_abc123def456",
-      "day": "tuesday",
-      "status": "active",
-      "times": [
-        {
-          "id": 2,
-          "meetings_day_id": 2,
-          "time_slot_start": "09:00",
-          "time_slot_end": "17:00"
+          "time_slot_start": "09:00:00",
+          "time_slot_end": "17:00:00",
+          "utc_start": null,
+          "utc_end": null
         }
       ]
     }
   ],
   "form": {
     "id": 1,
-    "meeting_id": 1,
+    "meeting_uuid": "9f3a1c52-7d0e-4b1a-9c33-5d2b8e6f1a77",
+    "title": "Book a call",
+    "description": null,
     "fields": [
       {
-        "label": "Full Name",
-        "type": "text",
-        "required": true
-      },
-      {
-        "label": "Email",
-        "type": "email",
-        "required": true
-      },
-      {
-        "label": "Company",
-        "type": "text",
-        "required": false
+        "id": "f_8a1b2c",
+        "original_id": "email",
+        "settings": {
+          "condition": 0,
+          "conditions": { "AND": null, "OR": null },
+          "fields": [
+            { "name": "email", "type": "email", "label": "Email", "required": true, "show": true }
+          ],
+          "filter": null
+        }
       }
     ]
   },
   "customise": {
-    "id": 1,
-    "meeting_id": 1,
-    "success_message": "Thank you for booking! We'll send you a confirmation email shortly.",
+    "meeting_uuid": "9f3a1c52-7d0e-4b1a-9c33-5d2b8e6f1a77",
     "button_text": "Book Meeting",
-    "primary_color": "#2563eb"
+    "button_color": "#ffffff",
+    "button_bg_color": "#2563eb",
+    "button_hover_color": "#ffffff",
+    "button_hover_bg_color": "#1d4ed8",
+    "success_message": "Thank you for booking! We'll send you a confirmation email shortly.",
+    "redirection": 0,
+    "redirection_url": null,
+    "description": null,
+    "form_title": null,
+    "default_timezone": null
   },
-  "reminders": [
-    {
-      "id": 1,
-      "meeting_id": 1,
-      "type": "email",
-      "time": 30,
-      "time_unit": "minutes"
-    },
-    {
-      "id": 2,
-      "meeting_id": 1,
-      "type": "email",
-      "time": 24,
-      "time_unit": "hours"
-    }
-  ],
   "booking_count": 3,
-  "applicable_from": "2024-01-01",
-  "applicable_to": "2024-12-31",
+  "applicable_from": "2024-01-01T00:00:00.000000Z",
+  "applicable_to": "2024-12-31T00:00:00.000000Z",
   "allow_guest": true,
   "meeting_integration_id": null,
-  "logo": {
-    "id": 45,
-    "original_url": "https://storage.taskip.net/logos/meeting-logo.png"
-  }
+  "repeat": false,
+  "repeat_frequency": null,
+  "repeat_until_type": null,
+  "repeat_until_date": null,
+  "logo": null
 }
 ```
+
+`availability[].day` is `0` (Sunday) to `6` (Saturday) and `availability[].status` is `0` (unavailable) or `1` (available).
+
+A meeting that does not exist returns `404` with `{"status": 404, "msg": "Meeting not found"}`.
 
 ---
 
@@ -299,14 +305,10 @@ GET /api/public-v1/meeting/{uuid}/booking-list
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `page` | integer | No | Page number for pagination (default: 1) |
-| `limit` | integer | No | Number of bookings per page (default: 15) |
-| `search` | string | No | Search term for booking details |
-| `status` | string | No | Filter by booking status (`confirmed`, `pending`, `cancelled`) |
-| `date_from` | date | No | Filter bookings from date |
-| `date_to` | date | No | Filter bookings to date |
+| `item` | integer | No | Bookings per page (default: 10). Use `0` to return all bookings without pagination |
 
 <ApiTester
-  endpoint="/api/public-v1/meeting/meeting-abc123def456/booking-list"
+  endpoint="/api/public-v1/meeting/9f3a1c52-7d0e-4b1a-9c33-5d2b8e6f1a77/booking-list"
   method="GET"
   description="Test getting booking list for a meeting"
 />
@@ -314,7 +316,7 @@ GET /api/public-v1/meeting/{uuid}/booking-list
 ### Example Request
 
 ```bash
-curl -X GET "https://public-api.taskip.net/api/public-v1/meeting/meeting-abc123def456/booking-list?status=confirmed" \
+curl -X GET "https://public-api.taskip.net/api/public-v1/meeting/9f3a1c52-7d0e-4b1a-9c33-5d2b8e6f1a77/booking-list?page=1&item=20" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json"
 ```
@@ -326,57 +328,41 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/meeting/meeting-abc123d
   "data": [
     {
       "id": 1,
-      "uuid": "booking_abc123def456",
+      "uuid": "b1c7e0aa-3f52-4a6e-8d11-0c9e5a7f2b34",
       "cancel_reason": null,
       "meeting": {
         "id": 1,
-        "uuid": "meeting_abc123def456",
+        "uuid": "9f3a1c52-7d0e-4b1a-9c33-5d2b8e6f1a77",
         "user_id": 12,
         "host": {
           "id": 12,
-          "name": "Jane Smith",
-          "email": "jane@taskip.com"
-        },
-        "created_by": {
-          "id": 12,
-          "name": "Jane Smith",
-          "email": "jane@taskip.com"
+          "first_name": "Jane",
+          "last_name": "Smith",
+          "full_name": "Jane Smith",
+          "email": "jane@taskip.com",
+          "timezone": "America/New_York",
+          "image": null
         },
         "title": "Client Discovery Call",
-        "description": "Initial discovery call with potential client",
         "duration": 60,
-        "method": "online",
-        "phone_option": false,
-        "phone": null,
-        "location": "Google Meet",
-        "status": "active",
+        "method": 2,
+        "status": 1,
         "slug": "client-discovery-call",
-        "applicable_from": "2024-01-01",
-        "applicable_to": "2024-12-31",
-        "reminder": true,
-        "booking_status": "open",
         "timezone": "America/New_York",
-        "booking_count": 3,
-        "meeting_integration_id": null,
         "allow_guest": true,
-        "logo": {
-          "id": 45,
-          "original_url": "https://storage.taskip.net/logos/meeting-logo.png"
-        }
+        "logo": null
       },
       "first_name": "John",
       "last_name": "Doe",
       "email": "john.doe@client.com",
       "booking_data": [
         {
+          "id": "f_8a1b2c",
           "label": "Company",
           "value": "Acme Corporation"
         },
         {
-          "label": "Phone",
-          "value": "+1-555-987-6543"
-        },
-        {
+          "id": "f_3d4e5f",
           "label": "Meeting Purpose",
           "value": "Discuss website redesign requirements"
         }
@@ -393,13 +379,14 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/meeting/meeting-abc123d
       "meeting_link": "https://meet.google.com/xyz-abc-def",
       "meeting_provider": "Google Meet",
       "timezone": "America/New_York",
+      "workspace_timezone": "America/New_York",
       "is_over": false,
-      "status": "confirmed"
+      "status": 0
     }
   ],
   "links": {
-    "first": "https://public-api.taskip.net/api/public-v1/meeting/meeting_abc123def456/booking-list?page=1",
-    "last": "https://public-api.taskip.net/api/public-v1/meeting/meeting_abc123def456/booking-list?page=1",
+    "first": "https://public-api.taskip.net/api/public-v1/meeting/9f3a1c52-7d0e-4b1a-9c33-5d2b8e6f1a77/booking-list?page=1",
+    "last": "https://public-api.taskip.net/api/public-v1/meeting/9f3a1c52-7d0e-4b1a-9c33-5d2b8e6f1a77/booking-list?page=1",
     "prev": null,
     "next": null
   },
@@ -407,14 +394,17 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/meeting/meeting-abc123d
     "current_page": 1,
     "from": 1,
     "last_page": 1,
-    "path": "https://public-api.taskip.net/api/public-v1/meeting/meeting_abc123def456/booking-list",
-    "per_page": 15,
-    "to": 3,
-    "total": 3,
-    "search": null
+    "path": "https://public-api.taskip.net/api/public-v1/meeting/9f3a1c52-7d0e-4b1a-9c33-5d2b8e6f1a77/booking-list",
+    "per_page": 10,
+    "to": 1,
+    "total": 1
   }
 }
 ```
+
+The `meeting` object inside each booking is abbreviated here; it has the same fields as an item in [Get All Meetings](#get-all-meetings). `date`, `created_at`, `time_slot_start` and `time_slot_end` are formatted for display (`d-M-Y` and `g:i A`). `status` is an integer.
+
+A meeting that does not exist returns `422` with `{"error": {"msg": ["Meeting not found"]}}`.
 
 ---
 
@@ -433,7 +423,7 @@ GET /api/public-v1/meeting/{uuid}/booking/details/{id}
 | `id` | integer | Yes | Booking ID |
 
 <ApiTester
-  endpoint="/api/public-v1/meeting/meeting-abc123def456/booking/details/1"
+  endpoint="/api/public-v1/meeting/9f3a1c52-7d0e-4b1a-9c33-5d2b8e6f1a77/booking/details/1"
   method="GET"
   description="Test getting specific booking details"
 />
@@ -441,7 +431,7 @@ GET /api/public-v1/meeting/{uuid}/booking/details/{id}
 ### Example Request
 
 ```bash
-curl -X GET "https://public-api.taskip.net/api/public-v1/meeting/meeting-abc123def456/booking/details/1" \
+curl -X GET "https://public-api.taskip.net/api/public-v1/meeting/9f3a1c52-7d0e-4b1a-9c33-5d2b8e6f1a77/booking/details/1" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json"
 ```
@@ -452,119 +442,76 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/meeting/meeting-abc123d
 {
   "data": {
     "id": 1,
-    "uuid": "booking_abc123def456",
+    "uuid": "b1c7e0aa-3f52-4a6e-8d11-0c9e5a7f2b34",
     "cancel_reason": null,
     "meeting": {
       "id": 1,
-      "uuid": "meeting_abc123def456",
-      "user_id": 12,
-      "host": {
-        "id": 12,
-        "name": "Jane Smith",
-        "email": "jane@taskip.com"
-      },
-      "created_by": {
-        "id": 12,
-        "name": "Jane Smith",
-        "email": "jane@taskip.com"
-      },
+      "uuid": "9f3a1c52-7d0e-4b1a-9c33-5d2b8e6f1a77",
       "title": "Client Discovery Call",
-      "description": "Initial discovery call with potential client",
       "duration": 60,
-      "method": "online",
-      "phone_option": false,
-      "phone": null,
-      "location": "Google Meet",
-      "status": "active",
-      "slug": "client-discovery-call",
-      "applicable_from": "2024-01-01",
-      "applicable_to": "2024-12-31",
-      "reminder": true,
-      "booking_status": "open",
-      "timezone": "America/New_York",
-      "booking_count": 3,
-      "meeting_integration_id": null,
-      "allow_guest": true,
-      "logo": {
-        "id": 45,
-        "original_url": "https://storage.taskip.net/logos/meeting-logo.png"
-      }
+      "method": 2,
+      "status": 1,
+      "timezone": "America/New_York"
     },
     "first_name": "John",
     "last_name": "Doe",
     "email": "john.doe@client.com",
     "booking_data": [
       {
+        "id": "f_8a1b2c",
         "label": "Company",
         "value": "Acme Corporation"
-      },
-      {
-        "label": "Phone",
-        "value": "+1-555-987-6543"
-      },
-      {
-        "label": "Meeting Purpose",
-        "value": "Discuss website redesign requirements"
       }
     ],
-    "date": "30-Jan-2024",
+    "date": "2024-01-30T00:00:00.000000Z",
     "country": "United States",
     "ip": "192.168.1.1",
     "browser": "Chrome",
     "os": "MacOS",
     "device": "Desktop",
     "created_at": "26-Jan-2024",
-    "time_slot_start": "2:00 PM",
-    "time_slot_end": "3:00 PM",
+    "time_slot_start": "14:00:00",
+    "time_slot_end": "15:00:00",
+    "timezone": "America/New_York",
+    "workspace_timezone": "America/New_York",
+    "guest_email": ["guest@client.com"],
     "meeting_link": "https://meet.google.com/xyz-abc-def",
     "meeting_provider": "Google Meet",
-    "timezone": "America/New_York",
-    "is_over": false,
-    "status": "confirmed"
+    "status": 0
   },
   "availibility": [
     {
       "id": 1,
-      "meeting_uuid": "meeting_abc123def456",
-      "day": "monday",
-      "status": "active",
+      "meeting_uuid": "9f3a1c52-7d0e-4b1a-9c33-5d2b8e6f1a77",
+      "day": 1,
+      "status": 1,
       "times": [
         {
           "id": 1,
           "meetings_day_id": 1,
-          "time_slot_start": "09:00",
-          "time_slot_end": "17:00"
-        }
-      ]
-    },
-    {
-      "id": 2,
-      "meeting_uuid": "meeting_abc123def456",
-      "day": "tuesday",
-      "status": "active",
-      "times": [
-        {
-          "id": 2,
-          "meetings_day_id": 2,
-          "time_slot_start": "09:00",
-          "time_slot_end": "17:00"
+          "time_slot_start": "09:00:00",
+          "time_slot_end": "17:00:00",
+          "utc_start": null,
+          "utc_end": null
         }
       ]
     }
   ],
   "booking_data": {
-    "company": "Acme Corporation",
-    "phone": "+1-555-987-6543",
-    "meeting_purpose": "Discuss website redesign requirements"
+    "f_8a1b2c____company": "Acme Corporation"
   }
 }
 ```
+
+The top-level key is spelled `availibility` in the API response. The top-level `booking_data` is the raw submitted form data keyed by `<field_id>____<field_name>`, while `data.booking_data` is the rendered label/value list.
+
+A meeting or booking that does not exist returns `422` with `{"error": {"msg": ["Meeting not found"]}}` or `{"error": {"msg": ["Meeting booking not found"]}}`.
 
 ---
 
 ## Book a Meeting
 
-Create a new booking for an available meeting slot.
+Create a new booking for an available meeting slot. The booking form fields are validated against the meeting's booking form (see `form.fields` in [Get Meeting Details](#get-meeting-details)).
 
 ```http
 POST /api/public-v1/meeting/{uuid}/booking
@@ -579,55 +526,50 @@ POST /api/public-v1/meeting/{uuid}/booking
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `date` | string | Yes | Booking date (YYYY-MM-DD) |
-| `time_slot_start` | string | Yes | Start time (HH:MM) |
-| `time_slot_end` | string | Yes | End time (HH:MM) |
-| `booking_data` | array | Yes | Array of booking form data |
-| `timezone` | string | No | Timezone for the booking |
+| `date` | string | Yes | Booking date (`YYYY-MM-DD`), in the `timezone` given below |
+| `time_slot_start` | string | Yes | Start time (`HH:MM`) |
+| `time_slot_end` | string | Yes | End time (`HH:MM`) |
+| `booking_data` | object | Yes | Booking form answers, keyed by `<field_id>____<field_name>` for each field of the meeting's booking form (for example `f_8a1b2c____email`). Field validation (required, email, number, ...) follows the form configuration |
+| `guest_email` | array | No | Array of guest email addresses. May be omitted (treated as no guests) or sent as `[]` |
+| `timezone` | string | No | Timezone of `date` / `time_slot_*` (defaults to the workspace timezone). Times are converted to the workspace timezone for storage |
+
+The first name, last name and email of the booker are read from the form's `name` (`..____first_name`, `..____last_name`) and `email` (`..____email`) fields.
 
 <ApiTester
-  endpoint="/api/public-v1/meeting/meeting-abc123def456/booking"
+  endpoint="/api/public-v1/meeting/9f3a1c52-7d0e-4b1a-9c33-5d2b8e6f1a77/booking"
   method="POST"
   defaultBody={{
-    attendee_name: "John Doe",
-    attendee_email: "john.doe@client.com",
-    attendee_phone: "+1-555-987-6543",
-    company: "Acme Corporation",
-    position: "Marketing Director",
-    booked_time: "2024-02-15T14:00:00Z",
+    date: "2024-02-15",
+    time_slot_start: "14:00",
+    time_slot_end: "15:00",
     timezone: "America/New_York",
-    meeting_purpose: "Discuss website redesign project",
-    message: "Looking forward to discussing our upcoming website redesign project and exploring how your team can help us achieve our goals.",
-    custom_fields: {
-      budget_range: "$15,000 - $25,000",
-      timeline: "Q2 2024",
-      current_website: "https://acme.com"
+    booking_data: {
+      "f_name01____first_name": "John",
+      "f_name01____last_name": "Doe",
+      "f_8a1b2c____email": "john.doe@client.com"
     },
-    send_confirmation: true,
-    language: "en"
+    guest_email: []
   }}
-  description="Test booking a meeting slot"
+  description="Test booking a meeting slot. Replace the booking_data keys with the field IDs of your meeting's booking form."
 />
 
 ### Example Request
 
 ```bash
-curl -X POST "https://public-api.taskip.net/api/public-v1/meeting/meeting-abc123def456/booking" \
+curl -X POST "https://public-api.taskip.net/api/public-v1/meeting/9f3a1c52-7d0e-4b1a-9c33-5d2b8e6f1a77/booking" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json" \
   -d '{
     "date": "2024-02-15",
     "time_slot_start": "14:00",
     "time_slot_end": "15:00",
+    "timezone": "America/New_York",
     "booking_data": {
-      "first_name": "John",
-      "last_name": "Doe",
-      "email": "john.doe@client.com",
-      "company": "Acme Corporation",
-      "phone": "+1-555-987-6543",
-      "meeting_purpose": "Discuss website redesign project"
+      "f_name01____first_name": "John",
+      "f_name01____last_name": "Doe",
+      "f_8a1b2c____email": "john.doe@client.com"
     },
-    "timezone": "America/New_York"
+    "guest_email": []
   }'
 ```
 
@@ -637,42 +579,61 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/meeting/meeting-abc123
 {
   "success_msg": "Thank you for booking! We'll send you a confirmation email shortly.",
   "data": {
+    "booking_id": 2,
+    "booking_uuid": "c4d8a1f0-52b7-4e39-9a66-1f0b2d7e8c55",
     "meeting": {
-      "id": 1,
-      "uuid": "meeting_abc123def456",
+      "uuid": "9f3a1c52-7d0e-4b1a-9c33-5d2b8e6f1a77",
+      "user_id": 12,
       "title": "Client Discovery Call",
       "description": "Initial discovery call with potential client",
       "duration": 60,
-      "method": "online",
-      "location": "Google Meet",
+      "method": 2,
+      "phone_option": null,
+      "phone": null,
+      "location": null,
+      "status": 1,
+      "availability": [],
+      "form": {},
+      "customise": {},
+      "applicable_from": "2024-01-01T00:00:00.000000Z",
+      "applicable_to": "2024-12-31T00:00:00.000000Z",
       "timezone": "America/New_York",
-      "host": {
-        "id": 12,
-        "name": "Jane Smith",
-        "email": "jane@taskip.com"
-      }
+      "allow_guest": true,
+      "logo": null
     },
     "user": {
       "first_name": "John",
       "last_name": "Doe",
       "email": "john.doe@client.com"
     },
-    "time_slot_start": "14:00",
-    "time_slot_end": "15:00",
-    "date": "2024-02-15",
+    "time_slot_start": "14:00:00",
+    "time_slot_end": "15:00:00",
+    "date": "2024-02-15T00:00:00.000000Z",
     "timezone": "America/New_York",
-    "allow_guest": true
+    "allow_guest": false
   }
 }
 ```
 
+(The `meeting` object is abbreviated; it also contains `host`, `created_by`, `availability`, `form` and `customise` as in [Get Meeting Details](#get-meeting-details).)
+
+### Error Responses
+
+| Status | When | Body |
+|--------|------|------|
+| `422` | `date`, `time_slot_start`, `time_slot_end`, or `booking_data` is missing | `{"error": {"date": ["The date field is required."]}}` |
+| `422` | The meeting UUID does not exist | `{"error": {"msg": ["meeting not found"]}}` |
+| `422` | The slot overlaps an existing booking | `{"error": {"msg": ["This time slot is already booked. Please select a different time."]}}` |
+| `422` | `booking_data` fails the booking form's validation | `{"error": {"<field_id>____<field_name>": ["..."]}, "status": 422}` |
+| `403` | No price plan found for the workspace | `{"msg": "Price plan not found"}` |
+
 ---
 
 <Callout type="info" emoji="📅">
-  **Meeting Integration**: Meeting Management integrates with Google Meet and Zoom for seamless video conferencing and automatic meeting link generation.
+  **Meeting Integration**: Meetings can use Google Meet or Zoom (`method` `2` and `3`) for video conferencing and automatic meeting link generation.
 </Callout>
 
 
 <Callout type="warning" emoji="⏰">
-  **Time Zones**: Always specify time zones when scheduling meetings to avoid confusion. The system supports automatic time zone conversion for participants.
+  **Time Zones**: Always send the `timezone` that `date` and `time_slot_start` / `time_slot_end` are expressed in. Times are converted to the workspace timezone before the booking is stored.
 </Callout>

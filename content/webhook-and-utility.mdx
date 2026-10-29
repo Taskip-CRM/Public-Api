@@ -1,0 +1,506 @@
+# Webhook and Utility API
+
+This page covers the endpoints that support the rest of the API: managing webhooks, getting the authenticated user, and reference data (currencies, countries, states and cities).
+
+## Endpoints Overview
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | [`/api/public-v1/webhook`](#list-webhooks) | List webhooks |
+| `POST` | [`/api/public-v1/webhook`](#create-a-webhook) | Create a webhook |
+| `GET` | [`/api/public-v1/webhook/{id}`](#get-a-webhook) | Get a webhook |
+| `PUT` / `PATCH` | [`/api/public-v1/webhook/{id}`](#update-a-webhook) | Update a webhook |
+| `DELETE` | [`/api/public-v1/webhook/{id}`](#delete-a-webhook) | Delete a webhook |
+| `GET` | [`/api/public-v1/me`](#get-authenticated-user) | Get the authenticated user |
+| `GET` | [`/api/public-v1/currencies`](#get-currencies) | List currencies |
+| `GET` | [`/api/public-v1/country`](#get-countries) | List countries |
+| `GET` | [`/api/public-v1/state`](#get-states) | List states of a country |
+| `GET` | [`/api/public-v1/city`](#get-cities) | List cities of a state |
+
+Every request must send the secret key header:
+
+```http
+X-Secret-Key: your-secret-key-here
+Content-Type: application/json
+```
+
+---
+
+# Webhooks
+
+Webhooks let TaskIP call a URL of yours when an event happens in the workspace. Each webhook stores a name, the target URL, the HTTP method used to call it, the list of events it listens to and optional custom headers.
+
+Event names are strings such as `contact.created`, `company.created`, `invoice.*`, `quotation.*`, `sales.pipeline.*`, `support.ticket.*`, `project.*`, `project.task.created`, `meeting.*`, `form.submitted`, `discussion.created`, `document.created`, `document.updated` and `document.published`. The `events` list is not validated against a fixed list when you create a webhook.
+
+## List Webhooks
+
+```http
+GET /api/public-v1/webhook
+```
+
+### Query Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `item` | integer | No | Items per page (default: `10`) |
+| `page` | integer | No | Page number |
+| `event_prefix` | string | No | Only return webhooks that listen to at least one event starting with this prefix (for example `project.`) |
+
+<ApiTester
+  endpoint="/api/public-v1/webhook"
+  method="GET"
+  description="Test listing webhooks"
+/>
+
+### Example Request
+
+```bash
+curl -X GET "https://public-api.taskip.net/api/public-v1/webhook?item=20" \
+  -H "X-Secret-Key: your-secret-key-here"
+```
+
+### Example Response
+
+```json
+{
+  "message": "Webhook List",
+  "data": [
+    {
+      "id": 1,
+      "name": "CRM Sync",
+      "events": ["contact.created", "invoice.created"],
+      "method": "POST",
+      "url": "https://example.com/hooks/taskip",
+      "headers": [
+        { "Content-Type": "application/json" }
+      ],
+      "status": 1,
+      "lastTriggered": "2 hours ago"
+    }
+  ],
+  "links": {
+    "first": "https://public-api.taskip.net/api/public-v1/webhook?page=1",
+    "last": "https://public-api.taskip.net/api/public-v1/webhook?page=1",
+    "prev": null,
+    "next": null
+  },
+  "meta": {
+    "current_page": 1,
+    "from": 1,
+    "last_page": 1,
+    "per_page": 10,
+    "to": 1,
+    "total": 1
+  }
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `status` | `1` = active, `0` = inactive |
+| `lastTriggered` | Human readable time of the last call (for example `2 hours ago`), or `null` if never triggered |
+
+---
+
+## Create a Webhook
+
+```http
+POST /api/public-v1/webhook
+```
+
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | string | Yes | Webhook name |
+| `url` | string | Yes | Target URL (must be a valid URL) |
+| `request_method` | string | Yes | One of `GET`, `POST`, `PUT`, `DELETE` (upper case) |
+| `events` | array | Yes | List of event names to listen to |
+| `request_headers` | array | No | Custom headers as a list of single-entry objects, for example `[{"Authorization": "Bearer token"}]`. A `Content-Type: application/json` header is added automatically if you do not send a `Content-Type` header |
+
+New webhooks are created active.
+
+<ApiTester
+  endpoint="/api/public-v1/webhook"
+  method="POST"
+  defaultBody={{
+    name: "CRM Sync",
+    url: "https://example.com/hooks/taskip",
+    request_method: "POST",
+    events: ["contact.created", "invoice.created"],
+    request_headers: [{ "Authorization": "Bearer your-token" }]
+  }}
+  description="Test creating a webhook"
+/>
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/webhook" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "CRM Sync",
+    "url": "https://example.com/hooks/taskip",
+    "request_method": "POST",
+    "events": ["contact.created", "invoice.created"],
+    "request_headers": [{ "Authorization": "Bearer your-token" }]
+  }'
+```
+
+### Example Response
+
+```json
+{
+  "id": 1,
+  "url": "https://example.com/hooks/taskip"
+}
+```
+
+### Errors
+
+- `422` standard Laravel validation response, for example `{"message": "The url field must be a valid URL.", "errors": {"url": ["The url field must be a valid URL."]}}` (validated: `name`, `request_method`, `events`, `url`)
+
+---
+
+## Get a Webhook
+
+```http
+GET /api/public-v1/webhook/{id}
+```
+
+### Example Request
+
+```bash
+curl -X GET "https://public-api.taskip.net/api/public-v1/webhook/1" \
+  -H "X-Secret-Key: your-secret-key-here"
+```
+
+### Example Response
+
+```json
+{
+  "message": "Webhook Detail",
+  "data": {
+    "id": 1,
+    "name": "CRM Sync",
+    "events": ["contact.created", "invoice.created"],
+    "method": "POST",
+    "url": "https://example.com/hooks/taskip",
+    "headers": [
+      { "Authorization": "Bearer your-token" },
+      { "Content-Type": "application/json" }
+    ],
+    "status": 1,
+    "lastTriggered": null
+  }
+}
+```
+
+If the webhook does not exist, the API responds with HTTP `404` and `{"message": "Webhook Not Found"}`.
+
+---
+
+## Update a Webhook
+
+```http
+PUT /api/public-v1/webhook/{id}
+PATCH /api/public-v1/webhook/{id}
+```
+
+`PUT` and `PATCH` behave the same. Updates are **partial**: only the fields you send are validated and changed; omitted fields keep their stored values.
+
+### Request Body
+
+All fields are optional, but when a field is present it is validated.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | string | Webhook name (cannot be empty) |
+| `url` | string | Target URL (must be a valid URL) |
+| `request_method` | string | One of `GET`, `POST`, `PUT`, `DELETE`. Stored upper-cased |
+| `events` | array | List of event names (cannot be empty) |
+| `request_headers` | array or null | Custom headers (same format as create). When sent, they replace the stored headers and `Content-Type: application/json` is added if missing. Sending `null` resets the headers to just `Content-Type: application/json`. When omitted, the stored headers are kept |
+
+A body that fails validation returns `422` with the standard validation response, for example `{"message": "The url field must be a valid URL.", "errors": {"url": ["..."]}}`.
+
+### Example Request
+
+```bash
+curl -X PUT "https://public-api.taskip.net/api/public-v1/webhook/1" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "CRM Sync v2",
+    "url": "https://example.com/hooks/taskip-v2",
+    "request_method": "POST",
+    "events": ["contact.created"]
+  }'
+```
+
+### Example Response
+
+```json
+{ "message": "Webhook Updated" }
+```
+
+If the webhook does not exist the API responds with HTTP `404` and `{"message": "Webhook not found"}`.
+
+---
+
+## Delete a Webhook
+
+```http
+DELETE /api/public-v1/webhook/{id}
+```
+
+### Example Request
+
+```bash
+curl -X DELETE "https://public-api.taskip.net/api/public-v1/webhook/1" \
+  -H "X-Secret-Key: your-secret-key-here"
+```
+
+### Example Response
+
+```json
+{ "message": "Webhook Deleted" }
+```
+
+If the webhook does not exist the API responds with HTTP `404` and `{"message": "Webhook not found"}`.
+
+---
+
+# Utility Endpoints
+
+## Get Authenticated User
+
+Return the user that the secret key belongs to, and the workspace (tenant) key. Useful for verifying that a key works.
+
+```http
+GET /api/public-v1/me
+```
+
+<ApiTester
+  endpoint="/api/public-v1/me"
+  method="GET"
+  description="Test the authenticated user endpoint"
+/>
+
+### Example Request
+
+```bash
+curl -X GET "https://public-api.taskip.net/api/public-v1/me" \
+  -H "X-Secret-Key: your-secret-key-here"
+```
+
+### Example Response
+
+```json
+{
+  "id": 3,
+  "name": "Sarah Johnson",
+  "email": "sarah@company.com",
+  "tenant": "your-workspace"
+}
+```
+
+If no user is resolved for the request, the API returns `401` with `{"message": "Unauthenticated."}`.
+
+---
+
+## Get Currencies
+
+Return the list of currencies (taken from active countries, one entry per currency code).
+
+```http
+GET /api/public-v1/currencies
+```
+
+<ApiTester
+  endpoint="/api/public-v1/currencies"
+  method="GET"
+  description="Test listing currencies"
+/>
+
+### Example Request
+
+```bash
+curl -X GET "https://public-api.taskip.net/api/public-v1/currencies" \
+  -H "X-Secret-Key: your-secret-key-here"
+```
+
+### Example Response
+
+```json
+{
+  "message": "currencies list",
+  "data": [
+    {
+      "value": "USD",
+      "label": "🇺🇸 United States dollar (USD)",
+      "symbol": "$"
+    },
+    {
+      "value": "EUR",
+      "label": "🇪🇺 Euro (EUR)",
+      "symbol": "€"
+    }
+  ]
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `value` | Currency code, use this in `currency` fields of other endpoints |
+| `label` | Display label: flag emoji, currency name and code |
+| `symbol` | Currency symbol |
+
+---
+
+## Get Countries
+
+Return all active countries ordered by name. No parameters.
+
+```http
+GET /api/public-v1/country
+```
+
+<ApiTester
+  endpoint="/api/public-v1/country"
+  method="GET"
+  description="Test listing countries"
+/>
+
+### Example Request
+
+```bash
+curl -X GET "https://public-api.taskip.net/api/public-v1/country" \
+  -H "X-Secret-Key: your-secret-key-here"
+```
+
+### Example Response
+
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "name": "Afghanistan",
+      "code": "AFG",
+      "code2": "AF",
+      "currency": "AFN",
+      "currency_symbol": "؋",
+      "flag": "🇦🇫"
+    }
+  ]
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `id` | Country ID, use it as `country_id` in [Get States](#get-states) |
+| `code` / `code2` | ISO 3166-1 alpha-3 / alpha-2 code |
+
+---
+
+## Get States
+
+Return the active states of a country, ordered by name.
+
+```http
+GET /api/public-v1/state
+```
+
+### Query Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `country_id` | integer | Yes | Country ID from [Get Countries](#get-countries) |
+| `search` | string | No | Filter states by name |
+
+<ApiTester
+  endpoint="/api/public-v1/state?country_id=1"
+  method="GET"
+  description="Test listing states of a country"
+/>
+
+### Example Request
+
+```bash
+curl -X GET "https://public-api.taskip.net/api/public-v1/state?country_id=1" \
+  -H "X-Secret-Key: your-secret-key-here"
+```
+
+### Example Response
+
+```json
+{
+  "data": [
+    {
+      "id": 3901,
+      "name": "Badakhshan",
+      "country": "Afghanistan"
+    }
+  ]
+}
+```
+
+### Errors
+
+- `422` `{"error": {"msg": ["provide country id"]}}` when `country_id` is missing
+
+---
+
+## Get Cities
+
+Return the active cities of a state, ordered by name.
+
+```http
+GET /api/public-v1/city
+```
+
+### Query Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `state_id` | integer | Yes | State ID from [Get States](#get-states) |
+| `search` | string | No | Filter cities by name |
+
+<ApiTester
+  endpoint="/api/public-v1/city?state_id=3901"
+  method="GET"
+  description="Test listing cities of a state"
+/>
+
+### Example Request
+
+```bash
+curl -X GET "https://public-api.taskip.net/api/public-v1/city?state_id=3901" \
+  -H "X-Secret-Key: your-secret-key-here"
+```
+
+### Example Response
+
+```json
+{
+  "data": [
+    {
+      "id": 52,
+      "name": "Ashkasham",
+      "state": "Badakhshan"
+    }
+  ]
+}
+```
+
+### Errors
+
+- `422` `{"error": {"msg": ["provide state id"]}}` when `state_id` is missing
+
+---
+
+## Common Errors
+
+| Status | Description |
+|--------|-------------|
+| `401` | `{"message": "Secret keys are missing."}` - no `X-Secret-Key` header |
+| `404` | `{"status": 404, "msg": "Workspace not found"}` - unknown or expired secret key |
+| `503` | Workspace is in read-only maintenance and the request is a write |

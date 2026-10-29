@@ -249,9 +249,12 @@ def create_project_invoice(api, project_id, invoice_data):
         
         # Step 5: Send to client if requested
         if invoice_data.get('send_to_client'):
-            api.request(f'/invoice/{invoice_id}/send-to-client', 'POST', {
-                'custom_message': f"Please find attached the invoice for {project['data']['name']}. Thank you for your business!",
-                'send_copy_to_self': True
+            # invoice_html: the rendered invoice (becomes the PDF attachment);
+            # template_id: ID of a custom email template (the email is only sent with one)
+            api.request(f'/invoice/sent/{invoice_id}', 'POST', {
+                'type': 'invoice',
+                'invoiceHtml': invoice_html,
+                'template_id': email_template_id
             })
             print('Invoice sent to client')
         
@@ -518,101 +521,33 @@ print(f"Projects at Risk: {len(dashboard['projects_at_risk'])}")
 
 ### 5. Document Management Integration
 
-Upload and organize project documents with automatic sharing.
+Create a document, rename it, move it into a folder and share it by link.
 
-#### PHP Example
-```php
-function uploadProjectDocuments($api, $projectId, $files, $folderName = null) {
-    try {
-        // Create project folder if specified
-        $folderId = null;
-        if ($folderName) {
-            $folderResponse = $api->makeRequest('/document/folders', 'POST', [
-                'name' => "Project_{$projectId}_{$folderName}",
-                'parent_id' => 0,
-                'description' => "Documents for project {$projectId}"
-            ]);
-            $folderId = $folderResponse['data']['id'];
-        }
-        
-        $uploadedDocs = [];
-        
-        foreach ($files as $file) {
-            // Upload document
-            $postFields = [
-                'file' => new CURLFile($file['path'], $file['mime_type'], $file['name']),
-                'name' => $file['display_name'] ?? $file['name'],
-                'description' => $file['description'] ?? '',
-                'folder_id' => $folderId,
-                'tags' => implode(',', $file['tags'] ?? []),
-                'is_public' => $file['is_public'] ?? false,
-                'notify_team' => true
-            ];
-            
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $api->baseUrl . '/document');
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                'X-Secret-Key: ' . $api->apiKey
-            ]);
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
-            
-            $response = curl_exec($ch);
-            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
-            
-            if ($httpCode === 200 || $httpCode === 201) {
-                $result = json_decode($response, true);
-                $uploadedDocs[] = $result['data'];
-                
-                // Share with project team
-                shareDocumentWithProjectTeam($api, $result['data']['id'], $projectId);
-            }
-        }
-        
-        return $uploadedDocs;
-        
-    } catch (Exception $e) {
-        error_log("Document upload failed: " . $e->getMessage());
-        throw $e;
-    }
+#### JavaScript Example
+```javascript
+async function createAndShareDocument(api, name, folderId) {
+  // Create the document (folder_id is not accepted on create)
+  const created = await api.request('/documents', 'POST', {
+    name,
+    visibility: 2 // 0 = Private, 1 = Public, 2 = Team Only
+  });
+  const uuid = created.document.uuid;
+
+  // Move it into a folder afterwards
+  if (folderId) {
+    await api.request(`/documents/blocks/move-to-folder/${uuid}`, 'POST', {
+      folder_id: folderId
+    });
+  }
+
+  // Publish it so it has a public link
+  await api.request(`/documents-publish/${uuid}`, 'POST', { actionType: 0 }); // 0 = publish, 1 = unpublish
+
+  return uuid;
 }
-
-function shareDocumentWithProjectTeam($api, $documentId, $projectId) {
-    // Get project team members
-    $project = $api->makeRequest("/project/{$projectId}");
-    
-    // Extract team member IDs from assignees and project managers
-    $teamMemberIds = [];
-    if (isset($project['data']['assignees'])) {
-        $teamMemberIds = array_merge($teamMemberIds, array_column($project['data']['assignees'], 'id'));
-    }
-    if (isset($project['data']['project_manager'])) {
-        $teamMemberIds = array_merge($teamMemberIds, array_column($project['data']['project_manager'], 'id'));
-    }
-    
-    if (!empty($teamMemberIds)) {
-        // Note: Document sharing endpoints may need to be implemented based on your backend
-        error_log("Would share document {$documentId} with team members: " . implode(', ', $teamMemberIds));
-    }
-}
-
-// Usage
-$projectFiles = [
-    [
-        'path' => '/path/to/requirements.pdf',
-        'name' => 'requirements.pdf',
-        'display_name' => 'Project Requirements Document',
-        'mime_type' => 'application/pdf',
-        'description' => 'Detailed project requirements and specifications',
-        'tags' => ['requirements', 'specs'],
-        'is_public' => false
-    ]
-];
-
-$uploadedDocuments = uploadProjectDocuments($api, 26, $projectFiles, 'Requirements');
 ```
+
+See [Document Management](/document-management) for every field and the share, invite, thumbnail and cover endpoints.
 
 ---
 

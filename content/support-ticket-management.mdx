@@ -1,6 +1,8 @@
 # Support Ticket Management API
 
-The Support Ticket Management API allows you to manage customer support tickets in your TaskIP CRM system. You can create, read, update, and delete tickets, manage ticket assignments, handle attachments, and track ticket resolution workflow.
+The Support Ticket Management API allows you to manage customer support tickets in your TaskIP CRM system. You can create, read, update, and delete tickets, reply as a client or an agent, change status and priority, assign agents in bulk, and manage ticket notes.
+
+Tickets are identified by a **UUID** (string), not by a numeric ID, in every `{uuid}` path parameter below.
 
 ## Endpoints Overview
 
@@ -8,21 +10,54 @@ The Support Ticket Management API allows you to manage customer support tickets 
 |--------|----------|-------------|
 | `GET` | [`/api/public-v1/support-ticket`](#get-all-support-tickets) | Get all support tickets |
 | `POST` | [`/api/public-v1/support-ticket`](#create-a-support-ticket) | Create a new support ticket |
-| `GET` | [`/api/public-v1/support-ticket/{id}`](#get-a-specific-support-ticket) | Get a specific support ticket |
-| `PUT` | [`/api/public-v1/support-ticket/{id}`](#update-a-support-ticket) | Update a support ticket |
-| `DELETE` | [`/api/public-v1/support-ticket/{id}`](#delete-a-support-ticket) | Delete a support ticket |
-| `POST` | [`/api/public-v1/support-ticket/bulk-actions`](#bulk-actions) | Perform bulk operations |
-| `POST` | [`/api/public-v1/support-ticket/reply/{uuid}`](#reply-to-support-ticket) | Reply to support ticket |
+| `GET` | [`/api/public-v1/support-ticket/{uuid}`](#get-a-specific-support-ticket) | Get a specific support ticket |
+| `PUT` / `PATCH` | [`/api/public-v1/support-ticket/{uuid}`](#update-a-support-ticket) | Update a support ticket |
+| `DELETE` | [`/api/public-v1/support-ticket/{uuid}`](#delete-a-support-ticket) | Delete a support ticket |
+| `POST` | [`/api/public-v1/support-ticket/bulk-actions`](#bulk-actions) | Delete, change priority/status, or assign agents in bulk |
+| `GET` | [`/api/public-v1/support-ticket/{uuid}/replies`](#list-ticket-replies) | List replies of a ticket |
+| `POST` | [`/api/public-v1/support-ticket/reply/{uuid}`](#reply-to-support-ticket) | Reply to a ticket |
+| `POST` | [`/api/public-v1/support-ticket/agent-reply/{uuid}`](#agent-reply-to-support-ticket) | Reply to a ticket as a specific agent |
 | `POST` | [`/api/public-v1/support-ticket/{uuid}/priority`](#update-ticket-priority) | Update ticket priority |
 | `POST` | [`/api/public-v1/support-ticket/status-update/{uuid}`](#update-ticket-status) | Update ticket status |
-| `DELETE` | [`/api/public-v1/support-ticket/{uuid}/note-delete/{id}`](#delete-ticket-note) | Delete ticket note |
 | `POST` | [`/api/public-v1/support-ticket/{uuid}/note-store`](#add-ticket-note) | Add ticket note |
+| `DELETE` | [`/api/public-v1/support-ticket/{uuid}/note-delete/{id}`](#delete-ticket-note) | Delete ticket note |
+
+## Value Reference
+
+**Priority**
+
+| Value | Meaning |
+|-------|---------|
+| `0` | Low |
+| `1` | Medium |
+| `2` | High |
+| `3` | Urgent |
+
+**Status**
+
+| Value | Meaning |
+|-------|---------|
+| `0` | Open |
+| `1` | In Progress |
+| `2` | Close |
+| `3` | Replied |
+| `4` | Waiting For Reply |
+| `5` | Queue |
+
+**Note visibility (`is_public`)**
+
+| Value | Meaning |
+|-------|---------|
+| `0` | Private - agents only, visible across all of the client's tickets |
+| `1` | Public - visible to the client across all of their tickets |
+| `2` | This ticket only - visible to the client, only on this ticket |
+| `3` | Private, this ticket only - agents only, only on this ticket |
 
 ---
 
 ## Get All Support Tickets
 
-Retrieve a list of all support tickets in your system.
+Retrieve a paginated list of support tickets, newest first.
 
 ```http
 GET /api/public-v1/support-ticket
@@ -37,30 +72,29 @@ Content-Type: application/json
 ### Query Parameters
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `page` | integer | No | Page number for pagination (default: 1) |
-| `limit` | integer | No | Number of tickets per page (default: 50) |
-| `search` | string | No | Search term for ticket title or description |
-| `sort` | string | No | Sort field (`created_at`, `updated_at`, `priority`, `status`) |
-| `order` | string | No | Sort order (`asc` or `desc`) |
-| `status` | string | No | Filter by status (`open`, `in_progress`, `resolved`, `closed`) |
-| `priority` | string | No | Filter by priority (`low`, `medium`, `high`, `urgent`) |
-| `assigned_to` | integer | No | Filter by assigned team member ID |
-| `client_id` | integer | No | Filter by client ID |
-| `category` | string | No | Filter by ticket category |
-| `date_from` | string | No | Filter tickets from date (YYYY-MM-DD) |
-| `date_to` | string | No | Filter tickets to date (YYYY-MM-DD) |
+| `page` | integer | No | Page number for pagination |
+| `item` | integer | No | Tickets per page (default: 10). `0` returns all tickets without pagination |
+| `search` | string | No | A numeric value matches the ticket `id` exactly; any other text matches the subject or the creator's email |
+| `email` | string | No | Return only tickets created by the user with this email (must be a valid email) |
+| `status` | integer | No | Filter by status (`0`-`5`, see [Value Reference](#value-reference)) |
+| `priority` | integer | No | Filter by priority (`0`-`3`) |
+| `spam` | integer | No | Filter by spam flag (`0` or `1`) |
+
+<Callout type="info" emoji="💡">
+  List results are cached for about 10 seconds, so a ticket you just created or changed may take a few seconds to appear in the list.
+</Callout>
 
 ### Example Request
 
 ```bash
-curl -X GET "https://public-api.taskip.net/api/public-v1/support-ticket?page=1&limit=20&status=open&priority=high" \
+curl -X GET "https://public-api.taskip.net/api/public-v1/support-ticket?page=1&item=20&status=0&priority=2" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json"
 ```
 
 ### JavaScript Example
 ```javascript
-const response = await fetch('https://public-api.taskip.net/api/public-v1/support-ticket?page=1&limit=20', {
+const response = await fetch('https://public-api.taskip.net/api/public-v1/support-ticket?page=1&item=20', {
   method: 'GET',
   headers: {
     'X-Secret-Key': 'your-secret-key-here',
@@ -75,60 +109,87 @@ const tickets = await response.json();
 
 ```json
 {
+  "msg": "Support ticket list",
   "data": [
     {
       "id": 1,
       "uuid": "550e8400-e29b-41d4-a716-446655440001",
       "subject": "Login Issues with Dashboard",
       "created_by": {
-        "id": 1,
-        "name": "Admin User",
-        "email": "admin@taskip.com"
+        "id": 15,
+        "uuid": "9f1c2f0e-6c1b-4e6e-a1d2-0c3a8f7b2d11",
+        "contact_id": 7,
+        "first_name": "John",
+        "last_name": "Smith",
+        "full_name": "John Smith",
+        "email": "john@acme.com",
+        "image": null
       },
       "user": {
-        "id": 15,
-        "name": "John Smith",
-        "email": "john@acme.com"
+        "id": 3,
+        "uuid": "b7a0c1d4-33f2-4a8e-9a77-5e1d9a2c4f10",
+        "contact_id": null,
+        "first_name": "Sarah",
+        "last_name": "Johnson",
+        "full_name": "Sarah Johnson",
+        "email": "sarah@taskip.com",
+        "image": null
       },
+      "agents": [
+        {
+          "id": 3,
+          "uuid": "b7a0c1d4-33f2-4a8e-9a77-5e1d9a2c4f10",
+          "contact_id": null,
+          "first_name": "Sarah",
+          "last_name": "Johnson",
+          "full_name": "Sarah Johnson",
+          "email": "sarah@taskip.com",
+          "image": null
+        }
+      ],
       "priority": 3,
       "status": 1,
       "description": "User cannot access dashboard after password reset",
-      "attachment": {
-        "id": 101,
-        "url": "https://cdn.taskip.net/attachments/ticket-attachment.pdf",
-        "name": "screenshot.pdf",
-        "size": 2048576
-      },
       "createAt": "2 hours ago",
-      "date": "15-Jan-2024",
-      "time": "09:30AM"
-    },
-    {
-      "id": 2,
-      "uuid": "550e8400-e29b-41d4-a716-446655440002",
-      "subject": "Feature Request: Export Functionality",
-      "created_by": {
-        "id": 1,
-        "name": "Admin User",
-        "email": "admin@taskip.com"
+      "date": "2024-01-15",
+      "time": "09:30AM",
+      "is_spam": 0,
+      "is_shared": false,
+      "replies_count": 2,
+      "last_replied_at": "1 hour ago",
+      "last_reply": {
+        "id": 12,
+        "message": "We are looking into this.",
+        "created_at": "2024-01-15T10:30:00.000000Z",
+        "updated_at": "2024-01-15T10:30:00.000000Z",
+        "user": {
+          "id": 3,
+          "name": "Sarah Johnson",
+          "email": "sarah@taskip.com",
+          "image": null
+        }
       },
-      "user": {
-        "id": 22,
-        "name": "Mike Wilson",
-        "email": "mike@techcorp.com"
-      },
-      "priority": 2,
-      "status": 2,
-      "description": "Request to add CSV export feature to reports",
-      "attachment": null,
-      "createAt": "1 day ago",
-      "date": "14-Jan-2024",
-      "time": "11:15AM"
+      "sla": null
     }
   ],
-  "status": 200
+  "links": {
+    "first": "https://public-api.taskip.net/api/public-v1/support-ticket?page=1",
+    "last": "https://public-api.taskip.net/api/public-v1/support-ticket?page=1",
+    "prev": null,
+    "next": null
+  },
+  "meta": {
+    "current_page": 1,
+    "from": 1,
+    "last_page": 1,
+    "per_page": 10,
+    "to": 1,
+    "total": 1
+  }
 }
 ```
+
+`user` is the primary assigned agent and `agents` lists all assigned agents. `sla` is `null` unless an SLA tracker exists for the ticket; otherwise it contains `first_response_status`, `first_response_status_label`, `first_response_due_at`, `first_response_seconds_remaining`, `resolution_status`, `resolution_status_label`, `resolution_due_at` and `resolution_seconds_remaining`. When `search` is used, `meta.search` echoes the search term.
 
 ---
 
@@ -151,12 +212,14 @@ Content-Type: application/json
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `subject` | string | Yes | Ticket subject (max 191 characters) |
-| `priority` | integer | Yes | Priority level (0=Low, 1=Normal, 2=Medium, 3=High, 4=Urgent) |
-| `status` | integer | No | Status (0=Open, 1=In Progress, 2=Resolved, 3=Closed, 4=Pending) |
-| `description` | string | No | Detailed description of the issue |
-| `attachment` | integer | No | Attachment media ID |
-| `created_by` | integer | No | ID of user who created the ticket |
-| `user_id` | integer | No | ID of user associated with the ticket |
+| `priority` | integer | Yes | Priority level: `0`=Low, `1`=Medium, `2`=High, `3`=Urgent (any other value returns `422`) |
+| `status` | integer | No | Status (`0`-`5`, see [Value Reference](#value-reference)). Defaults to `0` (Open) |
+| `description` | string | No | Detailed description of the issue. Also stored as the ticket's first reply |
+| `attachment` | integer | No | Attachment media ID (a single ID, not an array) |
+| `email` | string | No | Email of the client the ticket is created for (max 191, must be valid). If a user with this email exists it must be a contact (otherwise `422`); if none exists a contact is created automatically |
+| `created_by` | integer | No | User ID of the ticket creator (ignored when `email` is provided) |
+| `user_id` | integer | No | User ID of the agent to assign the ticket to |
+| `user_ids` | array of integer | No | User IDs of agents to assign (at least 1). The first ID becomes the primary agent (`user`). Takes precedence over `user_id` |
 
 ### Example Request
 
@@ -166,11 +229,11 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/support-ticket" \
   -H "Content-Type: application/json" \
   -d '{
     "subject": "Email Notifications Not Working",
-    "priority": 3,
+    "priority": 2,
     "status": 0,
     "description": "Customer reports that email notifications for new orders are not being received. This started happening 2 days ago.",
     "attachment": 101,
-    "created_by": 1,
+    "email": "emma@startup.com",
     "user_id": 18
   }'
 ```
@@ -186,11 +249,11 @@ headers = {
 
 ticket_data = {
     "subject": "Email Notifications Not Working",
-    "priority": 3,
+    "priority": 2,
     "status": 0,
     "description": "Customer reports that email notifications for new orders are not being received. This started happening 2 days ago.",
     "attachment": 101,
-    "created_by": 1,
+    "email": "emma@startup.com",
     "user_id": 18
 }
 
@@ -205,59 +268,83 @@ result = response.json()
 
 ### Example Response
 
+Status: `200 OK`
+
 ```json
 {
-  "data": {
+  "msg": "SupportTicket updated successfully",
+  "ticket": {
     "id": 46,
     "uuid": "550e8400-e29b-41d4-a716-446655440046",
     "subject": "Email Notifications Not Working",
     "created_by": {
-      "id": 1,
-      "name": "Admin User",
-      "email": "admin@taskip.com"
+      "id": 40,
+      "uuid": "1c9d3a52-8e0b-4d57-9c1e-2f6b7a3d4e90",
+      "contact_id": 12,
+      "first_name": "emma",
+      "last_name": "",
+      "full_name": "emma",
+      "email": "emma@startup.com",
+      "image": null
     },
     "user": {
       "id": 18,
-      "name": "Emma Davis",
-      "email": "emma@startup.com"
+      "uuid": "6d2e8b1a-5f3c-4a09-b1d7-8c4e2f9a0b33",
+      "contact_id": null,
+      "first_name": "David",
+      "last_name": "Chen",
+      "full_name": "David Chen",
+      "email": "david@taskip.com",
+      "image": null
     },
-    "priority": 3,
+    "agents": [
+      {
+        "id": 18,
+        "uuid": "6d2e8b1a-5f3c-4a09-b1d7-8c4e2f9a0b33",
+        "contact_id": null,
+        "first_name": "David",
+        "last_name": "Chen",
+        "full_name": "David Chen",
+        "email": "david@taskip.com",
+        "image": null
+      }
+    ],
+    "priority": 2,
     "status": 0,
     "description": "Customer reports that email notifications for new orders are not being received. This started happening 2 days ago.",
-    "attachment": {
-      "id": 101,
-      "url": "https://cdn.taskip.net/attachments/ticket-attachment.pdf",
-      "name": "screenshot.pdf",
-      "size": 2048576
-    },
     "createAt": "just now",
-    "date": "16-Jan-2024",
-    "time": "10:30AM"
-  },
-  "status": 201,
-  "msg": "SupportTicket stored successfully"
+    "date": "2024-01-16",
+    "time": "10:30AM",
+    "is_spam": 0,
+    "is_shared": false,
+    "replies_count": null,
+    "last_replied_at": null,
+    "sla": null
+  }
 }
 ```
+
+Validation failures return `422` with `{ "error": { "<field>": ["..."] } }`.
 
 ---
 
 ## Get a Specific Support Ticket
 
-Retrieve details of a specific support ticket by ID.
+Retrieve details of a specific support ticket by UUID, including the latest 10 replies and the latest 10 activities.
 
 ```http
-GET /api/public-v1/support-ticket/{id}
+GET /api/public-v1/support-ticket/{uuid}
 ```
 
 ### Path Parameters
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `id` | integer | Yes | Ticket ID |
+| `uuid` | string | Yes | Ticket UUID |
 
 ### Example Request
 
 ```bash
-curl -X GET "https://public-api.taskip.net/api/public-v1/support-ticket/46" \
+curl -X GET "https://public-api.taskip.net/api/public-v1/support-ticket/550e8400-e29b-41d4-a716-446655440046" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json"
 ```
@@ -266,61 +353,104 @@ curl -X GET "https://public-api.taskip.net/api/public-v1/support-ticket/46" \
 
 ```json
 {
-  "id": 46,
-  "uuid": "550e8400-e29b-41d4-a716-446655440046",
-  "subject": "Email Notifications Not Working",
-  "created_by": {
-    "id": 1,
-    "name": "Admin User",
-    "email": "admin@taskip.com"
-  },
-  "user": {
-    "id": 18,
-    "name": "Emma Davis",
-    "email": "emma@startup.com"
-  },
-  "priority": 3,
-  "status": 1,
-  "description": "Customer reports that email notifications for new orders are not being received. This started happening 2 days ago.",
-  "attachment": {
-    "id": 101,
-    "url": "https://cdn.taskip.net/attachments/ticket-attachment.pdf",
-    "name": "error_logs.txt",
-    "size": 15420
-  },
-  "createAt": "3 hours ago",
-  "date": "16-Jan-2024",
-  "time": "10:30AM"
+  "msg": "SupportTicket retrieved successfully",
+  "data": {
+    "id": 46,
+    "uuid": "550e8400-e29b-41d4-a716-446655440046",
+    "subject": "Email Notifications Not Working",
+    "created_by": {
+      "id": 40,
+      "uuid": "1c9d3a52-8e0b-4d57-9c1e-2f6b7a3d4e90",
+      "contact_id": 12,
+      "first_name": "emma",
+      "last_name": "",
+      "full_name": "emma",
+      "email": "emma@startup.com",
+      "image": null
+    },
+    "user": null,
+    "agents": [],
+    "priority": 2,
+    "status": 1,
+    "description": "Customer reports that email notifications for new orders are not being received.",
+    "attachment": {
+      "id": 101,
+      "title": "error_logs.txt",
+      "ext": "txt",
+      "size": 15420,
+      "url": "https://cdn.taskip.net/attachments/error_logs.txt",
+      "media_type": "text",
+      "createdAt": "16-01-2024 10:30:00"
+    },
+    "replies": [
+      {
+        "id": 55,
+        "user": {
+          "id": 40,
+          "uuid": "1c9d3a52-8e0b-4d57-9c1e-2f6b7a3d4e90",
+          "contact_id": 12,
+          "first_name": "emma",
+          "last_name": "",
+          "full_name": "emma",
+          "email": "emma@startup.com",
+          "image": null
+        },
+        "description": "Customer reports that email notifications for new orders are not being received.",
+        "attachment": [],
+        "createAt": "3 hours ago",
+        "date": "16-Jan-2024",
+        "time": "10:30AM",
+        "created_at": "2024-01-16T10:30:00+00:00"
+      }
+    ],
+    "createAt": "3 hours ago",
+    "date": "16-Jan-2024",
+    "time": "10:30AM",
+    "shares": [],
+    "is_shared": false,
+    "activities": [],
+    "time_tracking_enabled": false,
+    "manual_time_track_permission": true,
+    "live_time_track_permission": true,
+    "sla": null
+  }
 }
 ```
+
+A missing ticket returns `404` with `{ "msg": "Ticket not found" }`.
 
 ---
 
 ## Update a Support Ticket
 
-Update an existing support ticket's information.
+Update an existing support ticket. Supports both `PUT` and `PATCH`.
 
 ```http
-PUT /api/public-v1/support-ticket/{id}
+PUT /api/public-v1/support-ticket/{uuid}
+PATCH /api/public-v1/support-ticket/{uuid}
 ```
 
 ### Path Parameters
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `id` | integer | Yes | Ticket ID to update |
+| `uuid` | string | Yes | Ticket UUID to update |
 
 ### Request Body
-Same fields as create ticket. All fields are optional - only include fields you want to update.
+The update uses the same validation as create, so `subject` and `priority` are **required** on every update (even `PATCH`). The other fields (`status`, `description`, `attachment`, `created_by`, `user_id`, `user_ids`) are optional. See [Create a Support Ticket](#create-a-support-ticket) for field descriptions.
+
+Only the keys you send among `subject`, `priority`, `status` and `description` are written; fields you omit keep their current value (nothing is reset). If `user_ids` (or `user_id`) is sent, the ticket's assignees are replaced with those agents (the first ID becomes the primary agent); invalid agent IDs return `422` with `{ "msg": "..." }`. If `attachment` is sent, the ticket's existing attachment media is replaced by the given media ID. An update does not create an initial reply and does not fire the "ticket created" webhook or workflows, and you do not need to send the ticket's current `user_id`.
+
+The ticket is looked up by `uuid`; an unknown UUID returns `404` with `{ "msg": "Ticket not found" }`.
 
 ### Example Request
 
 ```bash
-curl -X PUT "https://public-api.taskip.net/api/public-v1/support-ticket/46" \
+curl -X PUT "https://public-api.taskip.net/api/public-v1/support-ticket/550e8400-e29b-41d4-a716-446655440046" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json" \
   -d '{
     "subject": "Email Notifications Not Working - URGENT",
-    "priority": 4,
+    "priority": 3,
     "status": 1,
     "description": "Customer reports critical email notification failures affecting order processing"
   }'
@@ -328,39 +458,26 @@ curl -X PUT "https://public-api.taskip.net/api/public-v1/support-ticket/46" \
 
 ### Example Response
 
+Status: `201 Created`
+
 ```json
 {
-  "data": {
+  "msg": "SupportTicket stored successfully",
+  "ticket": {
     "id": 46,
     "uuid": "550e8400-e29b-41d4-a716-446655440046",
     "subject": "Email Notifications Not Working - URGENT",
-    "created_by": {
-      "id": 1,
-      "name": "Admin User",
-      "email": "admin@taskip.com"
-    },
-    "user": {
-      "id": 18,
-      "name": "Emma Davis",
-      "email": "emma@startup.com"
-    },
-    "priority": 4,
+    "priority": 3,
     "status": 1,
     "description": "Customer reports critical email notification failures affecting order processing",
-    "attachment": {
-      "id": 101,
-      "url": "https://cdn.taskip.net/attachments/ticket-attachment.pdf",
-      "name": "error_logs.txt",
-      "size": 15420
-    },
     "createAt": "3 hours ago",
-    "date": "16-Jan-2024",
+    "date": "2024-01-16",
     "time": "10:30AM"
-  },
-  "status": 201,
-  "msg": "SupportTicket stored successfully"
+  }
 }
 ```
+
+The `ticket` object has the same shape as in [Create a Support Ticket](#create-a-support-ticket) (abbreviated above).
 
 ---
 
@@ -369,377 +486,23 @@ curl -X PUT "https://public-api.taskip.net/api/public-v1/support-ticket/46" \
 Delete a specific support ticket from your system.
 
 ```http
-DELETE /api/public-v1/support-ticket/{id}
+DELETE /api/public-v1/support-ticket/{uuid}
 ```
 
 ### Path Parameters
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `id` | integer | Yes | Ticket ID to delete |
-
+| `uuid` | string | Yes | Ticket UUID to delete |
 
 <Callout type="warning" emoji="⚠️">
-  **Warning**: Deleting a support ticket will permanently remove it and all associated replies, attachments, and activity history. This action cannot be undone.
+  **Warning**: Deleting a support ticket cannot be undone.
 </Callout>
 
 ### Example Request
 
 ```bash
-curl -X DELETE "https://public-api.taskip.net/api/public-v1/support-ticket/46" \
+curl -X DELETE "https://public-api.taskip.net/api/public-v1/support-ticket/550e8400-e29b-41d4-a716-446655440046" \
   -H "X-Secret-Key: your-secret-key-here"
-```
-
-### Example Response
-
-```json
-{
-  "msg": "SupportTicket deleted successfully",
-  "status": 200
-}
-```
-
----
-
-## Assign Ticket to Team Member
-
-Assign or reassign a support ticket to a team member.
-
-```http
-POST /api/public-v1/ticket/{id}/assign
-```
-
-### Path Parameters
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | integer | Yes | Ticket ID to assign |
-
-### Request Body
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `assigned_to` | integer | Yes | Team member ID to assign the ticket |
-| `reason` | string | No | Reason for assignment/reassignment |
-| `notify_assignee` | boolean | No | Send notification to assignee (default: true) |
-
-### Example Request
-
-```bash
-curl -X POST "https://public-api.taskip.net/api/public-v1/ticket/45/assign" \
-  -H "X-Secret-Key: your-secret-key-here" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "assigned_to": 8,
-    "reason": "Reassigning to specialist for email server issues",
-    "notify_assignee": true
-  }'
-```
-
-### Example Response
-
-```json
-{
-  "success": true,
-  "message": "Ticket assigned successfully",
-  "data": {
-    "ticket_id": 45,
-    "previous_assignee": "Sarah Johnson",
-    "new_assignee": "David Chen",
-    "assigned_at": "2024-01-16T16:00:00Z",
-    "reason": "Reassigning to specialist for email server issues"
-  }
-}
-```
-
----
-
-## Update Ticket Status
-
-Update the status of a support ticket.
-
-```http
-POST /api/public-v1/ticket/{id}/status-update
-```
-
-### Path Parameters
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | integer | Yes | Ticket ID |
-
-### Request Body
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `status` | string | Yes | New status (`open`, `in_progress`, `resolved`, `closed`) |
-| `resolution_notes` | string | No | Resolution notes (required for `resolved` status) |
-| `notify_client` | boolean | No | Send status update notification to client |
-
-### Example Request
-
-```bash
-curl -X POST "https://public-api.taskip.net/api/public-v1/ticket/45/status-update" \
-  -H "X-Secret-Key: your-secret-key-here" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "status": "resolved",
-    "resolution_notes": "Email notification system has been fixed. All services are now working properly.",
-    "notify_client": true
-  }'
-```
-
-### Example Response
-
-```json
-{
-  "success": true,
-  "message": "Ticket status updated successfully",
-  "data": {
-    "ticket_id": 45,
-    "old_status": "in_progress",
-    "new_status": "resolved",
-    "resolution_notes": "Email notification system has been fixed. All services are now working properly.",
-    "actual_resolution_time": "2024-01-16T18:30:00Z",
-    "updated_at": "2024-01-16T18:30:00Z"
-  }
-}
-```
-
----
-
-## Add Reply to Ticket
-
-Add a reply/comment to a support ticket.
-
-```http
-POST /api/public-v1/ticket/{id}/add-reply
-```
-
-### Path Parameters
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | integer | Yes | Ticket ID |
-
-### Request Body
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `message` | string | Yes | Reply message content |
-| `author_type` | string | No | Author type (`team_member`, `client`, `system`) |
-| `is_private` | boolean | No | Private reply (not visible to client) |
-| `notify_client` | boolean | No | Send notification to client |
-
-### Example Request
-
-```bash
-curl -X POST "https://public-api.taskip.net/api/public-v1/ticket/45/add-reply" \
-  -H "X-Secret-Key: your-secret-key-here" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "message": "The issue has been resolved. Please test the email notifications and let us know if you encounter any further problems.",
-    "author_type": "team_member",
-    "is_private": false,
-    "notify_client": true
-  }'
-```
-
-### JavaScript Example
-```javascript
-const replyData = {
-  message: "The issue has been resolved. Please test the email notifications and let us know if you encounter any further problems.",
-  author_type: "team_member",
-  is_private: false,
-  notify_client: true
-};
-
-const response = await fetch('https://public-api.taskip.net/api/public-v1/ticket/45/add-reply', {
-  method: 'POST',
-  headers: {
-    'X-Secret-Key': 'your-secret-key-here',
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify(replyData)
-});
-
-const result = await response.json();
-```
-
-### Example Response
-
-```json
-{
-  "success": true,
-  "message": "Reply added successfully",
-  "data": {
-    "reply_id": 103,
-    "ticket_id": 45,
-    "message": "The issue has been resolved. Please test the email notifications and let us know if you encounter any further problems.",
-    "author": "Sarah Johnson",
-    "author_type": "team_member",
-    "is_private": false,
-    "created_at": "2024-01-16T18:35:00Z"
-  }
-}
-```
-
----
-
-## Upload Ticket Attachments
-
-Upload files/attachments to a support ticket.
-
-```http
-POST /api/public-v1/ticket/{id}/attachments
-```
-
-### Path Parameters
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | integer | Yes | Ticket ID |
-
-### Request Body (multipart/form-data)
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `files[]` | file | Yes | Files to upload (multiple files supported) |
-| `description` | string | No | Description of the attachments |
-
-### Example Request
-
-```bash
-curl -X POST "https://public-api.taskip.net/api/public-v1/ticket/45/attachments" \
-  -H "X-Secret-Key: your-secret-key-here" \
-  -F "files[]=@screenshot.png" \
-  -F "files[]=@error_log.txt" \
-  -F "description=Screenshots and error logs showing the resolved issue"
-```
-
-### Example Response
-
-```json
-{
-  "success": true,
-  "message": "Attachments uploaded successfully",
-  "data": {
-    "ticket_id": 45,
-    "uploaded_files": [
-      {
-        "id": 26,
-        "filename": "screenshot.png",
-        "original_filename": "screenshot.png",
-        "file_size": 245760,
-        "mime_type": "image/png",
-        "uploaded_at": "2024-01-16T19:00:00Z"
-      },
-      {
-        "id": 27,
-        "filename": "error_log.txt",
-        "original_filename": "error_log.txt",
-        "file_size": 8192,
-        "mime_type": "text/plain",
-        "uploaded_at": "2024-01-16T19:00:00Z"
-      }
-    ]
-  }
-}
-```
-
----
-
-## Get Ticket Attachments
-
-Retrieve all attachments for a specific ticket.
-
-```http
-GET /api/public-v1/ticket/{id}/attachments
-```
-
-### Path Parameters
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | integer | Yes | Ticket ID |
-
-### Example Request
-
-```bash
-curl -X GET "https://public-api.taskip.net/api/public-v1/ticket/45/attachments" \
-  -H "X-Secret-Key: your-secret-key-here" \
-  -H "Content-Type: application/json"
-```
-
-### Example Response
-
-```json
-{
-  "success": true,
-  "data": {
-    "ticket_id": 45,
-    "attachments": [
-      {
-        "id": 25,
-        "filename": "error_logs.txt",
-        "original_filename": "error_logs.txt",
-        "file_size": 15420,
-        "mime_type": "text/plain",
-        "download_url": "https://public-api.taskip.net/api/public-v1/ticket/45/attachments/25/download",
-        "uploaded_by": "Emma Davis",
-        "uploaded_at": "2024-01-16T10:35:00Z"
-      },
-      {
-        "id": 26,
-        "filename": "screenshot.png",
-        "original_filename": "screenshot.png",
-        "file_size": 245760,
-        "mime_type": "image/png",
-        "download_url": "https://public-api.taskip.net/api/public-v1/ticket/45/attachments/26/download",
-        "uploaded_by": "Sarah Johnson",
-        "uploaded_at": "2024-01-16T19:00:00Z"
-      }
-    ],
-    "total_attachments": 2,
-    "total_size": 261180
-  }
-}
-```
-
----
-
-## Bulk Actions
-
-Perform bulk operations on multiple support tickets.
-
-```http
-POST /api/public-v1/support-ticket/bulk-actions
-```
-
-### Request Body
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `ticket_ids` | array | Yes | Array of ticket IDs |
-| `action` | string | Yes | Action to perform (`delete`, `status_update`, `assign`, `add_tags`) |
-| `parameters` | object | No | Additional parameters for the action |
-
-#### Action-specific Parameters
-
-**For `status_update` action:**
-- `status`: New status for all tickets
-- `resolution_notes`: Resolution notes (for resolved status)
-
-**For `assign` action:**
-- `assigned_to`: Team member ID to assign tickets to
-
-**For `add_tags` action:**
-- `tags`: Array of tags to add to tickets
-
-### Example Request
-
-```bash
-curl -X POST "https://public-api.taskip.net/api/public-v1/support-ticket/bulk-actions" \
-  -H "X-Secret-Key: your-secret-key-here" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "ticket_ids": [40, 41, 42, 43],
-    "action": "delete"
-  }'
 ```
 
 ### Example Response
@@ -750,225 +513,123 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/support-ticket/bulk-ac
 }
 ```
 
+A missing ticket returns `404` with `{ "msg": "Ticket not found" }`.
+
 ---
 
-## Get Ticket Analytics
+## Bulk Actions
 
-Retrieve analytics and statistics for support tickets.
+Perform an operation on up to 1000 tickets at once.
 
 ```http
-GET /api/public-v1/ticket/analytics
+POST /api/public-v1/support-ticket/bulk-actions
 ```
 
-### Query Parameters
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `period` | string | No | Time period (`day`, `week`, `month`, `year`) |
-| `start_date` | string | No | Start date for analysis (YYYY-MM-DD) |
-| `end_date` | string | No | End date for analysis (YYYY-MM-DD) |
-| `group_by` | string | No | Group results by (`status`, `priority`, `category`, `assignee`) |
+### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `ids` | array of string | Yes | Ticket **UUIDs** (1 to 1000) |
+| `action` | string | Yes | One of `delete`, `priority`, `status`, `assign` |
+| `priority` | integer | Required if `action` is `priority` | New priority (`0`-`3`) |
+| `status` | integer | Required if `action` is `status` | New status (`0`-`5`) |
+| `user_ids` | array of integer | No | Agent user IDs for `assign` (at least 1). Takes precedence over `user_id` |
+| `user_id` | integer | No | Single agent user ID for `assign` |
+
+For `assign`, the supplied agents replace the current assignees of every selected ticket. Invalid agent IDs return `422`.
 
 ### Example Request
 
 ```bash
-curl -X GET "https://public-api.taskip.net/api/public-v1/ticket/analytics?period=month&group_by=status" \
+curl -X POST "https://public-api.taskip.net/api/public-v1/support-ticket/bulk-actions" \
   -H "X-Secret-Key: your-secret-key-here" \
-  -H "Content-Type: application/json"
+  -H "Content-Type: application/json" \
+  -d '{
+    "ids": ["550e8400-e29b-41d4-a716-446655440040", "550e8400-e29b-41d4-a716-446655440041"],
+    "action": "status",
+    "status": 2
+  }'
 ```
 
 ### Example Response
 
 ```json
 {
-  "success": true,
-  "data": {
-    "period": "month",
-    "start_date": "2024-01-01",
-    "end_date": "2024-01-31",
-    "summary": {
-      "total_tickets": 125,
-      "new_tickets": 45,
-      "resolved_tickets": 38,
-      "closed_tickets": 35,
-      "average_resolution_time": "2.3 days",
-      "customer_satisfaction": 4.2
-    },
-    "by_status": {
-      "open": 25,
-      "in_progress": 18,
-      "resolved": 38,
-      "closed": 44
-    },
-    "by_priority": {
-      "low": 30,
-      "medium": 55,
-      "high": 25,
-      "urgent": 15
-    },
-    "by_category": {
-      "Technical Support": 45,
-      "Feature Request": 20,
-      "Bug Report": 35,
-      "General Inquiry": 25
-    },
-    "resolution_time_trend": [
-      {
-        "week": "2024-W01",
-        "average_hours": 48
+  "msg": "SupportTicket status updated successfully"
+}
+```
+
+Success messages by action: `SupportTicket deleted successfully`, `SupportTicket priority updated successfully`, `SupportTicket status updated successfully`, `SupportTicket assigned successfully`. If none of the UUIDs match a ticket, `404` is returned with `SupportTicket not found`.
+
+---
+
+## List Ticket Replies
+
+Retrieve the replies of a ticket, oldest first.
+
+```http
+GET /api/public-v1/support-ticket/{uuid}/replies
+```
+
+### Path Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `uuid` | string | Yes | Ticket UUID |
+
+### Query Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `page` | integer | No | Page number |
+| `per_page` | integer | No | Replies per page (default: 10) |
+
+### Example Request
+
+```bash
+curl -X GET "https://public-api.taskip.net/api/public-v1/support-ticket/550e8400-e29b-41d4-a716-446655440046/replies?per_page=20" \
+  -H "X-Secret-Key: your-secret-key-here"
+```
+
+### Example Response
+
+```json
+{
+  "data": [
+    {
+      "id": 55,
+      "user": {
+        "id": 40,
+        "uuid": "1c9d3a52-8e0b-4d57-9c1e-2f6b7a3d4e90",
+        "contact_id": 12,
+        "first_name": "emma",
+        "last_name": "",
+        "full_name": "emma",
+        "email": "emma@startup.com",
+        "image": null
       },
-      {
-        "week": "2024-W02",
-        "average_hours": 36
-      },
-      {
-        "week": "2024-W03",
-        "average_hours": 42
-      },
-      {
-        "week": "2024-W04",
-        "average_hours": 38
-      }
-    ],
-    "top_assignees": [
-      {
-        "assignee": "Sarah Johnson",
-        "tickets_handled": 28,
-        "average_resolution_time": "1.8 days"
-      },
-      {
-        "assignee": "David Chen",
-        "tickets_handled": 22,
-        "average_resolution_time": "2.1 days"
-      }
-    ]
+      "description": "Customer reports that email notifications for new orders are not being received.",
+      "attachment": [],
+      "createAt": "3 hours ago",
+      "date": "16-Jan-2024",
+      "time": "10:30AM",
+      "created_at": "2024-01-16T10:30:00+00:00"
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "last_page": 1,
+    "per_page": 20,
+    "total": 1
   }
 }
 ```
 
----
-
-## Error Responses
-
-### Common Error Codes
-
-| Status Code | Error Type | Description |
-|-------------|------------|-------------|
-| `400` | Bad Request | Invalid request data or missing required fields |
-| `401` | Unauthorized | Invalid or missing X-Secret-Key |
-| `404` | Not Found | Ticket not found |
-| `409` | Conflict | Ticket cannot be modified in current status |
-| `413` | Payload Too Large | Attachment file size exceeds limit |
-| `422` | Validation Error | Request data failed validation |
-| `429` | Too Many Requests | Rate limit exceeded |
-
-### Example Error Response
-
-```json
-{
-  "success": false,
-  "error": "Validation Error",
-  "message": "The given data was invalid",
-  "errors": {
-    "title": ["The title field is required."],
-    "client_id": ["The selected client id is invalid."],
-    "category": ["The category field is required."]
-  },
-  "status_code": 422
-}
-```
-
----
-
-## Response Schemas
-
-### Support Ticket Object
-
-```json
-{
-  "id": "integer",
-  "ticket_number": "string",
-  "title": "string",
-  "description": "string",
-  "client_id": "integer",
-  "client_name": "string",
-  "client_email": "string",
-  "category": "string",
-  "priority": "string",
-  "status": "string",
-  "assigned_to": "integer|null",
-  "assigned_to_name": "string|null",
-  "created_by": "string",
-  "resolution_notes": "string|null",
-  "estimated_resolution_time": "string (ISO 8601)|null",
-  "actual_resolution_time": "string (ISO 8601)|null",
-  "tags": "array",
-  "custom_fields": "object|null",
-  "reply_count": "integer",
-  "attachment_count": "integer",
-  "created_at": "string (ISO 8601)",
-  "updated_at": "string (ISO 8601)"
-}
-```
-
-### Reply Object
-
-```json
-{
-  "id": "integer",
-  "message": "string",
-  "author": "string",
-  "author_type": "string",
-  "is_private": "boolean",
-  "created_at": "string (ISO 8601)"
-}
-```
-
-### Attachment Object
-
-```json
-{
-  "id": "integer",
-  "filename": "string",
-  "original_filename": "string",
-  "file_size": "integer",
-  "mime_type": "string",
-  "download_url": "string",
-  "uploaded_by": "string",
-  "uploaded_at": "string (ISO 8601)"
-}
-```
-
----
-
-## Best Practices
-
-### Ticket Management
-1. **Clear titles**: Use descriptive, specific titles for easy identification
-2. **Detailed descriptions**: Include all relevant information in the initial description
-3. **Proper categorization**: Use consistent categories for better organization
-4. **Priority assignment**: Set appropriate priorities based on business impact
-
-### Workflow Optimization
-1. **Quick assignment**: Assign tickets to appropriate team members promptly
-2. **Regular updates**: Keep clients informed with regular status updates
-3. **Resolution tracking**: Document resolution steps for future reference
-4. **Follow-up**: Ensure client satisfaction after ticket resolution
-
-### Communication
-1. **Professional replies**: Maintain professional tone in all communications
-2. **Timely responses**: Respond to tickets within defined SLA timeframes
-3. **Client notifications**: Keep clients informed of important updates
-4. **Internal notes**: Use private replies for internal team coordination
-
-<Callout type="info" emoji="💡">
-  **Tip**: Use the analytics endpoint to identify trends in ticket volume, resolution times, and common issues. This data can help optimize your support processes and resource allocation.
-</Callout>
+A missing ticket returns `404` with `{ "msg": "Ticket not found" }`.
 
 ---
 
 ## Reply to Support Ticket
 
-Add a reply to an existing support ticket.
+Add a reply to an existing support ticket. The reply is attributed to the user given in `reply_by_user_id`.
 
 ```http
 POST /api/public-v1/support-ticket/reply/{uuid}
@@ -982,20 +643,23 @@ POST /api/public-v1/support-ticket/reply/{uuid}
 ### Request Body
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `status` | integer | No | Status update (0=Open, 1=In Progress, 2=Resolved, 3=Closed, 4=Pending) |
-| `description` | string | Yes | Reply message content |
-| `attachment` | integer | No | Attachment media ID |
+| `reply_by_user_id` | integer | Yes (in practice) | ID of the user the reply is posted as. This field is not part of the validation rules; if it is missing or does not match a user (and no user is authenticated), the request returns `422` with `{ "msg": "A valid reply_by_user_id is required" }` |
+| `description` | string | Conditional | Reply content. Required unless `attachment` is provided |
+| `attachment` | array of integer | Conditional | Media upload IDs to attach. Each must exist. Required unless `description` is provided |
+| `status` | any | No | Accepted but ignored; the ticket status is set automatically (see below) |
+
+The ticket status is set automatically: `3` (Replied) when the replier is a contact (client), `1` (In Progress) when the replier is an agent/team member. Agent notifications are suppressed on this endpoint; use [Agent Reply](#agent-reply-to-support-ticket) to notify agents.
 
 ### Example Request
 
 ```bash
-curl -X POST "https://public-api.taskip.net/api/public-v1/support-ticket/reply/abc123def456" \
+curl -X POST "https://public-api.taskip.net/api/public-v1/support-ticket/reply/550e8400-e29b-41d4-a716-446655440046" \
   -H "X-Secret-Key: your-secret-key-here" \
   -H "Content-Type: application/json" \
   -d '{
-    "status": 1,
-    "description": "Thank you for contacting us. We have reviewed your issue and will provide a solution shortly.",
-    "attachment": 123
+    "reply_by_user_id": 40,
+    "description": "Thanks, the problem is still happening this morning.",
+    "attachment": [123]
   }'
 ```
 
@@ -1003,38 +667,304 @@ curl -X POST "https://public-api.taskip.net/api/public-v1/support-ticket/reply/a
 
 ```json
 {
-  "msg": "Reply added successfully",
-  "status": 201,
+  "msg": "SupportTicket reply successfully",
+  "status": 200,
   "reply": {
     "id": 789,
     "user": {
-      "id": 5,
-      "name": "Support Agent",
-      "email": "agent@company.com"
+      "id": 40,
+      "uuid": "1c9d3a52-8e0b-4d57-9c1e-2f6b7a3d4e90",
+      "contact_id": 12,
+      "first_name": "emma",
+      "last_name": "",
+      "full_name": "emma",
+      "email": "emma@startup.com",
+      "image": null
     },
-    "description": "Thank you for contacting us. We have reviewed your issue and will provide a solution shortly.",
-    "attachment": {
-      "id": 123,
-      "url": "https://cdn.taskip.net/attachments/solution_guide.pdf",
-      "name": "solution_guide.pdf",
-      "size": 245760
-    },
+    "description": "Thanks, the problem is still happening this morning.",
+    "attachment": [
+      {
+        "id": 123,
+        "title": "solution_guide.pdf",
+        "ext": "pdf",
+        "size": 245760,
+        "url": "https://cdn.taskip.net/attachments/solution_guide.pdf",
+        "media_type": "document",
+        "createdAt": "26-01-2024 15:30:00"
+      }
+    ],
     "createAt": "just now",
     "date": "26-Jan-2024",
-    "time": "03:30PM"
+    "time": "03:30PM",
+    "created_at": "2024-01-26T15:30:00+00:00"
   }
 }
 ```
 
-### Response Fields
+Errors: `404` `{ "msg": "Ticket not found" }`; `422` validation error `{ "error": { ... } }`; `422` `{ "msg": "A valid reply_by_user_id is required" }` when `reply_by_user_id` is missing or does not match a user.
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `reply_id` | integer | Unique reply ID |
-| `ticket_uuid` | string | Parent ticket UUID |
-| `message` | string | Reply message content |
-| `is_internal` | boolean | Whether reply is internal only |
-| `author` | object | Reply author information |
-| `attachments` | array | Attached files information |
-| `created_at` | string | Reply creation timestamp |
-| `client_notified` | boolean | Whether client was notified via email |
+---
+
+## Agent Reply to Support Ticket
+
+Reply to a ticket as an agent (team member). Unlike [Reply to Support Ticket](#reply-to-support-ticket), agent notifications are not suppressed, and the replier must be an agent user.
+
+```http
+POST /api/public-v1/support-ticket/agent-reply/{uuid}
+```
+
+### Path Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `uuid` | string | Yes | Support ticket UUID |
+
+### Request Body
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `agent_id` | integer | Yes | User ID of the agent posting the reply. Must exist and must not be a contact or lead |
+| `description` | string | Conditional | Reply content. Required unless `attachment` is provided |
+| `attachment` | array of integer | Conditional | Media upload IDs to attach. Required unless `description` is provided |
+| `status` | any | No | Accepted but ignored; the ticket status is set to `1` (In Progress) |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/support-ticket/agent-reply/550e8400-e29b-41d4-a716-446655440046" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "agent_id": 3,
+    "description": "We have reviewed your issue and will provide a solution shortly."
+  }'
+```
+
+### Example Response
+
+```json
+{
+  "msg": "SupportTicket reply successfully",
+  "reply": {
+    "id": 790,
+    "user": {
+      "id": 3,
+      "uuid": "b7a0c1d4-33f2-4a8e-9a77-5e1d9a2c4f10",
+      "contact_id": null,
+      "first_name": "Sarah",
+      "last_name": "Johnson",
+      "full_name": "Sarah Johnson",
+      "email": "sarah@taskip.com",
+      "image": null
+    },
+    "description": "We have reviewed your issue and will provide a solution shortly.",
+    "attachment": [],
+    "createAt": "just now",
+    "date": "26-Jan-2024",
+    "time": "03:35PM",
+    "created_at": "2024-01-26T15:35:00+00:00"
+  }
+}
+```
+
+### Error Responses
+| Status | Body |
+|--------|------|
+| `422` | `{ "msg": "agent_id is required" }` |
+| `422` | `{ "msg": "Agent not found" }` |
+| `422` | `{ "msg": "The provided agent_id does not belong to an agent user" }` |
+| `404` | `{ "msg": "Ticket not found" }` |
+
+---
+
+## Update Ticket Priority
+
+```http
+POST /api/public-v1/support-ticket/{uuid}/priority
+```
+
+### Request Body
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `priority` | integer | Yes | `0`=Low, `1`=Medium, `2`=High, `3`=Urgent |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/support-ticket/550e8400-e29b-41d4-a716-446655440046/priority" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{ "priority": 3 }'
+```
+
+### Example Response
+
+```json
+{
+  "msg": "SupportTicket status updated successfully"
+}
+```
+
+The success message says "status" even though the priority was updated. A missing ticket returns `404` (`Ticket not found`).
+
+---
+
+## Update Ticket Status
+
+```http
+POST /api/public-v1/support-ticket/status-update/{uuid}
+```
+
+### Request Body
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `status` | integer | Yes | `0`=Open, `1`=In Progress, `2`=Close, `3`=Replied, `4`=Waiting For Reply, `5`=Queue |
+
+Setting `2` (Close) records the ticket as resolved for SLA purposes and fires the "status updated" webhook; `4` and `5` pause the SLA timer; `0` and `1` resume it.
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/support-ticket/status-update/550e8400-e29b-41d4-a716-446655440046" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{ "status": 2 }'
+```
+
+### Example Response
+
+```json
+{
+  "msg": "SupportTicket status updated successfully"
+}
+```
+
+Errors: `404` (`Ticket not found`), `422` `{ "error": { "status": [...] } }`.
+
+---
+
+## Add Ticket Note
+
+Add an internal or client-visible note to a ticket.
+
+```http
+POST /api/public-v1/support-ticket/{uuid}/note-store
+```
+
+### Request Body
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `title` | string | No | Note title (max 191 characters) |
+| `description` | string | Yes | Note content (max 1000 characters) |
+| `is_public` | integer | No | Visibility: `0`=Private, `1`=Public, `2`=This ticket only, `3`=Private this ticket only (default: `0`) |
+
+### Example Request
+
+```bash
+curl -X POST "https://public-api.taskip.net/api/public-v1/support-ticket/550e8400-e29b-41d4-a716-446655440046/note-store" \
+  -H "X-Secret-Key: your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Escalation",
+    "description": "Customer is on the Enterprise plan, handle with priority.",
+    "is_public": 0
+  }'
+```
+
+### Example Response
+
+Status: `201 Created`
+
+```json
+{
+  "msg": "Ticket stored successfully",
+  "data": {
+    "title": "Escalation",
+    "description": "Customer is on the Enterprise plan, handle with priority.",
+    "is_public": 0,
+    "notable_type": "Modules\\SupportTicket\\Models\\SupportTicket",
+    "notable_id": 46,
+    "updated_at": "2024-01-16T11:00:00.000000Z",
+    "created_at": "2024-01-16T11:00:00.000000Z",
+    "id": 9
+  }
+}
+```
+
+---
+
+## Delete Ticket Note
+
+```http
+DELETE /api/public-v1/support-ticket/{uuid}/note-delete/{id}
+```
+
+### Path Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `uuid` | string | Yes | Ticket UUID |
+| `id` | integer | Yes | Note ID |
+
+### Example Request
+
+```bash
+curl -X DELETE "https://public-api.taskip.net/api/public-v1/support-ticket/550e8400-e29b-41d4-a716-446655440046/note-delete/9" \
+  -H "X-Secret-Key: your-secret-key-here"
+```
+
+### Example Response
+
+```json
+{
+  "msg": "Note deleted successfully"
+}
+```
+
+A note is only deleted if it belongs to the ticket in the URL. Errors: `404` with `Ticket not found` or `Note not found` (including when the note ID belongs to a different ticket).
+
+---
+
+## Error Responses
+
+### Common Error Codes
+
+| Status Code | Error Type | Description |
+|-------------|------------|-------------|
+| `401` | Unauthorized | Invalid or missing X-Secret-Key |
+| `403` | Forbidden | Plan or module access restriction |
+| `404` | Not Found | Ticket or note not found |
+| `422` | Validation Error | Request data failed validation |
+| `429` | Too Many Requests | Rate limit exceeded |
+
+### Validation Error Shape
+
+Create, update, reply and status-update requests return validation failures as:
+
+```json
+{
+  "error": {
+    "subject": ["The subject field is required."],
+    "priority": ["The priority field is required."]
+  }
+}
+```
+
+List, bulk-actions, priority and note requests use the standard Laravel shape:
+
+```json
+{
+  "message": "The description field is required.",
+  "errors": {
+    "description": ["The description field is required."]
+  }
+}
+```
+
+Non-validation errors from this API have the form `{ "msg": "Ticket not found" }`.
+
+---
+
+## Best Practices
+
+1. **Use UUIDs**: every ticket path parameter is the ticket UUID, not the numeric ID.
+2. **Send full payloads on update**: update re-runs the create routine, so always include `subject`, `priority` and any other values you want to keep.
+3. **Pick the right reply endpoint**: use `reply/{uuid}` for client replies and `agent-reply/{uuid}` when an agent should be notified-by-reply.
+4. **Use notes for internal context**: set `is_public` to `0` or `3` to keep notes agent-only.
